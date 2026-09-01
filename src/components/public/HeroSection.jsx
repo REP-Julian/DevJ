@@ -94,7 +94,7 @@ export const HeroSection = ({ profile }) => {
                 {/* Right Column: Clean Multi-Portrait Visual Showcase */}
                 <div className="lg:col-span-5 flex justify-center">
                     <div className="w-full max-w-md">
-                        <div className="relative p-6 bg-gradient-to-br from-white via-devyellow-100/30 to-devorange-100/20 rounded-3xl border border-gray-100 shadow-warm-md hover:shadow-warm-lg transition-shadow duration-300">
+                        <div className="relative p-6 sm:p-7 bg-gradient-to-br from-white via-devyellow-100/30 to-devorange-100/20 rounded-3xl border border-gray-100 shadow-warm-md hover:shadow-warm-lg transition-shadow duration-300">
                             {/* Top Badge */}
                             <div className="absolute -top-3 -right-3 z-40 bg-charcoal-900 text-white text-xs font-black px-4 py-2 rounded-xl shadow-warm-md border border-devyellow-400 flex items-center gap-1.5">
                                 <Sparkles className="w-3.5 h-3.5 text-devyellow-400 animate-pulse" />
@@ -104,7 +104,7 @@ export const HeroSection = ({ profile }) => {
                             {/* Clean Gallery Stage */}
                             <div className="relative h-80 w-full flex items-center justify-center overflow-hidden rounded-2xl bg-white/60">
                                 {/* Left Background Card */}
-                                <div className="absolute left-2 w-40 h-56 rounded-xl overflow-hidden opacity-40 scale-90 transition-all duration-700 ease-in-out border border-gray-200 shadow-sm">
+                                <div className="absolute left-2 sm:left-4 w-36 sm:w-40 h-56 rounded-2xl overflow-hidden opacity-40 scale-90 transition-all duration-700 ease-in-out border border-gray-200 shadow-sm">
                                     <img
                                         src={images[leftIndex]}
                                         alt="Previous portrait"
@@ -116,7 +116,7 @@ export const HeroSection = ({ profile }) => {
                                 </div>
 
                                 {/* Right Background Card */}
-                                <div className="absolute right-2 w-40 h-56 rounded-xl overflow-hidden opacity-40 scale-90 transition-all duration-700 ease-in-out border border-gray-200 shadow-sm">
+                                <div className="absolute right-2 sm:right-4 w-36 sm:w-40 h-56 rounded-2xl overflow-hidden opacity-40 scale-90 transition-all duration-700 ease-in-out border border-gray-200 shadow-sm">
                                     <img
                                         src={images[rightIndex]}
                                         alt="Next portrait"
@@ -127,18 +127,20 @@ export const HeroSection = ({ profile }) => {
                                     />
                                 </div>
 
-                                {/* Active Foreground Image */}
-                                <div className="relative z-30 w-52 h-68 rounded-2xl overflow-hidden shadow-warm-md border-2 border-white bg-gradient-to-tr from-devyellow-300 via-devorange-400 to-devorange-500 p-1 transition-all duration-500">
-                                    <img
-                                        key={currentIndex}
-                                        src={images[currentIndex]}
-                                        alt={profile?.name || 'DevJ'}
-                                        onError={(e) => {
-                                            e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80';
-                                        }}
-                                        className="w-full h-full object-cover rounded-xl transition-opacity duration-500"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-charcoal-900/40 via-transparent to-transparent pointer-events-none rounded-xl" />
+                                {/* Active Foreground Image with Seamless Rounded Border */}
+                                <div className="relative z-30 w-48 sm:w-52 h-64 sm:h-72 rounded-2xl overflow-hidden shadow-2xl border-4 border-white bg-gradient-to-tr from-devyellow-300 via-devorange-400 to-devorange-500 p-1 transition-all duration-500 hover:scale-105">
+                                    <div className="w-full h-full rounded-xl overflow-hidden relative">
+                                        <img
+                                            key={currentIndex}
+                                            src={images[currentIndex]}
+                                            alt={profile?.name || 'DevJ'}
+                                            onError={(e) => {
+                                                e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80';
+                                            }}
+                                            className="w-full h-full object-cover rounded-xl transition-opacity duration-500"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-charcoal-900/40 via-transparent to-transparent pointer-events-none rounded-xl" />
+                                    </div>
                                 </div>
                             </div>
 
@@ -160,7 +162,7 @@ export const HeroSection = ({ profile }) => {
                                             aria-label={`View photo ${idx + 1}`}
                                             className={`h-2 rounded-full transition-all duration-300 ${
                                                 idx === currentIndex
-                                                    ? 'w-6 bg-devorange-500'
+                                                    ? 'w-6 bg-gradient-to-r from-devyellow-400 to-devorange-500'
                                                     : 'w-2 bg-gray-200 hover:bg-gray-300'
                                             }`}
                                         />
