@@ -4,6 +4,8 @@ export const initialPortfolioData = {
         tagline: 'Artificial Intelligence Enthusiast, Vibe Developer and Creative Developer',
         description: 'I love turning ideas into interactive experiences and exploring the possibilities of artificial intelligence through creative development.',
         avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+        avatarUrl2: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80',
+        avatarUrl3: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80',
         email: 'contact@devj.com',
         githubUrl: 'https://github.com',
         facebookUrl: 'https://facebook.com',

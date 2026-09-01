@@ -9,6 +9,8 @@ export const ProfileManager = ({ profile, onUpdated }) => {
         tagline: profile?.tagline || 'Artificial Intelligence Enthusiast, Vibe Developer and Creative Developer',
         description: profile?.description || '',
         avatarUrl: profile?.avatarUrl || '',
+        avatarUrl2: profile?.avatarUrl2 || '',
+        avatarUrl3: profile?.avatarUrl3 || '',
         email: profile?.email || '',
         githubUrl: profile?.githubUrl || '',
         facebookUrl: profile?.facebookUrl || '',
@@ -38,15 +40,27 @@ export const ProfileManager = ({ profile, onUpdated }) => {
             <div className="border-b border-gray-200 pb-4">
                 <h2 className="text-2xl font-black text-charcoal-900">Profile Management</h2>
                 <p className="text-xs text-charcoal-500">
-                    Modify your hero information, dynamic avatars, and public brand metadata.
+                    Modify your hero information, dynamic rotating avatars, and public brand metadata.
                 </p>
             </div>
 
-            <form onSubmit={handleSave} className="space-y-6 max-w-3xl bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <form onSubmit={handleSave} className="space-y-6 max-w-4xl bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
+                {status.success && (
+                    <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-semibold flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Profile successfully saved to Appwrite Cloud!
+                    </div>
+                )}
+
+                {status.error && (
+                    <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-red-800 text-xs font-semibold flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4 text-red-600" /> {status.error}
+                    </div>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 mb-1">
-                            Full Name
+                            Your Full Display Name
                         </label>
                         <input
                             type="text"
@@ -97,15 +111,33 @@ export const ProfileManager = ({ profile, onUpdated }) => {
                     />
                 </div>
 
-                {/* Dynamic Image Upload */}
-                <div className="pt-2">
-                    <ImageUploader
-                        label="Hero 3D Profile Avatar"
-                        currentImage={formData.avatarUrl}
-                        onImageUploaded={(url) => setFormData({ ...formData, avatarUrl: url })}
-                    />
+                {/* Dynamic 3-Hero Image Upload Section */}
+                <div className="space-y-3 pt-2">
+                    <div>
+                        <h3 className="text-sm font-extrabold text-charcoal-900">Hero 3D Rotating Portraits (3 Photos)</h3>
+                        <p className="text-xs text-charcoal-500">Upload up to 3 portrait pictures to cycle through in the 3D Hero Carousel.</p>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <ImageUploader
+                            label="Photo 1 (Primary Portrait)"
+                            currentImage={formData.avatarUrl}
+                            onImageUploaded={(url) => setFormData({ ...formData, avatarUrl: url })}
+                        />
+                        <ImageUploader
+                            label="Photo 2 (Carousel Card 2)"
+                            currentImage={formData.avatarUrl2}
+                            onImageUploaded={(url) => setFormData({ ...formData, avatarUrl2: url })}
+                        />
+                        <ImageUploader
+                            label="Photo 3 (Carousel Card 3)"
+                            currentImage={formData.avatarUrl3}
+                            onImageUploaded={(url) => setFormData({ ...formData, avatarUrl3: url })}
+                        />
+                    </div>
                 </div>
 
+                {/* Social Media Handles */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
                     <div>
                         <label className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 mb-1">
@@ -149,7 +181,7 @@ export const ProfileManager = ({ profile, onUpdated }) => {
                         </label>
                         <input
                             type="text"
-                            placeholder="https://t.me/yourusername"
+                            placeholder="https://t.me/username"
                             value={formData.telegramUrl}
                             onChange={(e) => setFormData({ ...formData, telegramUrl: e.target.value })}
                             className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-devorange-500"
@@ -169,28 +201,23 @@ export const ProfileManager = ({ profile, onUpdated }) => {
                     </div>
                 </div>
 
-                {status.success && (
-                    <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-green-800 text-xs flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-green-600" />
-                        <span>Profile saved successfully. Public portfolio updated!</span>
-                    </div>
-                )}
-
-                {status.error && (
-                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-800 text-xs flex items-center gap-2">
-                        <AlertCircle className="w-4 h-4 text-red-600" />
-                        <span>{status.error}</span>
-                    </div>
-                )}
-
-                <button
-                    type="submit"
-                    disabled={status.loading}
-                    className="px-6 py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-devyellow-400 to-devorange-500 text-charcoal-900 flex items-center gap-2 shadow-sm hover:shadow-warm-md transition-all disabled:opacity-50"
-                >
-                    {status.loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                    <span>Save Profile Changes</span>
-                </button>
+                <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
+                    <button
+                        type="submit"
+                        disabled={status.loading}
+                        className="px-6 py-3 rounded-xl font-bold text-xs uppercase tracking-wider bg-gradient-to-r from-devyellow-400 via-devorange-400 to-devorange-500 text-charcoal-900 shadow-warm-sm hover:shadow-warm-md hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center gap-2 disabled:opacity-50"
+                    >
+                        {status.loading ? (
+                            <>
+                                <Loader2 className="w-4 h-4 animate-spin" /> Saving Changes...
+                            </>
+                        ) : (
+                            <>
+                                <Save className="w-4 h-4" /> Save Profile Changes
+                            </>
+                        )}
+                    </button>
+                </div>
             </form>
         </div>
     );
