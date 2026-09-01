@@ -1,0 +1,83 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Admin {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Profile {
+  id          Int      @id @default(autoincrement())
+  name        String
+  tagline     String
+  description String
+  avatarUrl   String
+  email       String
+  githubUrl   String
+  linkedinUrl String
+  twitterUrl  String?
+  updatedAt   DateTime @updatedAt
+}
+
+model Skill {
+  id          Int      @id @default(autoincrement())
+  category    String
+  name        String
+  description String
+  proficiency Int      @default(90)
+  iconName    String   @default("Code")
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model Achievement {
+  id          Int      @id @default(autoincrement())
+  title       String
+  category    String
+  date        String
+  description String
+  imageUrl    String
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model Project {
+  id           Int      @id @default(autoincrement())
+  title        String
+  category     String
+  description  String
+  technologies String
+  imageUrl     String
+  githubUrl    String
+  liveUrl      String
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+}
+
+model Hobby {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  imageUrl    String
+  iconName    String   @default("Heart")
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+}
+
+model Message {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  message   String
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
