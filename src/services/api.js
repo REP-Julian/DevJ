@@ -131,37 +131,36 @@ export const api = {
         }
     },
 
-    // Authentication (Appwrite Account Session with demo fallback)
+    // Authentication (Strict Appwrite Cloud Authentication)
     login: async (email, password) => {
         try {
-            try {
-                await account.deleteSession('current');
-            } catch {
-                // Ignore if no active session
-            }
+            await account.deleteSession('current');
+        } catch {
+            // Ignore if no active session
+        }
+
+        try {
             const session = await account.createEmailPasswordSession(email, password);
             const user = await account.get();
-            localStorage.setItem(AUTH_STORAGE_KEY, session.$id || 'logged_in');
+            localStorage.setItem(AUTH_STORAGE_KEY, session.$id);
             return { ...user, session };
         } catch (err) {
-            // Local fallback check
-            if (email && password) {
-                const token = `devj_token_${Date.now()}`;
-                localStorage.setItem(AUTH_STORAGE_KEY, token);
-                return { email, name: 'Admin', token };
-            }
-            throw new Error(err.message || 'Login failed');
+            console.error('Appwrite authentication error:', err);
+            throw new Error(err.message || 'Invalid email or password. Please check your Appwrite credentials.');
         }
     },
 
     verifyToken: async () => {
         try {
             const user = await account.get();
-            if (user && user.$id) return true;
+            if (user && user.$id) {
+                return true;
+            }
+            return false;
         } catch {
-            // Check localStorage
+            localStorage.removeItem(AUTH_STORAGE_KEY);
+            return false;
         }
-        return Boolean(localStorage.getItem(AUTH_STORAGE_KEY));
     },
 
     logout: async () => {
