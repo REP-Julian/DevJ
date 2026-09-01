@@ -16,7 +16,7 @@ export const appwriteConfig = {
         achievements: import.meta.env.VITE_APPWRITE_COLLECTION_ACHIEVEMENTS || '6a96b11f002f88e7773e',
         projects: import.meta.env.VITE_APPWRITE_COLLECTION_PROJECTS || '6a96b1b00031b6fa4f8a',
         hobbies: import.meta.env.VITE_APPWRITE_COLLECTION_HOBBIES || '6a96b1f90007d2b11849',
-        messages: import.meta.env.VITE_APPWRITE_COLLECTION_MESSAGES || 'messages',
+        messages: import.meta.env.VITE_APPWRITE_COLLECTION_MESSAGES || '6a96b22f00227fbdc31c',
     },
     isConfigured: Boolean(projectId && projectId.trim() !== '' && projectId !== 'your-appwrite-project-id'),
 };
