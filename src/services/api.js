@@ -201,8 +201,7 @@ export const api = {
                     appwriteConfig.databaseId,
                     appwriteConfig.collections.profile,
                     ID.unique(),
-                    payload,
-                    [Permission.read(Role.any()), Permission.write(Role.any())]
+                    payload
                 );
                 return { ...current.profile, ...normalizeDoc(created) };
             }
@@ -225,17 +224,12 @@ export const api = {
                 appwriteConfig.databaseId,
                 appwriteConfig.collections.skills,
                 ID.unique(),
-                payload,
-                [Permission.read(Role.any()), Permission.write(Role.any())]
+                payload
             );
             return normalizeDoc(res);
         } catch (err) {
-            console.warn('Saving skill to local fallback:', err.message);
-            const current = getStoredPortfolio();
-            const newSkill = { ...skill, id: String(Date.now()), proficiency: Number(skill.proficiency) || 90, order: Number(skill.order) || current.skills.length + 1 };
-            current.skills.push(newSkill);
-            saveStoredPortfolio(current);
-            return newSkill;
+            console.error('Appwrite createSkill error:', err);
+            throw new Error(`Appwrite Error: ${err.message}`);
         }
     },
 
@@ -255,10 +249,8 @@ export const api = {
             );
             return normalizeDoc(res);
         } catch (err) {
-            const current = getStoredPortfolio();
-            current.skills = current.skills.map((s) => (s.id === id ? { ...s, ...skill } : s));
-            saveStoredPortfolio(current);
-            return skill;
+            console.error('Appwrite updateSkill error:', err);
+            throw new Error(`Appwrite Error: ${err.message}`);
         }
     },
 
@@ -267,10 +259,8 @@ export const api = {
             await databases.deleteDocument(appwriteConfig.databaseId, appwriteConfig.collections.skills, id);
             return true;
         } catch (err) {
-            const current = getStoredPortfolio();
-            current.skills = current.skills.filter((s) => s.id !== id);
-            saveStoredPortfolio(current);
-            return true;
+            console.error('Appwrite deleteSkill error:', err);
+            throw new Error(`Appwrite Error: ${err.message}`);
         }
     },
 
@@ -286,16 +276,12 @@ export const api = {
                 appwriteConfig.databaseId,
                 appwriteConfig.collections.achievements,
                 ID.unique(),
-                payload,
-                [Permission.read(Role.any()), Permission.write(Role.any())]
+                payload
             );
             return normalizeDoc(res);
         } catch (err) {
-            const current = getStoredPortfolio();
-            const newAch = { ...data, id: String(Date.now()), order: Number(data.order) || current.achievements.length + 1 };
-            current.achievements.push(newAch);
-            saveStoredPortfolio(current);
-            return newAch;
+            console.error('Appwrite createAchievement error:', err);
+            throw new Error(`Appwrite Error: ${err.message}`);
         }
     },
 
@@ -314,10 +300,8 @@ export const api = {
             );
             return normalizeDoc(res);
         } catch (err) {
-            const current = getStoredPortfolio();
-            current.achievements = current.achievements.map((a) => (a.id === id ? { ...a, ...data } : a));
-            saveStoredPortfolio(current);
-            return data;
+            console.error('Appwrite updateAchievement error:', err);
+            throw new Error(`Appwrite Error: ${err.message}`);
         }
     },
 
@@ -326,10 +310,8 @@ export const api = {
             await databases.deleteDocument(appwriteConfig.databaseId, appwriteConfig.collections.achievements, id);
             return true;
         } catch (err) {
-            const current = getStoredPortfolio();
-            current.achievements = current.achievements.filter((a) => a.id !== id);
-            saveStoredPortfolio(current);
-            return true;
+            console.error('Appwrite deleteAchievement error:', err);
+            throw new Error(`Appwrite Error: ${err.message}`);
         }
     },
 
@@ -345,16 +327,12 @@ export const api = {
                 appwriteConfig.databaseId,
                 appwriteConfig.collections.projects,
                 ID.unique(),
-                payload,
-                [Permission.read(Role.any()), Permission.write(Role.any())]
+                payload
             );
             return normalizeDoc(res);
         } catch (err) {
-            const current = getStoredPortfolio();
-            const newProj = { ...data, id: String(Date.now()), order: Number(data.order) || current.projects.length + 1 };
-            current.projects.push(newProj);
-            saveStoredPortfolio(current);
-            return newProj;
+            console.error('Appwrite createProject error:', err);
+            throw new Error(`Appwrite Error: ${err.message}`);
         }
     },
 
@@ -373,10 +351,8 @@ export const api = {
             );
             return normalizeDoc(res);
         } catch (err) {
-            const current = getStoredPortfolio();
-            current.projects = current.projects.map((p) => (p.id === id ? { ...p, ...data } : p));
-            saveStoredPortfolio(current);
-            return data;
+            console.error('Appwrite updateProject error:', err);
+            throw new Error(`Appwrite Error: ${err.message}`);
         }
     },
 
@@ -385,10 +361,8 @@ export const api = {
             await databases.deleteDocument(appwriteConfig.databaseId, appwriteConfig.collections.projects, id);
             return true;
         } catch (err) {
-            const current = getStoredPortfolio();
-            current.projects = current.projects.filter((p) => p.id !== id);
-            saveStoredPortfolio(current);
-            return true;
+            console.error('Appwrite deleteProject error:', err);
+            throw new Error(`Appwrite Error: ${err.message}`);
         }
     },
 
@@ -404,16 +378,12 @@ export const api = {
                 appwriteConfig.databaseId,
                 appwriteConfig.collections.hobbies,
                 ID.unique(),
-                payload,
-                [Permission.read(Role.any()), Permission.write(Role.any())]
+                payload
             );
             return normalizeDoc(res);
         } catch (err) {
-            const current = getStoredPortfolio();
-            const newHobby = { ...data, id: String(Date.now()), order: Number(data.order) || current.hobbies.length + 1 };
-            current.hobbies.push(newHobby);
-            saveStoredPortfolio(current);
-            return newHobby;
+            console.error('Appwrite createHobby error:', err);
+            throw new Error(`Appwrite Error: ${err.message}`);
         }
     },
 
@@ -510,8 +480,7 @@ export const api = {
             const createdFile = await storage.createFile(
                 appwriteConfig.bucketId,
                 fileId,
-                file,
-                [Permission.read(Role.any()), Permission.write(Role.any())]
+                file
             );
 
             // Get direct public CDN view URL
