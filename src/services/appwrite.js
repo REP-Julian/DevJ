@@ -3,7 +3,7 @@ import { Client, Account, Databases, Storage, ID, Query, Permission, Role } from
 const endpoint = import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1';
 const projectId = import.meta.env.VITE_APPWRITE_PROJECT_ID || '6a969fd7003709708d27';
 const databaseId = import.meta.env.VITE_APPWRITE_DATABASE_ID || '6a96aa5b003b6af4827b';
-const bucketId = import.meta.env.VITE_APPWRITE_BUCKET_ID || 'portfolio-assets';
+const bucketId = import.meta.env.VITE_APPWRITE_BUCKET_ID || '6a96c5ad00249880aec6';
 
 export const appwriteConfig = {
     endpoint,
