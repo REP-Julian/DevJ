@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { ArrowRight, Sparkles, Terminal, Code2, Flame } from 'lucide-react';
 
 export const HeroSection = ({ profile }) => {
-    // Array of images to cycle through every 2 seconds
+    // Array of distinct images to cycle through every 2 seconds
     const images = [
         profile?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
-        profile?.avatarUrl2 || profile?.avatarUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80',
-        profile?.avatarUrl3 || profile?.avatarUrl || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80',
+        profile?.avatarUrl2 || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80',
+        profile?.avatarUrl3 || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80',
     ];
 
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -68,7 +68,8 @@ export const HeroSection = ({ profile }) => {
                             href="#projects"
                             className="px-7 py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider bg-gradient-to-r from-devyellow-400 via-devorange-400 to-devorange-500 text-charcoal-900 shadow-warm-md hover:shadow-warm-lg hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2"
                         >
-                            View My Projects <ArrowRight className="w-4 h-4" />
+                            <span>Explore Works</span>
+                            <ArrowRight className="w-4 h-4" />
                         </a>
                         <a
                             href="#contact"
@@ -94,17 +95,17 @@ export const HeroSection = ({ profile }) => {
                 {/* Right Column: Clean Multi-Portrait Visual Showcase */}
                 <div className="lg:col-span-5 flex justify-center">
                     <div className="w-full max-w-md">
-                        <div className="relative p-6 sm:p-7 bg-gradient-to-br from-white via-devyellow-100/30 to-devorange-100/20 rounded-3xl border border-gray-100 shadow-warm-md hover:shadow-warm-lg transition-shadow duration-300">
+                        <div className="relative p-6 sm:p-8 bg-gradient-to-br from-white via-devyellow-100/30 to-devorange-100/20 rounded-3xl border border-gray-100 shadow-warm-md hover:shadow-warm-lg transition-shadow duration-300">
                             {/* Top Badge */}
                             <div className="absolute -top-3 -right-3 z-40 bg-charcoal-900 text-white text-xs font-black px-4 py-2 rounded-xl shadow-warm-md border border-devyellow-400 flex items-center gap-1.5">
                                 <Sparkles className="w-3.5 h-3.5 text-devyellow-400 animate-pulse" />
                                 <span>Creative Portfolio</span>
                             </div>
 
-                            {/* Clean Gallery Stage */}
-                            <div className="relative h-80 w-full flex items-center justify-center overflow-hidden rounded-2xl bg-white/60">
+                            {/* Gallery Stage with comfortable padding so borders/shadows are never cut */}
+                            <div className="relative h-88 sm:h-96 w-full flex items-center justify-center rounded-2xl bg-white/40 p-4">
                                 {/* Left Background Card */}
-                                <div className="absolute left-2 sm:left-4 w-36 sm:w-40 h-56 rounded-2xl overflow-hidden opacity-40 scale-90 transition-all duration-700 ease-in-out border border-gray-200 shadow-sm">
+                                <div className="absolute left-2 sm:left-4 w-36 sm:w-40 h-52 sm:h-60 rounded-2xl overflow-hidden opacity-40 scale-90 transition-all duration-700 ease-in-out border border-gray-200 shadow-md">
                                     <img
                                         src={images[leftIndex]}
                                         alt="Previous portrait"
@@ -116,7 +117,7 @@ export const HeroSection = ({ profile }) => {
                                 </div>
 
                                 {/* Right Background Card */}
-                                <div className="absolute right-2 sm:right-4 w-36 sm:w-40 h-56 rounded-2xl overflow-hidden opacity-40 scale-90 transition-all duration-700 ease-in-out border border-gray-200 shadow-sm">
+                                <div className="absolute right-2 sm:right-4 w-36 sm:w-40 h-52 sm:h-60 rounded-2xl overflow-hidden opacity-40 scale-90 transition-all duration-700 ease-in-out border border-gray-200 shadow-md">
                                     <img
                                         src={images[rightIndex]}
                                         alt="Next portrait"
@@ -127,9 +128,9 @@ export const HeroSection = ({ profile }) => {
                                     />
                                 </div>
 
-                                {/* Active Foreground Image with Seamless Rounded Border */}
-                                <div className="relative z-30 w-48 sm:w-52 h-64 sm:h-72 rounded-2xl overflow-hidden shadow-2xl border-4 border-white bg-gradient-to-tr from-devyellow-300 via-devorange-400 to-devorange-500 p-1 transition-all duration-500 hover:scale-105">
-                                    <div className="w-full h-full rounded-xl overflow-hidden relative">
+                                {/* Active Foreground 3D Card with Clean Rounded Gradient Border */}
+                                <div className="relative z-30 w-48 sm:w-56 h-64 sm:h-76 rounded-2xl shadow-2xl p-[3px] bg-gradient-to-tr from-devyellow-400 via-devorange-400 to-devorange-500 transition-all duration-500 hover:scale-105">
+                                    <div className="w-full h-full rounded-[14px] overflow-hidden bg-white relative">
                                         <img
                                             key={currentIndex}
                                             src={images[currentIndex]}
@@ -137,9 +138,9 @@ export const HeroSection = ({ profile }) => {
                                             onError={(e) => {
                                                 e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80';
                                             }}
-                                            className="w-full h-full object-cover rounded-xl transition-opacity duration-500"
+                                            className="w-full h-full object-cover transition-opacity duration-500"
                                         />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-charcoal-900/40 via-transparent to-transparent pointer-events-none rounded-xl" />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-charcoal-900/30 via-transparent to-transparent pointer-events-none" />
                                     </div>
                                 </div>
                             </div>

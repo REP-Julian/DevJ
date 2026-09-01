@@ -95,7 +95,7 @@ export const api = {
 
             const profileDoc =
                 profileRes.status === 'fulfilled' && profileRes.value.documents.length > 0
-                    ? normalizeDoc(profileRes.value.documents[0])
+                    ? { ...fallback.profile, ...normalizeDoc(profileRes.value.documents[0]) }
                     : fallback.profile;
 
             const skillsDocs =
@@ -175,6 +175,11 @@ export const api = {
     // Profile Management
     updateProfile: async (profileData) => {
         const payload = cleanPayload(profileData);
+        // Save immediately to local cache
+        const current = getStoredPortfolio();
+        current.profile = { ...current.profile, ...profileData };
+        saveStoredPortfolio(current);
+
         try {
             const docs = await databases.listDocuments(
                 appwriteConfig.databaseId,
@@ -190,7 +195,7 @@ export const api = {
                     docId,
                     payload
                 );
-                return normalizeDoc(updated);
+                return { ...current.profile, ...normalizeDoc(updated) };
             } else {
                 const created = await databases.createDocument(
                     appwriteConfig.databaseId,
@@ -199,13 +204,10 @@ export const api = {
                     payload,
                     [Permission.read(Role.any()), Permission.write(Role.any())]
                 );
-                return normalizeDoc(created);
+                return { ...current.profile, ...normalizeDoc(created) };
             }
         } catch (err) {
-            console.warn('Saving profile to local fallback:', err.message);
-            const current = getStoredPortfolio();
-            current.profile = { ...current.profile, ...profileData };
-            saveStoredPortfolio(current);
+            console.warn('Appwrite profile sync notice (saved locally):', err.message);
             return current.profile;
         }
     },
