@@ -181,14 +181,21 @@ export const api = {
         saveStoredPortfolio(current);
 
         try {
-            const docs = await databases.listDocuments(
-                appwriteConfig.databaseId,
-                appwriteConfig.collections.profile,
-                [Query.limit(1)]
-            );
+            let docId = null;
+            try {
+                const docs = await databases.listDocuments(
+                    appwriteConfig.databaseId,
+                    appwriteConfig.collections.profile,
+                    [Query.limit(1)]
+                );
+                if (docs.documents.length > 0) {
+                    docId = docs.documents[0].$id;
+                }
+            } catch {
+                // Ignore list error and proceed to create/update
+            }
 
-            if (docs.documents.length > 0) {
-                const docId = docs.documents[0].$id;
+            if (docId) {
                 const updated = await databases.updateDocument(
                     appwriteConfig.databaseId,
                     appwriteConfig.collections.profile,
@@ -200,9 +207,14 @@ export const api = {
                 const created = await databases.createDocument(
                     appwriteConfig.databaseId,
                     appwriteConfig.collections.profile,
-                    ID.unique(),
+                    'main_profile',
                     payload
-                );
+                ).catch(() => databases.updateDocument(
+                    appwriteConfig.databaseId,
+                    appwriteConfig.collections.profile,
+                    'main_profile',
+                    payload
+                ));
                 return { ...current.profile, ...normalizeDoc(created) };
             }
         } catch (err) {
