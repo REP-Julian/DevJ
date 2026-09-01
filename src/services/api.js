@@ -207,8 +207,8 @@ export const api = {
                 return { ...current.profile, ...normalizeDoc(created) };
             }
         } catch (err) {
-            console.warn('Appwrite profile sync notice (saved locally):', err.message);
-            return current.profile;
+            console.error('Appwrite profile sync error:', err);
+            throw new Error(`Appwrite Cloud Error: ${err.message}`);
         }
     },
 
