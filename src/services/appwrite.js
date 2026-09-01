@@ -2,7 +2,7 @@ import { Client, Account, Databases, Storage, ID, Query, Permission, Role } from
 
 const endpoint = import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://fra.cloud.appwrite.io/v1';
 const projectId = import.meta.env.VITE_APPWRITE_PROJECT_ID || '6a969fd7003709708d27';
-const databaseId = import.meta.env.VITE_APPWRITE_DATABASE_ID || 'devj_portfolio';
+const databaseId = import.meta.env.VITE_APPWRITE_DATABASE_ID || '6a96aa5b003b6af4827b';
 const bucketId = import.meta.env.VITE_APPWRITE_BUCKET_ID || 'portfolio-assets';
 
 export const appwriteConfig = {
@@ -11,11 +11,11 @@ export const appwriteConfig = {
     databaseId,
     bucketId,
     collections: {
-        profile: import.meta.env.VITE_APPWRITE_COLLECTION_PROFILE || 'profiles',
-        skills: import.meta.env.VITE_APPWRITE_COLLECTION_SKILLS || 'skills',
-        achievements: import.meta.env.VITE_APPWRITE_COLLECTION_ACHIEVEMENTS || 'achievements',
-        projects: import.meta.env.VITE_APPWRITE_COLLECTION_PROJECTS || 'projects',
-        hobbies: import.meta.env.VITE_APPWRITE_COLLECTION_HOBBIES || 'hobbies',
+        profile: import.meta.env.VITE_APPWRITE_COLLECTION_PROFILE || '6a96aa940026789aaa03',
+        skills: import.meta.env.VITE_APPWRITE_COLLECTION_SKILLS || '6a96ace40004e4cf7979',
+        achievements: import.meta.env.VITE_APPWRITE_COLLECTION_ACHIEVEMENTS || '6a96b11f002f88e7773e',
+        projects: import.meta.env.VITE_APPWRITE_COLLECTION_PROJECTS || '6a96b1b00031b6fa4f8a',
+        hobbies: import.meta.env.VITE_APPWRITE_COLLECTION_HOBBIES || '6a96b1f90007d2b11849',
         messages: import.meta.env.VITE_APPWRITE_COLLECTION_MESSAGES || 'messages',
     },
     isConfigured: Boolean(projectId && projectId.trim() !== '' && projectId !== 'your-appwrite-project-id'),
