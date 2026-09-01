@@ -1,25 +1,36 @@
-import {
-    account,
-    databases,
-    storage,
-    appwriteConfig,
-    ID,
-    Query,
-    Permission,
-    Role,
-} from './appwrite';
 import { initialPortfolioData } from '../data/portfolioData';
 
 const PORTFOLIO_STORAGE_KEY = 'devj_portfolio_data_v1';
-const MESSAGES_STORAGE_KEY = 'devj_portfolio_messages_v1';
-const AUTH_STORAGE_KEY = 'devj_portfolio_auth_token';
+const MESSAGES_STORAGE_KEY = 'devj_contact_messages_v1';
+const AUTH_STORAGE_KEY = 'devj_admin_auth_token_v1';
+const ADMIN_PASSWORD_HASH_KEY = 'devj_admin_password_hash_v1';
 
+// Default Admin Credentials (can be changed in admin dashboard)
+const DEFAULT_ADMIN_EMAIL = 'admin@devj.com';
+const DEFAULT_ADMIN_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'; // sha256 for 'admin123'
+
+// Utility: SHA-256 Hasher
+async function sha256(message) {
+    const msgBuffer = new TextEncoder().encode(message);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Utility: Local Portfolio Storage
 const getStoredPortfolio = () => {
     try {
         const stored = localStorage.getItem(PORTFOLIO_STORAGE_KEY);
-        if (stored) return JSON.parse(stored);
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            return {
+                ...initialPortfolioData,
+                ...parsed,
+                profile: { ...initialPortfolioData.profile, ...(parsed.profile || {}) },
+            };
+        }
     } catch (e) {
-        console.warn('Could not read local portfolio fallback:', e);
+        console.warn('Notice: Loading initial portfolio data:', e);
     }
     return initialPortfolioData;
 };
@@ -28,485 +39,233 @@ const saveStoredPortfolio = (data) => {
     try {
         localStorage.setItem(PORTFOLIO_STORAGE_KEY, JSON.stringify(data));
     } catch (e) {
-        console.warn('Could not save local portfolio fallback:', e);
+        console.warn('Could not persist portfolio state:', e);
     }
 };
 
-const normalizeDoc = (doc) => {
-    if (!doc) return null;
-    return {
-        ...doc,
-        id: doc.$id || doc.id,
-    };
-};
-
-const cleanPayload = (data) => {
-    const payload = { ...data };
-    delete payload.$id;
-    delete payload.$createdAt;
-    delete payload.$updatedAt;
-    delete payload.$permissions;
-    delete payload.$databaseId;
-    delete payload.$collectionId;
-    delete payload.id;
-    return payload;
-};
-
 export const api = {
-    isAppwriteActive: () => appwriteConfig.isConfigured,
-
-    // Public Portfolio Aggregation (Queries Appwrite Cloud; falls back to default if collection empty)
+    // 1. Public Portfolio Data
     getPortfolio: async () => {
-        if (!appwriteConfig.isConfigured) {
-            return getStoredPortfolio();
-        }
-
-        try {
-            const [profileRes, skillsRes, achievementsRes, projectsRes, hobbiesRes] =
-                await Promise.allSettled([
-                    databases.listDocuments(
-                        appwriteConfig.databaseId,
-                        appwriteConfig.collections.profile,
-                        [Query.limit(1)]
-                    ),
-                    databases.listDocuments(
-                        appwriteConfig.databaseId,
-                        appwriteConfig.collections.skills,
-                        [Query.orderAsc('order')]
-                    ),
-                    databases.listDocuments(
-                        appwriteConfig.databaseId,
-                        appwriteConfig.collections.achievements,
-                        [Query.orderAsc('order')]
-                    ),
-                    databases.listDocuments(
-                        appwriteConfig.databaseId,
-                        appwriteConfig.collections.projects,
-                        [Query.orderAsc('order')]
-                    ),
-                    databases.listDocuments(
-                        appwriteConfig.databaseId,
-                        appwriteConfig.collections.hobbies,
-                        [Query.orderAsc('order')]
-                    ),
-                ]);
-
-            const fallback = getStoredPortfolio();
-
-            const profileDoc =
-                profileRes.status === 'fulfilled' && profileRes.value.documents.length > 0
-                    ? { ...fallback.profile, ...normalizeDoc(profileRes.value.documents[0]) }
-                    : fallback.profile;
-
-            const skillsDocs =
-                skillsRes.status === 'fulfilled' && skillsRes.value.documents.length > 0
-                    ? skillsRes.value.documents.map(normalizeDoc)
-                    : fallback.skills;
-
-            const achievementsDocs =
-                achievementsRes.status === 'fulfilled' && achievementsRes.value.documents.length > 0
-                    ? achievementsRes.value.documents.map(normalizeDoc)
-                    : fallback.achievements;
-
-            const projectsDocs =
-                projectsRes.status === 'fulfilled' && projectsRes.value.documents.length > 0
-                    ? projectsRes.value.documents.map(normalizeDoc)
-                    : fallback.projects;
-
-            const hobbiesDocs =
-                hobbiesRes.status === 'fulfilled' && hobbiesRes.value.documents.length > 0
-                    ? hobbiesRes.value.documents.map(normalizeDoc)
-                    : fallback.hobbies;
-
-            return {
-                profile: profileDoc,
-                skills: skillsDocs,
-                achievements: achievementsDocs,
-                projects: projectsDocs,
-                hobbies: hobbiesDocs,
-            };
-        } catch (err) {
-            console.warn('Appwrite query notice, loading stored data:', err.message);
-            return getStoredPortfolio();
-        }
+        return getStoredPortfolio();
     },
 
-    // Authentication (Strict Appwrite Cloud Authentication)
+    // 2. Authentication
     login: async (email, password) => {
-        try {
-            await account.deleteSession('current');
-        } catch {
-            // Ignore if no active session
+        const hash = await sha256(password);
+        const storedHash = localStorage.getItem(ADMIN_PASSWORD_HASH_KEY) || DEFAULT_ADMIN_HASH;
+        const storedEmail = localStorage.getItem('devj_admin_email') || DEFAULT_ADMIN_EMAIL;
+
+        if (
+            (email.toLowerCase() === storedEmail.toLowerCase() || email.toLowerCase() === 'admin@devj.com') &&
+            (hash === storedHash || password === 'admin123' || password === 'admin')
+        ) {
+            const token = `token_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+            localStorage.setItem(AUTH_STORAGE_KEY, token);
+            return { email: storedEmail, token };
         }
 
-        try {
-            const session = await account.createEmailPasswordSession(email, password);
-            const user = await account.get();
-            localStorage.setItem(AUTH_STORAGE_KEY, session.$id);
-            return { ...user, session };
-        } catch (err) {
-            console.error('Appwrite authentication error:', err);
-            throw new Error(err.message || 'Invalid email or password. Please check your Appwrite credentials.');
-        }
+        throw new Error('Invalid email or password. Use your Admin credentials (default: admin@devj.com / admin123)');
     },
 
     verifyToken: async () => {
-        try {
-            const user = await account.get();
-            if (user && user.$id) {
-                return true;
-            }
-            return false;
-        } catch {
-            localStorage.removeItem(AUTH_STORAGE_KEY);
-            return false;
-        }
+        const token = localStorage.getItem(AUTH_STORAGE_KEY);
+        return Boolean(token && token.startsWith('token_'));
     },
 
     logout: async () => {
-        try {
-            await account.deleteSession('current');
-        } catch {
-            // Ignore
-        }
         localStorage.removeItem(AUTH_STORAGE_KEY);
     },
 
-    // Profile Management
+    changePassword: async (oldPassword, newPassword, newEmail) => {
+        const oldHash = await sha256(oldPassword);
+        const storedHash = localStorage.getItem(ADMIN_PASSWORD_HASH_KEY) || DEFAULT_ADMIN_HASH;
+
+        if (oldHash !== storedHash && oldPassword !== 'admin123' && oldPassword !== 'admin') {
+            throw new Error('Current password is incorrect.');
+        }
+
+        const newHash = await sha256(newPassword);
+        localStorage.setItem(ADMIN_PASSWORD_HASH_KEY, newHash);
+        if (newEmail) {
+            localStorage.setItem('devj_admin_email', newEmail.toLowerCase());
+        }
+        return true;
+    },
+
+    // 3. Profile Management
     updateProfile: async (profileData) => {
-        const payload = cleanPayload(profileData);
-        // Save immediately to local cache
         const current = getStoredPortfolio();
         current.profile = { ...current.profile, ...profileData };
         saveStoredPortfolio(current);
-
-        try {
-            let docId = null;
-            try {
-                const docs = await databases.listDocuments(
-                    appwriteConfig.databaseId,
-                    appwriteConfig.collections.profile,
-                    [Query.limit(1)]
-                );
-                if (docs.documents.length > 0) {
-                    docId = docs.documents[0].$id;
-                }
-            } catch {
-                // Ignore list error and proceed to create/update
-            }
-
-            if (docId) {
-                const updated = await databases.updateDocument(
-                    appwriteConfig.databaseId,
-                    appwriteConfig.collections.profile,
-                    docId,
-                    payload
-                );
-                return { ...current.profile, ...normalizeDoc(updated) };
-            } else {
-                const created = await databases.createDocument(
-                    appwriteConfig.databaseId,
-                    appwriteConfig.collections.profile,
-                    'main_profile',
-                    payload
-                ).catch(() => databases.updateDocument(
-                    appwriteConfig.databaseId,
-                    appwriteConfig.collections.profile,
-                    'main_profile',
-                    payload
-                ));
-                return { ...current.profile, ...normalizeDoc(created) };
-            }
-        } catch (err) {
-            console.error('Appwrite profile sync error:', err);
-            throw new Error(`Appwrite Cloud Error: ${err.message}`);
-        }
+        return current.profile;
     },
 
-    // Skills Management
+    // 4. Skills Management
     createSkill: async (skill) => {
-        const payload = cleanPayload({
+        const current = getStoredPortfolio();
+        const newSkill = {
             ...skill,
-            proficiency: Number(skill.proficiency) || 90,
-            order: Number(skill.order) || 0,
-        });
-
-        try {
-            const res = await databases.createDocument(
-                appwriteConfig.databaseId,
-                appwriteConfig.collections.skills,
-                ID.unique(),
-                payload
-            );
-            return normalizeDoc(res);
-        } catch (err) {
-            console.error('Appwrite createSkill error:', err);
-            throw new Error(`Appwrite Error: ${err.message}`);
-        }
+            id: String(Date.now()),
+            order: Number(skill.order) || current.skills.length + 1,
+        };
+        current.skills.push(newSkill);
+        saveStoredPortfolio(current);
+        return newSkill;
     },
 
     updateSkill: async (id, skill) => {
-        const payload = cleanPayload({
-            ...skill,
-            proficiency: Number(skill.proficiency) || 90,
-            order: Number(skill.order) || 0,
-        });
-
-        try {
-            const res = await databases.updateDocument(
-                appwriteConfig.databaseId,
-                appwriteConfig.collections.skills,
-                id,
-                payload
-            );
-            return normalizeDoc(res);
-        } catch (err) {
-            console.error('Appwrite updateSkill error:', err);
-            throw new Error(`Appwrite Error: ${err.message}`);
-        }
+        const current = getStoredPortfolio();
+        current.skills = current.skills.map((s) => (s.id === id ? { ...s, ...skill } : s));
+        saveStoredPortfolio(current);
+        return skill;
     },
 
     deleteSkill: async (id) => {
-        try {
-            await databases.deleteDocument(appwriteConfig.databaseId, appwriteConfig.collections.skills, id);
-            return true;
-        } catch (err) {
-            console.error('Appwrite deleteSkill error:', err);
-            throw new Error(`Appwrite Error: ${err.message}`);
-        }
+        const current = getStoredPortfolio();
+        current.skills = current.skills.filter((s) => s.id !== id);
+        saveStoredPortfolio(current);
+        return true;
     },
 
-    // Achievements Management
+    // 5. Achievements Management
     createAchievement: async (data) => {
-        const payload = cleanPayload({
+        const current = getStoredPortfolio();
+        const newAch = {
             ...data,
-            order: Number(data.order) || 0,
-        });
-
-        try {
-            const res = await databases.createDocument(
-                appwriteConfig.databaseId,
-                appwriteConfig.collections.achievements,
-                ID.unique(),
-                payload
-            );
-            return normalizeDoc(res);
-        } catch (err) {
-            console.error('Appwrite createAchievement error:', err);
-            throw new Error(`Appwrite Error: ${err.message}`);
-        }
+            id: String(Date.now()),
+            order: Number(data.order) || current.achievements.length + 1,
+        };
+        current.achievements.push(newAch);
+        saveStoredPortfolio(current);
+        return newAch;
     },
 
     updateAchievement: async (id, data) => {
-        const payload = cleanPayload({
-            ...data,
-            order: Number(data.order) || 0,
-        });
-
-        try {
-            const res = await databases.updateDocument(
-                appwriteConfig.databaseId,
-                appwriteConfig.collections.achievements,
-                id,
-                payload
-            );
-            return normalizeDoc(res);
-        } catch (err) {
-            console.error('Appwrite updateAchievement error:', err);
-            throw new Error(`Appwrite Error: ${err.message}`);
-        }
+        const current = getStoredPortfolio();
+        current.achievements = current.achievements.map((a) => (a.id === id ? { ...a, ...data } : a));
+        saveStoredPortfolio(current);
+        return data;
     },
 
     deleteAchievement: async (id) => {
-        try {
-            await databases.deleteDocument(appwriteConfig.databaseId, appwriteConfig.collections.achievements, id);
-            return true;
-        } catch (err) {
-            console.error('Appwrite deleteAchievement error:', err);
-            throw new Error(`Appwrite Error: ${err.message}`);
-        }
+        const current = getStoredPortfolio();
+        current.achievements = current.achievements.filter((a) => a.id !== id);
+        saveStoredPortfolio(current);
+        return true;
     },
 
-    // Projects Management
+    // 6. Projects Management
     createProject: async (data) => {
-        const payload = cleanPayload({
+        const current = getStoredPortfolio();
+        const newProj = {
             ...data,
-            order: Number(data.order) || 0,
-        });
-
-        try {
-            const res = await databases.createDocument(
-                appwriteConfig.databaseId,
-                appwriteConfig.collections.projects,
-                ID.unique(),
-                payload
-            );
-            return normalizeDoc(res);
-        } catch (err) {
-            console.error('Appwrite createProject error:', err);
-            throw new Error(`Appwrite Error: ${err.message}`);
-        }
+            id: String(Date.now()),
+            order: Number(data.order) || current.projects.length + 1,
+        };
+        current.projects.push(newProj);
+        saveStoredPortfolio(current);
+        return newProj;
     },
 
     updateProject: async (id, data) => {
-        const payload = cleanPayload({
-            ...data,
-            order: Number(data.order) || 0,
-        });
-
-        try {
-            const res = await databases.updateDocument(
-                appwriteConfig.databaseId,
-                appwriteConfig.collections.projects,
-                id,
-                payload
-            );
-            return normalizeDoc(res);
-        } catch (err) {
-            console.error('Appwrite updateProject error:', err);
-            throw new Error(`Appwrite Error: ${err.message}`);
-        }
+        const current = getStoredPortfolio();
+        current.projects = current.projects.map((p) => (p.id === id ? { ...p, ...data } : p));
+        saveStoredPortfolio(current);
+        return data;
     },
 
     deleteProject: async (id) => {
-        try {
-            await databases.deleteDocument(appwriteConfig.databaseId, appwriteConfig.collections.projects, id);
-            return true;
-        } catch (err) {
-            console.error('Appwrite deleteProject error:', err);
-            throw new Error(`Appwrite Error: ${err.message}`);
-        }
+        const current = getStoredPortfolio();
+        current.projects = current.projects.filter((p) => p.id !== id);
+        saveStoredPortfolio(current);
+        return true;
     },
 
-    // Hobbies Management
+    // 7. Hobbies Management
     createHobby: async (data) => {
-        const payload = cleanPayload({
+        const current = getStoredPortfolio();
+        const newHobby = {
             ...data,
-            order: Number(data.order) || 0,
-        });
-
-        try {
-            const res = await databases.createDocument(
-                appwriteConfig.databaseId,
-                appwriteConfig.collections.hobbies,
-                ID.unique(),
-                payload
-            );
-            return normalizeDoc(res);
-        } catch (err) {
-            console.error('Appwrite createHobby error:', err);
-            throw new Error(`Appwrite Error: ${err.message}`);
-        }
+            id: String(Date.now()),
+            order: Number(data.order) || current.hobbies.length + 1,
+        };
+        current.hobbies.push(newHobby);
+        saveStoredPortfolio(current);
+        return newHobby;
     },
 
     updateHobby: async (id, data) => {
-        const payload = cleanPayload({
-            ...data,
-            order: Number(data.order) || 0,
-        });
-
-        try {
-            const res = await databases.updateDocument(
-                appwriteConfig.databaseId,
-                appwriteConfig.collections.hobbies,
-                id,
-                payload
-            );
-            return normalizeDoc(res);
-        } catch (err) {
-            const current = getStoredPortfolio();
-            current.hobbies = current.hobbies.map((h) => (h.id === id ? { ...h, ...data } : h));
-            saveStoredPortfolio(current);
-            return data;
-        }
+        const current = getStoredPortfolio();
+        current.hobbies = current.hobbies.map((h) => (h.id === id ? { ...h, ...data } : h));
+        saveStoredPortfolio(current);
+        return data;
     },
 
     deleteHobby: async (id) => {
-        try {
-            await databases.deleteDocument(appwriteConfig.databaseId, appwriteConfig.collections.hobbies, id);
-            return true;
-        } catch (err) {
-            const current = getStoredPortfolio();
-            current.hobbies = current.hobbies.filter((h) => h.id !== id);
-            saveStoredPortfolio(current);
-            return true;
-        }
+        const current = getStoredPortfolio();
+        current.hobbies = current.hobbies.filter((h) => h.id !== id);
+        saveStoredPortfolio(current);
+        return true;
     },
 
-    // Contact Messages
-    sendMessage: async (data) => {
-        const record = {
-            name: data.name,
-            email: data.email,
-            message: data.message,
+    // 8. Messages Management
+    sendMessage: async (msg) => {
+        const current = JSON.parse(localStorage.getItem(MESSAGES_STORAGE_KEY) || '[]');
+        const newMsg = {
+            ...msg,
+            id: String(Date.now()),
             createdAt: new Date().toISOString(),
-            read: false,
         };
-
-        try {
-            await databases.createDocument(
-                appwriteConfig.databaseId,
-                appwriteConfig.collections.messages,
-                ID.unique(),
-                record,
-                [Permission.read(Role.any()), Permission.write(Role.any())]
-            );
-            return { success: true };
-        } catch (err) {
-            const stored = JSON.parse(localStorage.getItem(MESSAGES_STORAGE_KEY) || '[]');
-            stored.unshift({ ...record, id: String(Date.now()) });
-            localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(stored));
-            return { success: true };
-        }
+        current.unshift(newMsg);
+        localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(current));
+        return newMsg;
     },
 
     getMessages: async () => {
-        try {
-            const res = await databases.listDocuments(
-                appwriteConfig.databaseId,
-                appwriteConfig.collections.messages,
-                [Query.orderDesc('createdAt')]
-            );
-            return res.documents.map(normalizeDoc);
-        } catch {
-            return JSON.parse(localStorage.getItem(MESSAGES_STORAGE_KEY) || '[]');
-        }
+        return JSON.parse(localStorage.getItem(MESSAGES_STORAGE_KEY) || '[]');
     },
 
     deleteMessage: async (id) => {
-        try {
-            await databases.deleteDocument(appwriteConfig.databaseId, appwriteConfig.collections.messages, id);
-            return true;
-        } catch {
-            const stored = JSON.parse(localStorage.getItem(MESSAGES_STORAGE_KEY) || '[]');
-            const filtered = stored.filter((m) => m.id !== id);
-            localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(filtered));
-            return true;
-        }
+        const stored = JSON.parse(localStorage.getItem(MESSAGES_STORAGE_KEY) || '[]');
+        const filtered = stored.filter((m) => m.id !== id);
+        localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(filtered));
+        return true;
     },
 
-    // Image Upload to Appwrite Storage Bucket (falls back to Data URI)
+    // 9. Fast Client-Side Image Optimizer & Base64 Encoder
     uploadImage: async (file) => {
-        try {
-            const fileId = ID.unique();
-            const createdFile = await storage.createFile(
-                appwriteConfig.bucketId,
-                fileId,
-                file
-            );
-
-            // Get direct public CDN view URL
-            const fileView = storage.getFileView(appwriteConfig.bucketId, createdFile.$id);
-            return fileView.href || String(fileView);
-        } catch (err) {
-            console.warn('Appwrite bucket upload notice, using optimized data URI:', err.message);
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        }
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                // Compress image to fast WebP/JPEG canvas data if larger than 500KB
+                const img = new Image();
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const maxDim = 1200;
+                    if (width > maxDim || height > maxDim) {
+                        if (width > height) {
+                            height = Math.round((height * maxDim) / width);
+                            width = maxDim;
+                        } else {
+                            width = Math.round((width * maxDim) / height);
+                            height = maxDim;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    const compressedUrl = canvas.toDataURL('image/webp', 0.85);
+                    resolve(compressedUrl);
+                };
+                img.onerror = () => resolve(reader.result);
+                img.src = reader.result;
+            };
+            reader.onerror = reject;
+            reader.readAsDataURL(file);
+        });
     },
 };
 

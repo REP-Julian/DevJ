@@ -47,7 +47,7 @@ export const ProfileManager = ({ profile, onUpdated }) => {
             <form onSubmit={handleSave} className="space-y-6 max-w-4xl bg-white p-8 rounded-2xl border border-gray-200 shadow-sm">
                 {status.success && (
                     <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-semibold flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Profile successfully saved to Appwrite Cloud!
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600" /> Profile successfully saved and updated!
                     </div>
                 )}
 
