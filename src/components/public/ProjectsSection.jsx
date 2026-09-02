@@ -50,6 +50,23 @@ export const ProjectsSection = ({ projects = [] }) => {
         return () => clearInterval(timer);
     }, [items.length, isHovered]);
 
+    const [touchStartX, setTouchStartX] = useState(null);
+
+    const handleTouchStart = (e) => {
+        setTouchStartX(e.touches[0].clientX);
+    };
+
+    const handleTouchEnd = (e) => {
+        if (touchStartX === null) return;
+        const diff = touchStartX - e.changedTouches[0].clientX;
+        if (diff > 45) {
+            handleNext();
+        } else if (diff < -45) {
+            handlePrev();
+        }
+        setTouchStartX(null);
+    };
+
     const handlePrev = () => {
         setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
     };
@@ -232,7 +249,11 @@ export const ProjectsSection = ({ projects = [] }) => {
                             onMouseEnter={() => setIsHovered(true)}
                             onMouseLeave={() => setIsHovered(false)}
                         >
-                            <div className="relative h-72 sm:h-96 w-full flex items-center justify-center overflow-hidden rounded-2xl">
+                            <div
+                                onTouchStart={handleTouchStart}
+                                onTouchEnd={handleTouchEnd}
+                                className="relative h-72 sm:h-96 w-full flex items-center justify-center overflow-hidden rounded-2xl touch-pan-y"
+                            >
                                 {/* Ambient Warm Backlight Glow behind active card */}
                                 <div className="absolute w-56 sm:w-80 h-64 sm:h-84 bg-gradient-to-tr from-devorange-400/25 via-devyellow-400/20 to-devorange-500/25 rounded-3xl blur-2xl transform transition-all duration-700 pointer-events-none" />
 

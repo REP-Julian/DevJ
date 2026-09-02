@@ -29,6 +29,23 @@ export const HeroSection = ({ profile }) => {
         return () => clearInterval(timer);
     }, [images.length, isHovered]);
 
+    const [touchStartX, setTouchStartX] = useState(null);
+
+    const handleTouchStart = (e) => {
+        setTouchStartX(e.touches[0].clientX);
+    };
+
+    const handleTouchEnd = (e) => {
+        if (touchStartX === null) return;
+        const diff = touchStartX - e.changedTouches[0].clientX;
+        if (diff > 45) {
+            handleNext();
+        } else if (diff < -45) {
+            handlePrev();
+        }
+        setTouchStartX(null);
+    };
+
     const handlePrev = () => {
         setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
     };
@@ -137,15 +154,15 @@ export const HeroSection = ({ profile }) => {
                         </a>
                     </div>
 
-                    <div className="pt-8 border-t border-gray-100 flex items-center gap-6 text-xs font-semibold text-charcoal-500">
+                    <div className="pt-8 border-t border-gray-100 flex flex-wrap items-center gap-3 sm:gap-6 text-xs font-semibold text-charcoal-500">
                         <div className="flex items-center gap-1.5">
-                            <Terminal className="w-4 h-4 text-devorange-500" /> Modern AI Architecture
+                            <Terminal className="w-4 h-4 text-devorange-500 shrink-0" /> Modern AI Architecture
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <Code2 className="w-4 h-4 text-devyellow-500" /> Interactive Frontend
+                            <Code2 className="w-4 h-4 text-devyellow-500 shrink-0" /> Interactive Frontend
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <Flame className="w-4 h-4 text-devorange-600" /> Dynamic CMS Driven
+                            <Flame className="w-4 h-4 text-devorange-600 shrink-0" /> Dynamic CMS Driven
                         </div>
                     </div>
                 </div>
@@ -164,8 +181,12 @@ export const HeroSection = ({ profile }) => {
                                 <span>Creative Portfolio</span>
                             </div>
 
-                            {/* Gallery 3D Stage */}
-                            <div className="relative h-88 sm:h-96 w-full flex items-center justify-center rounded-2xl bg-white/40 p-4 overflow-hidden">
+                            {/* Gallery 3D Stage with touch swipe support */}
+                            <div
+                                onTouchStart={handleTouchStart}
+                                onTouchEnd={handleTouchEnd}
+                                className="relative h-88 sm:h-96 w-full flex items-center justify-center rounded-2xl bg-white/40 p-4 overflow-hidden touch-pan-y"
+                            >
                                 {/* Ambient Warm Backlight Glow behind active portrait */}
                                 <div className="absolute w-48 sm:w-56 h-64 sm:h-76 bg-gradient-to-tr from-devyellow-400/30 via-devorange-400/25 to-devorange-500/30 rounded-3xl blur-2xl transform transition-all duration-700 pointer-events-none" />
 
@@ -210,11 +231,11 @@ export const HeroSection = ({ profile }) => {
                                 </div>
 
                                 {/* Controls: Arrows & Dot Indicators */}
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1 sm:gap-2">
                                     <button
                                         onClick={handlePrev}
                                         aria-label="Previous photo"
-                                        className="p-1 rounded-lg text-charcoal-400 hover:text-devorange-600 hover:bg-devyellow-100/50 transition-all active:scale-90"
+                                        className="w-8 h-8 rounded-lg text-charcoal-500 hover:text-devorange-600 hover:bg-devyellow-100/50 transition-all active:scale-90 flex items-center justify-center touch-manipulation"
                                     >
                                         <ChevronLeft className="w-4 h-4" />
                                     </button>
@@ -225,7 +246,7 @@ export const HeroSection = ({ profile }) => {
                                                 key={idx}
                                                 onClick={() => setCurrentIndex(idx)}
                                                 aria-label={`View photo ${idx + 1}`}
-                                                className={`h-2 rounded-full transition-all duration-500 ease-out ${
+                                                className={`h-2 rounded-full transition-all duration-500 ease-out touch-manipulation ${
                                                     idx === currentIndex
                                                         ? 'w-6 bg-gradient-to-r from-devyellow-400 to-devorange-500 shadow-sm'
                                                         : 'w-2 bg-gray-200 hover:bg-gray-300'
@@ -237,7 +258,7 @@ export const HeroSection = ({ profile }) => {
                                     <button
                                         onClick={handleNext}
                                         aria-label="Next photo"
-                                        className="p-1 rounded-lg text-charcoal-400 hover:text-devorange-600 hover:bg-devyellow-100/50 transition-all active:scale-90"
+                                        className="w-8 h-8 rounded-lg text-charcoal-500 hover:text-devorange-600 hover:bg-devyellow-100/50 transition-all active:scale-90 flex items-center justify-center touch-manipulation"
                                     >
                                         <ChevronRight className="w-4 h-4" />
                                     </button>

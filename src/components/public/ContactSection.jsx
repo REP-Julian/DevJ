@@ -168,7 +168,7 @@ export const ContactSection = ({ profile = {} }) => {
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                         placeholder="Enter your name"
-                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-devorange-500 focus:ring-2 focus:ring-devyellow-300 text-sm"
+                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-devorange-500 focus:ring-2 focus:ring-devyellow-300 text-base md:text-sm"
                                     />
                                 </div>
 
@@ -182,7 +182,7 @@ export const ContactSection = ({ profile = {} }) => {
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                         placeholder="you@example.com"
-                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-devorange-500 focus:ring-2 focus:ring-devyellow-300 text-sm"
+                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-devorange-500 focus:ring-2 focus:ring-devyellow-300 text-base md:text-sm"
                                     />
                                 </div>
 
@@ -196,7 +196,7 @@ export const ContactSection = ({ profile = {} }) => {
                                         value={formData.message}
                                         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                                         placeholder="Describe your vision or inquiry..."
-                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-devorange-500 focus:ring-2 focus:ring-devyellow-300 text-sm"
+                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-devorange-500 focus:ring-2 focus:ring-devyellow-300 text-base md:text-sm"
                                     />
                                 </div>
 

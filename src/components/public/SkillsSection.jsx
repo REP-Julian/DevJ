@@ -39,15 +39,15 @@ export const SkillsSection = ({ skills = [] }) => {
                                     </span>
                                 </div>
 
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-3 sm:gap-4">
                                     {categorySkills.map((skill) => {
                                         return (
                                             <div
                                                 key={skill.id || skill.name}
-                                                className="p-4 sm:p-5 bg-white rounded-2xl border border-gray-200/80 shadow-warm-sm hover:shadow-warm-md hover:border-devorange-300 hover:-translate-y-1 transition-all duration-300 group flex items-center gap-3.5"
+                                                className="p-3 sm:p-5 bg-white rounded-2xl border border-gray-200/80 shadow-warm-sm hover:shadow-warm-md hover:border-devorange-300 hover:-translate-y-1 transition-all duration-300 group flex items-center gap-2.5 sm:gap-3.5"
                                             >
-                                                <div className="w-12 h-12 rounded-xl bg-gray-50/80 border border-gray-100 flex items-center justify-center p-2.5 shadow-sm group-hover:scale-110 group-hover:bg-white transition-all duration-300 flex-shrink-0">
-                                                    <BrandIcon name={skill.iconName || skill.name} className="w-7 h-7" />
+                                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gray-50/80 border border-gray-100 flex items-center justify-center p-2 sm:p-2.5 shadow-sm group-hover:scale-110 group-hover:bg-white transition-all duration-300 shrink-0">
+                                                    <BrandIcon name={skill.iconName || skill.name} className="w-5 h-5 sm:w-7 sm:h-7" />
                                                 </div>
                                                 <div className="min-w-0 flex-1">
                                                     <h4 className="text-sm sm:text-base font-extrabold text-charcoal-900 group-hover:text-devorange-600 transition-colors truncate">

@@ -44,13 +44,13 @@ export const Navbar = () => {
                     </span>
                 </Link>
 
-                {/* Desktop Nav */}
-                <nav className="hidden md:flex items-center gap-1 bg-white/70 backdrop-blur-sm p-1.5 rounded-full border border-gray-100 shadow-sm">
+                {/* Desktop & Tablet Nav */}
+                <nav className="hidden md:flex items-center gap-0.5 lg:gap-1 bg-white/70 backdrop-blur-sm p-1 lg:p-1.5 rounded-full border border-gray-100 shadow-sm">
                     {navLinks.map((link) => (
                         <a
                             key={link.name}
                             href={link.href}
-                            className="px-4 py-1.5 text-sm font-medium text-charcoal-800 hover:text-devorange-600 hover:bg-devyellow-100/40 rounded-full transition-all"
+                            className="px-2.5 lg:px-4 py-1.5 text-xs lg:text-sm font-medium text-charcoal-800 hover:text-devorange-600 hover:bg-devyellow-100/40 rounded-full transition-all"
                         >
                             {link.name}
                         </a>
@@ -58,10 +58,10 @@ export const Navbar = () => {
                 </nav>
 
                 {/* Header CTA & Admin Link */}
-                <div className="hidden md:flex items-center gap-3">
+                <div className="hidden md:flex items-center gap-2 lg:gap-3">
                     <Link
                         to={isAuthenticated ? '/admin' : '/login'}
-                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-charcoal-800 hover:border-devorange-400 hover:text-devorange-600 bg-white shadow-sm transition-all"
+                        className="flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-charcoal-800 hover:border-devorange-400 hover:text-devorange-600 bg-white shadow-sm transition-all"
                         title={isAuthenticated ? 'Admin Dashboard' : 'Admin Login'}
                     >
                         {isAuthenticated ? (
@@ -78,7 +78,7 @@ export const Navbar = () => {
                     </Link>
                     <a
                         href="#contact"
-                        className="px-4 py-2 text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-devyellow-400 via-devorange-400 to-devorange-500 text-charcoal-900 rounded-lg hover:shadow-warm-md hover:scale-102 active:scale-98 transition-all flex items-center gap-1"
+                        className="px-3 lg:px-4 py-2 text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-devyellow-400 via-devorange-400 to-devorange-500 text-charcoal-900 rounded-lg hover:shadow-warm-md hover:scale-102 active:scale-98 transition-all flex items-center gap-1"
                     >
                         Let's Talk <ArrowUpRight className="w-3.5 h-3.5" />
                     </a>
