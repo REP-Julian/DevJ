@@ -254,15 +254,31 @@ export const SkillsManager = ({ skills = [], onUpdated }) => {
                                     <option value="Claude">Claude AI (Anthropic)</option>
                                     <option value="Deepseek">DeepSeek AI</option>
                                 </optgroup>
-                                <optgroup label="Programming Languages">
+                                <optgroup label="Programming Languages & Frameworks (theSVG)">
                                     <option value="JavaScript">JavaScript</option>
+                                    <option value="TypeScript">TypeScript</option>
                                     <option value="Python">Python</option>
                                     <option value="Java">Java</option>
                                     <option value="HTML">HTML5</option>
                                     <option value="CSS">CSS3</option>
-                                    <option value="TypeScript">TypeScript</option>
                                     <option value="React">React</option>
                                     <option value="Node">Node.js</option>
+                                    <option value="cplusplus">C++</option>
+                                    <option value="csharp">C#</option>
+                                    <option value="c">C</option>
+                                    <option value="php">PHP</option>
+                                    <option value="go">Go (Golang)</option>
+                                    <option value="rust">Rust</option>
+                                    <option value="swift">Swift</option>
+                                    <option value="kotlin">Kotlin</option>
+                                    <option value="tailwindcss">Tailwind CSS</option>
+                                    <option value="nextjs">Next.js</option>
+                                    <option value="git">Git</option>
+                                    <option value="github">GitHub</option>
+                                    <option value="docker">Docker</option>
+                                    <option value="postgresql">PostgreSQL</option>
+                                    <option value="mongodb">MongoDB</option>
+                                    <option value="mysql">MySQL / SQL</option>
                                 </optgroup>
                             </select>
                         </div>
