@@ -91,133 +91,178 @@ function parseJSONSafe(text, fallback = null) {
     return fallback;
 }
 
-// Unified Multi-Provider AI Cascade (Gemini -> Groq -> Mistral -> OpenRouter)
+const AI_PROVIDER_STORAGE_KEY = 'devj_active_ai_provider';
+
+function getActiveAIProvider() {
+    try {
+        return localStorage.getItem(AI_PROVIDER_STORAGE_KEY) || 'auto';
+    } catch {
+        return 'auto';
+    }
+}
+
+function setActiveAIProvider(provider) {
+    const norm = (provider || '').toLowerCase().trim();
+    const valid = ['auto', 'gemini', 'groq', 'mistral', 'openrouter'];
+    const val = valid.includes(norm) ? norm : 'auto';
+    try {
+        localStorage.setItem(AI_PROVIDER_STORAGE_KEY, val);
+    } catch {}
+    return val;
+}
+
+// Individual provider execution handlers
+async function runGemini({ prompt, system, imageBase64, mimeType }) {
+    if (!AI_KEYS.gemini) return null;
+    const geminiModels = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.7-flash'];
+    for (const model of geminiModels) {
+        try {
+            const parts = [];
+            if (system) parts.push({ text: `[System Instruction]: ${system}\n\n` });
+            parts.push({ text: prompt });
+            if (imageBase64) {
+                const cleanBase64 = imageBase64.replace(/^data:[^;]+;base64,/, '');
+                parts.push({
+                    inline_data: {
+                        mime_type: mimeType || 'image/jpeg',
+                        data: cleanBase64
+                    }
+                });
+            }
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${AI_KEYS.gemini}`;
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts }] })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (text) return { provider: `Gemini (${model})`, text };
+            }
+        } catch (err) {}
+    }
+    return null;
+}
+
+async function runGroq({ prompt, system }) {
+    if (!AI_KEYS.groq) return null;
+    const groqModels = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'groq/compound'];
+    for (const model of groqModels) {
+        try {
+            const messages = [];
+            if (system) messages.push({ role: 'system', content: system });
+            messages.push({ role: 'user', content: prompt });
+            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${AI_KEYS.groq}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ model, messages, temperature: 0.7 })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const text = data.choices?.[0]?.message?.content;
+                if (text) return { provider: `Groq (${model})`, text };
+            }
+        } catch (err) {}
+    }
+    return null;
+}
+
+async function runMistral({ prompt, system }) {
+    if (!AI_KEYS.mistral) return null;
+    const mistralModels = ['mistral-small-latest', 'ministral-8b-latest', 'codestral-latest'];
+    for (const model of mistralModels) {
+        try {
+            const messages = [];
+            if (system) messages.push({ role: 'system', content: system });
+            messages.push({ role: 'user', content: prompt });
+            const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${AI_KEYS.mistral}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ model, messages, temperature: 0.7 })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const text = data.choices?.[0]?.message?.content;
+                if (text) return { provider: `Mistral (${model})`, text };
+            }
+        } catch (err) {}
+    }
+    return null;
+}
+
+async function runOpenRouter({ prompt, system }) {
+    if (!AI_KEYS.openrouter) return null;
+    const openrouterModels = [
+        'nvidia/nemotron-3.5-lightning:free',
+        'minimax/minimax-m3:free',
+        'inclusionai/ling-3.0-flash-fin:free',
+        'liquid/lfm-2.5-2.6b:free'
+    ];
+    for (const model of openrouterModels) {
+        try {
+            const messages = [];
+            if (system) messages.push({ role: 'system', content: system });
+            messages.push({ role: 'user', content: prompt });
+            const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${AI_KEYS.openrouter}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'https://devj.agustino-julian.workers.dev',
+                    'X-Title': 'DevJ Portfolio'
+                },
+                body: JSON.stringify({ model, messages, temperature: 0.7 })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                const text = data.choices?.[0]?.message?.content;
+                if (text) return { provider: `OpenRouter (${model})`, text };
+            }
+        } catch (err) {}
+    }
+    return null;
+}
+
+// Unified Multi-Provider AI Cascade with User Preference Priority
 async function executeProviderCascade({ prompt, system = '', imageBase64 = null, mimeType = 'image/jpeg' }) {
-    let lastError = null;
+    const active = getActiveAIProvider();
+    let runnerSequence = [];
 
-    // 1. Google Gemini (Primary - Multimodal Vision + LLM)
-    if (AI_KEYS.gemini) {
-        const geminiModels = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.7-flash'];
-        for (const model of geminiModels) {
-            try {
-                const parts = [];
-                if (system) parts.push({ text: `[System Instruction]: ${system}\n\n` });
-                parts.push({ text: prompt });
-                if (imageBase64) {
-                    const cleanBase64 = imageBase64.replace(/^data:[^;]+;base64,/, '');
-                    parts.push({
-                        inline_data: {
-                            mime_type: mimeType || 'image/jpeg',
-                            data: cleanBase64
-                        }
-                    });
-                }
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${AI_KEYS.gemini}`;
-                const res = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ contents: [{ parts }] })
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                    if (text) return { provider: `Gemini (${model})`, text };
-                }
-            } catch (err) {
-                lastError = err;
-            }
-        }
+    if (active === 'groq') {
+        runnerSequence = [runGroq, runGemini, runMistral, runOpenRouter];
+    } else if (active === 'mistral') {
+        runnerSequence = [runMistral, runGemini, runGroq, runOpenRouter];
+    } else if (active === 'openrouter') {
+        runnerSequence = [runOpenRouter, runGemini, runGroq, runMistral];
+    } else if (active === 'gemini') {
+        runnerSequence = [runGemini, runGroq, runMistral, runOpenRouter];
+    } else {
+        // Auto mode
+        runnerSequence = [runGemini, runGroq, runMistral, runOpenRouter];
     }
 
-    // 2. Groq (Secondary - Ultra-fast Inference)
-    if (AI_KEYS.groq) {
-        const groqModels = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'groq/compound'];
-        for (const model of groqModels) {
-            try {
-                const messages = [];
-                if (system) messages.push({ role: 'system', content: system });
-                messages.push({ role: 'user', content: prompt });
-                const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${AI_KEYS.groq}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ model, messages, temperature: 0.7 })
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    const text = data.choices?.[0]?.message?.content;
-                    if (text) return { provider: `Groq (${model})`, text };
-                }
-            } catch (err) {
-                lastError = err;
-            }
-        }
+    // Always prioritize Gemini first if image/vision input is supplied
+    if (imageBase64 && active !== 'gemini') {
+        runnerSequence = [runGemini, ...runnerSequence.filter(r => r !== runGemini)];
     }
 
-    // 3. Mistral AI (Tertiary - Deep Reasoning)
-    if (AI_KEYS.mistral) {
-        const mistralModels = ['mistral-small-latest', 'ministral-8b-latest', 'codestral-latest'];
-        for (const model of mistralModels) {
-            try {
-                const messages = [];
-                if (system) messages.push({ role: 'system', content: system });
-                messages.push({ role: 'user', content: prompt });
-                const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${AI_KEYS.mistral}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ model, messages, temperature: 0.7 })
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    const text = data.choices?.[0]?.message?.content;
-                    if (text) return { provider: `Mistral (${model})`, text };
-                }
-            } catch (err) {
-                lastError = err;
+    for (const runner of runnerSequence) {
+        try {
+            const result = await runner({ prompt, system, imageBase64, mimeType });
+            if (result && result.text) {
+                return result;
             }
-        }
+        } catch (err) {}
     }
 
-    // 4. OpenRouter (Quaternary - Resilient Open-Source Safety Net)
-    if (AI_KEYS.openrouter) {
-        const openrouterModels = [
-            'nvidia/nemotron-3.5-lightning:free',
-            'minimax/minimax-m3:free',
-            'inclusionai/ling-3.0-flash-fin:free',
-            'liquid/lfm-2.5-2.6b:free'
-        ];
-        for (const model of openrouterModels) {
-            try {
-                const messages = [];
-                if (system) messages.push({ role: 'system', content: system });
-                messages.push({ role: 'user', content: prompt });
-                const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${AI_KEYS.openrouter}`,
-                        'Content-Type': 'application/json',
-                        'HTTP-Referer': 'https://devj.agustino-julian.workers.dev',
-                        'X-Title': 'DevJ Portfolio'
-                    },
-                    body: JSON.stringify({ model, messages, temperature: 0.7 })
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    const text = data.choices?.[0]?.message?.content;
-                    if (text) return { provider: `OpenRouter (${model})`, text };
-                }
-            } catch (err) {
-                lastError = err;
-            }
-        }
-    }
-
-    throw lastError || new Error('All AI providers exhausted.');
+    throw new Error('All AI providers exhausted.');
 }
 
 // Client-Side Direct Execution Router (for serverless / Cloudflare hosting)
@@ -508,8 +553,103 @@ export const aiService = {
         }
     },
 
+    // Get active provider preference
+    getActiveProvider() {
+        return getActiveAIProvider();
+    },
+
+    // Set active provider preference
+    setActiveProvider(provider) {
+        return setActiveAIProvider(provider);
+    },
+
+    // Process hidden terminal commands (e.g. ?, ?gemini, ?groq, ?mistral, ?openrouter, ?auto)
+    handleHiddenCommand(cmd) {
+        const cleaned = (cmd || '').trim().toLowerCase();
+
+        if (cleaned === '?' || cleaned === '?status' || cleaned === '?help' || cleaned === '?provider' || cleaned === '?providers') {
+            const active = getActiveAIProvider();
+            const providerLabels = {
+                auto: 'Auto Smart Failover (Gemini ➡️ Groq ➡️ Mistral ➡️ OpenRouter)',
+                gemini: 'Google Gemini (gemini-3.6-flash / Native Vision enabled)',
+                groq: 'Groq (openai/gpt-oss-120b / Ultra-fast inference)',
+                mistral: 'Mistral AI (mistral-small-latest / Deep reasoning)',
+                openrouter: 'OpenRouter (nvidia/nemotron-3.5-lightning:free / Resilient open-source)'
+            };
+
+            return `### 🤖 DevJ Multi-Provider AI Engine
+
+**Current Active Provider**:
+🟢 **${providerLabels[active] || active.toUpperCase()}**
+
+**Integrated Model Capabilities**:
+- 🌐 **Google Gemini**: \`gemini-3.6-flash\`, \`gemini-3.5-flash-lite\`, \`gemini-3.7-flash\` *(Native Computer Vision & Certificate Analysis)*
+- ⚡ **Groq**: \`openai/gpt-oss-120b\`, \`qwen/qwen3.8-27b\`, \`groq/compound\` *(Ultra-fast low latency < 350ms)*
+- 🧠 **Mistral AI**: \`mistral-small-latest\`, \`ministral-8b-latest\`, \`codestral-latest\` *(High-precision reasoning & code)*
+- 🛡️ **OpenRouter**: \`nvidia/nemotron-3.5-lightning:free\`, \`minimax/minimax-m3:free\` *(High-availability open-source)*
+
+---
+**Hidden Switch Commands**:
+- \`?gemini\` — Switch priority to Google Gemini
+- \`?groq\` — Switch priority to Groq
+- \`?mistral\` — Switch priority to Mistral AI
+- \`?openrouter\` — Switch priority to OpenRouter
+- \`?auto\` — Reset to Auto Failover Cascade (Recommended)`;
+        }
+
+        if (cleaned === '?gemini') {
+            setActiveAIProvider('gemini');
+            return `⚡ **Switched Active AI Provider to Google Gemini**
+- **Active Model**: \`gemini-3.6-flash\` (with \`gemini-3.5-flash-lite\` failover)
+- **Features**: Native Computer Vision enabled for certificate and image analysis.
+- All portfolio AI generations will now prioritize **Google Gemini**.`;
+        }
+
+        if (cleaned === '?groq') {
+            setActiveAIProvider('groq');
+            return `⚡ **Switched Active AI Provider to Groq**
+- **Active Model**: \`openai/gpt-oss-120b\` (with \`qwen/qwen3.8-27b\` failover)
+- **Features**: Ultra-low latency inference engine running at maximum velocity.
+- All portfolio AI generations will now prioritize **Groq**.`;
+        }
+
+        if (cleaned === '?mistral') {
+            setActiveAIProvider('mistral');
+            return `⚡ **Switched Active AI Provider to Mistral AI**
+- **Active Model**: \`mistral-small-latest\` (with \`ministral-8b-latest\` failover)
+- **Features**: Advanced European frontier model specialized in deep reasoning.
+- All portfolio AI generations will now prioritize **Mistral AI**.`;
+        }
+
+        if (cleaned === '?openrouter') {
+            setActiveAIProvider('openrouter');
+            return `⚡ **Switched Active AI Provider to OpenRouter**
+- **Active Model**: \`nvidia/nemotron-3.5-lightning:free\` (with \`minimax/minimax-m3:free\` failover)
+- **Features**: Decentralized resilient open-source model routing.
+- All portfolio AI generations will now prioritize **OpenRouter**.`;
+        }
+
+        if (cleaned === '?auto') {
+            setActiveAIProvider('auto');
+            return `⚡ **Switched Active AI Provider to Auto Failover Cascade**
+- **Priority Sequence**: Gemini ➡️ Groq ➡️ Mistral ➡️ OpenRouter
+- Automatically failovers if any provider hits rate limits or network issues.`;
+        }
+
+        return null;
+    },
+
     // Chat with AI Portfolio Copilot (with image understanding)
     async chatWithCopilot(prompt, history = [], portfolioContext = {}, imageInput = null) {
+        // Intercept hidden terminal commands immediately with zero latency
+        const trimmed = (prompt || '').trim();
+        if (trimmed.startsWith('?')) {
+            const hiddenResult = this.handleHiddenCommand(trimmed);
+            if (hiddenResult) {
+                return hiddenResult;
+            }
+        }
+
         try {
             let imageBase64 = null;
             let mimeType = null;

@@ -52,6 +52,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
     ]);
     const [chatInput, setChatInput] = useState('');
     const [chatLoading, setChatLoading] = useState(false);
+    const [currentProvider, setCurrentProvider] = useState(aiService.getActiveProvider());
     const messagesEndRef = useRef(null);
 
     // Bio Generator State
@@ -235,6 +236,9 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                 messages: inquiries || []
             };
             const aiResponse = await aiService.chatWithCopilot(userMsg, updatedMessages, fullContext);
+            if (userMsg.trim().startsWith('?')) {
+                setCurrentProvider(aiService.getActiveProvider());
+            }
             
             // Smooth typing reveal
             const fullText = aiResponse;
@@ -552,7 +556,11 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                         </div>
                         <h2 className="text-2xl font-black text-charcoal-900">AI Studio & Copilot</h2>
                         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-devyellow-100 text-devorange-600 border border-devyellow-300">
-                            Gemini 3.6 Flash
+                            {currentProvider === 'gemini' ? 'Gemini 3.6 Flash' :
+                             currentProvider === 'groq' ? 'Groq (120B)' :
+                             currentProvider === 'mistral' ? 'Mistral Small' :
+                             currentProvider === 'openrouter' ? 'OpenRouter' :
+                             'Auto Cascade'}
                         </span>
                     </div>
                     <p className="text-xs text-charcoal-500 mt-1">
@@ -747,8 +755,14 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
 
                     {/* Quick Suggestion Pills */}
                     <div className="px-6 py-2 bg-gray-50/70 border-t border-gray-100 flex items-center gap-2 overflow-x-auto text-[11px]">
-                        <span className="text-charcoal-400 font-bold shrink-0">Quick prompts:</span>
+                        <span className="text-charcoal-400 font-bold shrink-0">Commands & Prompts:</span>
                         {[
+                            '❓ ? (Show Provider)',
+                            '⚡ ?gemini',
+                            '⚡ ?groq',
+                            '⚡ ?mistral',
+                            '⚡ ?openrouter',
+                            '🔄 ?auto',
                             '👤 Rewrite my bio to sound like a visionary AI engineer',
                             '🛠️ Audit my skills and suggest missing 2026 tech',
                             '🏆 Read and analyze my achievement certificate visual',
@@ -759,9 +773,19 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                             <button
                                 key={i}
                                 onClick={() => {
-                                    setChatInput(promptText);
+                                    if (promptText.startsWith('❓ ?')) {
+                                        setChatInput('?');
+                                    } else if (promptText.startsWith('⚡ ?') || promptText.startsWith('🔄 ?')) {
+                                        setChatInput(promptText.split(' ')[1]);
+                                    } else {
+                                        setChatInput(promptText);
+                                    }
                                 }}
-                                className="px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-charcoal-700 hover:border-devorange-400 hover:text-devorange-600 shrink-0 transition-colors"
+                                className={`px-2.5 py-1 rounded-lg border shrink-0 transition-colors ${
+                                    promptText.includes('?')
+                                        ? 'bg-devyellow-50 text-devorange-700 border-devyellow-300 font-bold hover:bg-devyellow-100'
+                                        : 'bg-white border-gray-200 text-charcoal-700 hover:border-devorange-400 hover:text-devorange-600'
+                                }`}
                             >
                                 {promptText}
                             </button>
@@ -774,7 +798,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                             type="text"
                             value={chatInput}
                             onChange={(e) => setChatInput(e.target.value)}
-                            placeholder="Ask DevJ AI Copilot anything about your portfolio, projects, or client replies..."
+                            placeholder="Ask Copilot anything... (Type '?' for providers or '?gemini', '?groq', '?mistral', '?openrouter' to switch)"
                             className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-devorange-500 text-xs text-charcoal-900"
                         />
                         <button
