@@ -64,17 +64,29 @@ export const api = {
         try {
             const portfolioDocRef = doc(db, 'portfolio', 'main');
             const docSnap = await getDoc(portfolioDocRef);
+            const local = getStoredPortfolio();
 
             if (docSnap.exists()) {
                 const data = docSnap.data();
+                const mergedProfile = {
+                    ...initialPortfolioData.profile,
+                    ...(local.profile || {}),
+                    ...(data.profile || {})
+                };
+
+                // Guarantee QR codes saved in local or Firestore are preserved and never erased
+                ['githubQrUrl', 'facebookQrUrl', 'instagramQrUrl', 'telegramQrUrl', 'whatsappQrUrl'].forEach((k) => {
+                    mergedProfile[k] = data.profile?.[k] || local.profile?.[k] || '';
+                });
+
                 const merged = {
                     ...initialPortfolioData,
                     ...data,
-                    profile: { ...initialPortfolioData.profile, ...(data.profile || {}) },
-                    skills: data.skills || initialPortfolioData.skills || [],
-                    achievements: data.achievements || initialPortfolioData.achievements || [],
-                    projects: data.projects || initialPortfolioData.projects || [],
-                    hobbies: data.hobbies || initialPortfolioData.hobbies || []
+                    profile: mergedProfile,
+                    skills: (data.skills && data.skills.length > 0) ? data.skills : (local.skills || initialPortfolioData.skills || []),
+                    achievements: (data.achievements && data.achievements.length > 0) ? data.achievements : (local.achievements || initialPortfolioData.achievements || []),
+                    projects: (data.projects && data.projects.length > 0) ? data.projects : (local.projects || initialPortfolioData.projects || []),
+                    hobbies: (data.hobbies && data.hobbies.length > 0) ? data.hobbies : (local.hobbies || initialPortfolioData.hobbies || [])
                 };
                 saveStoredPortfolio(merged);
                 return merged;
@@ -232,12 +244,18 @@ export const api = {
     // 3. Profile Management
     updateProfile: async (profileData) => {
         const current = getStoredPortfolio();
-        current.profile = { ...current.profile, ...profileData };
+        current.profile = {
+            ...initialPortfolioData.profile,
+            ...current.profile,
+            ...profileData
+        };
         saveStoredPortfolio(current);
 
         try {
             const portfolioDocRef = doc(db, 'portfolio', 'main');
-            await setDoc(portfolioDocRef, { profile: current.profile }, { merge: true });
+            // Clean undefined values to prevent Firestore rejection
+            const cleanProfile = JSON.parse(JSON.stringify(current.profile));
+            await setDoc(portfolioDocRef, { profile: cleanProfile }, { merge: true });
         } catch (err) {
             console.warn('Firestore sync failed, saved locally:', err);
         }

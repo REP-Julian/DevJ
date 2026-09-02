@@ -30,34 +30,35 @@ export const ProfileManager = ({ profile, onUpdated }) => {
     const [aiPolishing, setAiPolishing] = useState(false);
     const [activeSocialTab, setActiveSocialTab] = useState('instagram');
 
-    // Keep formData synchronized if remote profile changes or updates
+    // Keep formData synchronized without wiping non-empty user QR codes with empty strings
     React.useEffect(() => {
         if (profile) {
             setFormData(prev => ({
                 ...prev,
-                name: profile.name ?? prev.name,
-                tagline: profile.tagline ?? prev.tagline,
-                description: profile.description ?? prev.description,
-                avatarUrl: profile.avatarUrl ?? prev.avatarUrl,
-                avatarUrl2: profile.avatarUrl2 ?? prev.avatarUrl2,
-                avatarUrl3: profile.avatarUrl3 ?? prev.avatarUrl3,
-                email: profile.email ?? prev.email,
-                githubUrl: profile.githubUrl ?? prev.githubUrl,
-                githubQrUrl: profile.githubQrUrl ?? prev.githubQrUrl,
-                facebookUrl: profile.facebookUrl ?? prev.facebookUrl,
-                facebookQrUrl: profile.facebookQrUrl ?? prev.facebookQrUrl,
-                instagramUrl: profile.instagramUrl ?? prev.instagramUrl,
-                instagramQrUrl: profile.instagramQrUrl ?? prev.instagramQrUrl,
-                telegramUrl: profile.telegramUrl ?? prev.telegramUrl,
-                telegramQrUrl: profile.telegramQrUrl ?? prev.telegramQrUrl,
-                whatsappUrl: profile.whatsappUrl ?? prev.whatsappUrl,
-                whatsappQrUrl: profile.whatsappQrUrl ?? prev.whatsappQrUrl,
+                name: profile.name || prev.name,
+                tagline: profile.tagline || prev.tagline,
+                description: profile.description || prev.description,
+                avatarUrl: profile.avatarUrl || prev.avatarUrl,
+                avatarUrl2: profile.avatarUrl2 || prev.avatarUrl2,
+                avatarUrl3: profile.avatarUrl3 || prev.avatarUrl3,
+                email: profile.email || prev.email,
+                githubUrl: profile.githubUrl || prev.githubUrl,
+                githubQrUrl: profile.githubQrUrl || prev.githubQrUrl || '',
+                facebookUrl: profile.facebookUrl || prev.facebookUrl,
+                facebookQrUrl: profile.facebookQrUrl || prev.facebookQrUrl || '',
+                instagramUrl: profile.instagramUrl || prev.instagramUrl,
+                instagramQrUrl: profile.instagramQrUrl || prev.instagramQrUrl || '',
+                telegramUrl: profile.telegramUrl || prev.telegramUrl,
+                telegramQrUrl: profile.telegramQrUrl || prev.telegramQrUrl || '',
+                whatsappUrl: profile.whatsappUrl || prev.whatsappUrl,
+                whatsappQrUrl: profile.whatsappQrUrl || prev.whatsappQrUrl || '',
             }));
         }
     }, [profile]);
 
     // Instant auto-save when a custom QR code finishes uploading
     const handleQrUploaded = async (platformId, url) => {
+        if (!url) return;
         const qrKey = `${platformId}QrUrl`;
         setQrSaveStatus({ loading: true, success: '', error: '' });
 
