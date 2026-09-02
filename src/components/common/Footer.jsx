@@ -32,11 +32,6 @@ export const Footer = () => {
 
                 <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-charcoal-500 gap-4">
                     <p>© {new Date().getFullYear()} DevJ. All rights reserved. Crafted with precision.</p>
-                    <div className="flex gap-6">
-                        <a href="#skills" className="hover:text-devorange-600">Skills</a>
-                        <a href="#projects" className="hover:text-devorange-600">Projects</a>
-                        <a href="#achievements" className="hover:text-devorange-600">Achievements</a>
-                    </div>
                 </div>
             </div>
         </footer>
