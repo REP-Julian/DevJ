@@ -47,7 +47,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
     const [messages, setMessages] = useState([
         {
             role: 'model',
-            content: `👋 Welcome to DevJ AI Studio!\n\nI am your Gemini AI Copilot. I have live access to your entire portfolio (Profile, Skills, Projects, Achievements, Hobbies, and Inquiries).\n\nHow can I assist you today? You can ask me to inspect achievement visuals & certificates, rewrite your bio, analyze your skills gap, brainstorm new projects, or run a full portfolio audit!`,
+            content: `👋 Welcome to DevJ AI Studio!\n\nI am your DevJ AI Copilot with multi-provider intelligence (Gemini, Groq, Mistral, and OpenRouter). I have live access to your entire portfolio (Profile, Skills, Projects, Achievements, Hobbies, and Inquiries).\n\n💡 *Tip: Type \`?\` to inspect active providers or \`?mistral\`, \`?groq\`, \`?gemini\`, \`?openrouter\` to switch anytime.*\n\nHow can I assist you today?`,
         },
     ]);
     const [chatInput, setChatInput] = useState('');
@@ -254,7 +254,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                 ...updatedMessages,
                 {
                     role: 'model',
-                    content: `Notice: ${err.message || 'Failed to generate response. Please check your Gemini API Key.'}`,
+                    content: `Notice: ${err.message || 'Failed to generate response. Please check your AI API Key.'}`,
                 },
             ]);
         } finally {
@@ -583,7 +583,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                         }`}
                     >
                         <Key className="w-3.5 h-3.5" />
-                        <span>{hasKey ? 'Gemini API: Connected' : 'Configure Gemini API'}</span>
+                        <span>{hasKey ? 'AI Engine: Connected' : 'Configure API Key'}</span>
                     </button>
                 </div>
             </div>
@@ -720,7 +720,11 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                                         <div className="whitespace-pre-wrap">{msg.content}</div>
                                     )}
                                     {msg.role === 'model' && (
-                                        <div className="mt-2 pt-2 border-t border-gray-200/60 flex justify-end">
+                                        <div className="mt-2 pt-2 border-t border-gray-200/60 flex items-center justify-between text-[10px]">
+                                            <span className="text-charcoal-400 font-bold flex items-center gap-1">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
+                                                {msg.provider || (currentProvider === 'groq' ? 'Groq' : currentProvider === 'mistral' ? 'Mistral AI' : currentProvider === 'openrouter' ? 'OpenRouter' : 'Google Gemini')}
+                                            </span>
                                             <button
                                                 onClick={() => copyToClipboard(msg.content, idx)}
                                                 className="text-[10px] text-charcoal-400 hover:text-charcoal-700 flex items-center gap-1"
@@ -746,7 +750,13 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                                     <Loader2 className="w-4 h-4 animate-spin" />
                                 </div>
                                 <div className="p-4 bg-gray-50 border border-gray-200/80 rounded-2xl rounded-tl-none text-xs text-charcoal-500 flex items-center gap-2">
-                                    <span>Gemini is thinking and drafting response...</span>
+                                    <span>
+                                        {currentProvider === 'groq' ? 'Groq' :
+                                         currentProvider === 'mistral' ? 'Mistral AI' :
+                                         currentProvider === 'openrouter' ? 'OpenRouter' :
+                                         currentProvider === 'gemini' ? 'Gemini' :
+                                         'AI Copilot'} is thinking and drafting response...
+                                    </span>
                                 </div>
                             </div>
                         )}
@@ -995,7 +1005,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                         ) : (
                             <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-charcoal-400 border border-dashed border-gray-200 rounded-2xl">
                                 <Lightbulb className="w-8 h-8 text-devorange-400 mb-2 opacity-50" />
-                                <p className="text-xs font-semibold">Enter a project concept and let Gemini draft the complete overview & tech stack.</p>
+                                <p className="text-xs font-semibold">Enter a project concept and let AI draft the complete overview & tech stack.</p>
                             </div>
                         )}
                     </div>
@@ -1012,7 +1022,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                                 <span>Milestone & Certificate Visual</span>
                             </div>
                             <span className="px-2 py-0.5 rounded-md bg-devyellow-100 text-devorange-700 text-[10px] font-black uppercase">
-                                Gemini Vision
+                                Computer Vision
                             </span>
                         </div>
 
@@ -1082,7 +1092,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                                 className="w-full py-3 rounded-xl bg-charcoal-900 text-devyellow-400 font-extrabold text-xs shadow-sm hover:bg-black active:scale-95 transition-all flex items-center justify-center gap-2"
                             >
                                 {achievementLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
-                                <span>{achievementLoading ? 'Gemini Reading Visual...' : '👁️ Read & Analyze Visual with Gemini Vision'}</span>
+                                <span>{achievementLoading ? 'AI Reading Visual...' : '👁️ Read & Analyze Visual with AI Vision'}</span>
                             </button>
                         ) : (
                             <button
@@ -1253,7 +1263,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                             <Wrench className="w-8 h-8 text-devorange-500 mx-auto" />
                             <h4 className="font-bold text-charcoal-900 text-sm">Ready to analyze your tech stack</h4>
                             <p className="text-xs text-charcoal-500 max-w-md mx-auto">
-                                Click <strong>Run Tech Gap Scan</strong> to have Gemini inspect your current tools and recommend high-demand 2026 competencies.
+                                Click <strong>Run Tech Gap Scan</strong> to have AI inspect your current tools and recommend high-demand 2026 competencies.
                             </p>
                             <button
                                 onClick={handleAnalyzeSkillsGapInStudio}
@@ -1501,7 +1511,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                                         className="w-full py-2.5 rounded-xl bg-devyellow-400 hover:bg-devyellow-500 text-charcoal-900 font-extrabold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
                                     >
                                         {draftLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                        <span>{draftLoading ? 'Drafting with Gemini...' : '✨ Draft High-Converting Reply'}</span>
+                                        <span>{draftLoading ? 'Drafting reply...' : '✨ Draft High-Converting Reply'}</span>
                                     </button>
 
                                     {inquiryDraft && (
@@ -1650,7 +1660,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                                 <div className="w-8 h-8 rounded-xl bg-devyellow-100 text-devorange-600 flex items-center justify-center">
                                     <Key className="w-4 h-4" />
                                 </div>
-                                <h3 className="font-extrabold text-charcoal-900 text-base">Gemini API Key</h3>
+                                <h3 className="font-extrabold text-charcoal-900 text-base">AI Engine Configuration</h3>
                             </div>
                             <button
                                 onClick={() => setShowKeyModal(false)}
@@ -1661,17 +1671,17 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                         </div>
 
                         <p className="text-xs text-charcoal-600 leading-relaxed">
-                            To unlock real-time generative responses powered by <strong>Google Gemini 2.5 Flash</strong>, provide your Gemini API key.
+                            Your portfolio runs a live multi-provider cascade across <strong>Gemini, Groq, Mistral, and OpenRouter</strong>. You can configure custom keys or switch active providers in chat using commands like <code>?mistral</code>, <code>?groq</code>, <code>?gemini</code>, or <code>?openrouter</code>.
                         </p>
 
                         <form onSubmit={handleSaveKey} className="space-y-4">
                             <div>
-                                <label className="block text-xs font-bold text-charcoal-800 mb-1">API Key</label>
+                                <label className="block text-xs font-bold text-charcoal-800 mb-1">Custom API Key</label>
                                 <input
                                     type="password"
                                     value={apiKeyInput}
                                     onChange={(e) => setApiKeyInput(e.target.value)}
-                                    placeholder="Paste your Gemini API key here..."
+                                    placeholder="Paste custom API key here..."
                                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-devorange-500 font-mono"
                                 />
                             </div>
