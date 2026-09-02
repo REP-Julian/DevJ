@@ -763,44 +763,88 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                         <div ref={messagesEndRef} />
                     </div>
 
-                    {/* Quick Suggestion Pills */}
-                    <div className="px-6 py-2 bg-gray-50/70 border-t border-gray-100 flex items-center gap-2 overflow-x-auto text-[11px]">
-                        <span className="text-charcoal-400 font-bold shrink-0">Commands & Prompts:</span>
-                        {[
-                            '❓ ? (Show Provider)',
-                            '⚡ ?gemini',
-                            '⚡ ?groq',
-                            '⚡ ?mistral',
-                            '⚡ ?openrouter',
-                            '🔄 ?auto',
-                            '👤 Rewrite my bio to sound like a visionary AI engineer',
-                            '🛠️ Audit my skills and suggest missing 2026 tech',
-                            '🏆 Read and analyze my achievement certificate visual',
-                            '💡 Give me a viral AI project concept with tech architecture',
-                            '🎨 Polish my creative hobbies to showcase unique personality',
-                            '✉️ Help me draft a high-converting client inquiry reply',
-                        ].map((promptText, i) => (
-                            <button
-                                key={i}
-                                onClick={() => {
-                                    if (promptText.startsWith('❓ ?')) {
-                                        setChatInput('?');
-                                    } else if (promptText.startsWith('⚡ ?') || promptText.startsWith('🔄 ?')) {
-                                        setChatInput(promptText.split(' ')[1]);
-                                    } else {
-                                        setChatInput(promptText);
-                                    }
-                                }}
-                                className={`px-2.5 py-1 rounded-lg border shrink-0 transition-colors ${
-                                    promptText.includes('?')
-                                        ? 'bg-devyellow-50 text-devorange-700 border-devyellow-300 font-bold hover:bg-devyellow-100'
-                                        : 'bg-white border-gray-200 text-charcoal-700 hover:border-devorange-400 hover:text-devorange-600'
-                                }`}
-                            >
-                                {promptText}
-                            </button>
-                        ))}
-                    </div>
+                    {/* Dynamic '?' Command Category Palette (Only displays when user types '?') */}
+                    {chatInput.trim().startsWith('?') && (
+                        <div className="px-4 py-3 bg-gradient-to-b from-gray-50 to-white border-t border-devyellow-300/80 shadow-inner animate-in fade-in slide-in-from-bottom-2">
+                            <div className="flex items-center justify-between pb-2 mb-2 border-b border-gray-200/70">
+                                <span className="text-[11px] font-black uppercase tracking-wider text-charcoal-800 flex items-center gap-1.5">
+                                    <Sparkles className="w-3.5 h-3.5 text-devorange-500" />
+                                    <span>Hidden '?' Commands by Category</span>
+                                </span>
+                                <span className="text-[10px] text-charcoal-400 font-medium">Click any option or press Enter</span>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                                {/* Category 1: AI Provider Switchers */}
+                                <div className="space-y-1 bg-white p-2.5 rounded-xl border border-gray-200/80 shadow-2xs">
+                                    <span className="text-[10px] font-black text-devorange-600 uppercase tracking-wider block px-1 pb-1 border-b border-gray-100">
+                                        ⚡ Switch AI Provider
+                                    </span>
+                                    {[
+                                        { cmd: '?gemini', name: 'Google Gemini', desc: '3.6 Flash + Computer Vision', icon: '🌐' },
+                                        { cmd: '?groq', name: 'Groq', desc: '120B ultra-fast (<350ms)', icon: '⚡' },
+                                        { cmd: '?mistral', name: 'Mistral AI', desc: 'Deep technical reasoning', icon: '🧠' },
+                                        { cmd: '?openrouter', name: 'OpenRouter', desc: 'Resilient open-source', icon: '🛡️' },
+                                        { cmd: '?auto', name: 'Auto Cascade', desc: 'Smart failover route', icon: '🔄' },
+                                    ].map((item) => (
+                                        <button
+                                            key={item.cmd}
+                                            type="button"
+                                            onClick={() => {
+                                                setChatInput(item.cmd);
+                                            }}
+                                            className={`w-full text-left px-2 py-1.5 rounded-lg flex items-center justify-between transition-colors ${
+                                                chatInput.trim().toLowerCase() === item.cmd
+                                                    ? 'bg-devorange-500 text-white font-bold'
+                                                    : 'hover:bg-devyellow-50 text-charcoal-800'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <span>{item.icon}</span>
+                                                <span className="font-bold">{item.cmd}</span>
+                                            </div>
+                                            <span className={`text-[10px] ${chatInput.trim().toLowerCase() === item.cmd ? 'text-white/90' : 'text-charcoal-400'}`}>
+                                                {item.desc}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Category 2: Live Website Sync & Inspection */}
+                                <div className="space-y-1 bg-white p-2.5 rounded-xl border border-gray-200/80 shadow-2xs">
+                                    <span className="text-[10px] font-black text-devorange-600 uppercase tracking-wider block px-1 pb-1 border-b border-gray-100">
+                                        🔍 Live Website Sync & Audit
+                                    </span>
+                                    {[
+                                        { cmd: '?', name: 'Show Active Provider', desc: 'Current engine & status', icon: '❓' },
+                                        { cmd: '?changes', name: 'Verify Website Changes', desc: 'Deep check live updates', icon: '🔄' },
+                                        { cmd: '?audit', name: '360° Quality Audit', desc: 'Review presentation & SEO', icon: '📊' },
+                                    ].map((item) => (
+                                        <button
+                                            key={item.cmd}
+                                            type="button"
+                                            onClick={() => {
+                                                setChatInput(item.cmd);
+                                            }}
+                                            className={`w-full text-left px-2 py-1.5 rounded-lg flex items-center justify-between transition-colors ${
+                                                chatInput.trim().toLowerCase() === item.cmd
+                                                    ? 'bg-devorange-500 text-white font-bold'
+                                                    : 'hover:bg-devyellow-50 text-charcoal-800'
+                                            }`}
+                                        >
+                                            <div className="flex items-center gap-2">
+                                                <span>{item.icon}</span>
+                                                <span className="font-bold">{item.cmd}</span>
+                                            </div>
+                                            <span className={`text-[10px] ${chatInput.trim().toLowerCase() === item.cmd ? 'text-white/90' : 'text-charcoal-400'}`}>
+                                                {item.desc}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* Chat Input Bar */}
                     <form onSubmit={handleSendChat} className="p-4 bg-white border-t border-gray-200 flex items-center gap-2">
@@ -808,7 +852,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                             type="text"
                             value={chatInput}
                             onChange={(e) => setChatInput(e.target.value)}
-                            placeholder="Ask Copilot anything... (Type '?' for providers or '?gemini', '?groq', '?mistral', '?openrouter' to switch)"
+                            placeholder="Ask Copilot anything about your live website... (Type '?' to show command categories)"
                             className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-devorange-500 text-xs text-charcoal-900"
                         />
                         <button
