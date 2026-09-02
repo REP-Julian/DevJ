@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Github, Facebook, Instagram, Mail, ArrowUp } from 'lucide-react';
 import { usePortfolio } from '../../context/PortfolioContext';
+import SocialQrModal from './SocialQrModal';
 
 // Clean SVG Icon for Telegram
 const TelegramIcon = ({ className = 'w-4 h-4' }) => (
@@ -19,6 +20,21 @@ const WhatsAppIcon = ({ className = 'w-4 h-4' }) => (
 export const Footer = () => {
     const { portfolio } = usePortfolio();
     const profile = portfolio?.profile || {};
+    const [qrModal, setQrModal] = useState({
+        isOpen: false,
+        platform: 'instagram',
+        url: '',
+        customQrUrl: '',
+    });
+
+    const openQr = (platform, url, customQrUrl) => {
+        setQrModal({
+            isOpen: true,
+            platform,
+            url,
+            customQrUrl: customQrUrl || '',
+        });
+    };
 
     const scrollToTop = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -40,64 +56,64 @@ export const Footer = () => {
 
                     <div className="flex items-center flex-wrap gap-3">
                         {profile.githubUrl && (
-                            <a
-                                href={profile.githubUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-charcoal-800 hover:bg-devyellow-100 hover:text-devorange-600 transition-colors"
+                            <button
+                                type="button"
+                                onClick={() => openQr('github', profile.githubUrl, profile.githubQrUrl)}
+                                className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-charcoal-800 hover:bg-devyellow-100 hover:text-devorange-600 transition-all hover:scale-105"
+                                title="Click to view GitHub QR code"
                                 aria-label="GitHub"
                             >
                                 <Github className="w-4 h-4" />
-                            </a>
+                            </button>
                         )}
                         {profile.facebookUrl && (
-                            <a
-                                href={profile.facebookUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-charcoal-800 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                            <button
+                                type="button"
+                                onClick={() => openQr('facebook', profile.facebookUrl, profile.facebookQrUrl)}
+                                className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-charcoal-800 hover:bg-blue-50 hover:text-blue-600 transition-all hover:scale-105"
+                                title="Click to view Facebook QR code"
                                 aria-label="Facebook"
                             >
                                 <Facebook className="w-4 h-4" />
-                            </a>
+                            </button>
                         )}
                         {profile.instagramUrl && (
-                            <a
-                                href={profile.instagramUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-charcoal-800 hover:bg-pink-50 hover:text-pink-600 transition-colors"
+                            <button
+                                type="button"
+                                onClick={() => openQr('instagram', profile.instagramUrl, profile.instagramQrUrl)}
+                                className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-charcoal-800 hover:bg-pink-50 hover:text-pink-600 transition-all hover:scale-105"
+                                title="Click to view Instagram QR code"
                                 aria-label="Instagram"
                             >
                                 <Instagram className="w-4 h-4" />
-                            </a>
+                            </button>
                         )}
                         {profile.telegramUrl && (
-                            <a
-                                href={profile.telegramUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-charcoal-800 hover:bg-sky-50 hover:text-sky-500 transition-colors"
+                            <button
+                                type="button"
+                                onClick={() => openQr('telegram', profile.telegramUrl, profile.telegramQrUrl)}
+                                className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-charcoal-800 hover:bg-sky-50 hover:text-sky-500 transition-all hover:scale-105"
+                                title="Click to view Telegram QR code"
                                 aria-label="Telegram"
                             >
                                 <TelegramIcon className="w-4 h-4" />
-                            </a>
+                            </button>
                         )}
                         {profile.whatsappUrl && (
-                            <a
-                                href={profile.whatsappUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-charcoal-800 hover:bg-emerald-50 hover:text-emerald-600 transition-colors"
+                            <button
+                                type="button"
+                                onClick={() => openQr('whatsapp', profile.whatsappUrl, profile.whatsappQrUrl)}
+                                className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-charcoal-800 hover:bg-emerald-50 hover:text-emerald-600 transition-all hover:scale-105"
+                                title="Click to view WhatsApp QR code"
                                 aria-label="WhatsApp"
                             >
                                 <WhatsAppIcon className="w-4 h-4" />
-                            </a>
+                            </button>
                         )}
                         {profile.email && (
                             <a
                                 href={`mailto:${profile.email}`}
-                                className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-charcoal-800 hover:bg-devyellow-100 hover:text-devorange-600 transition-colors"
+                                className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center text-charcoal-800 hover:bg-devyellow-100 hover:text-devorange-600 transition-all hover:scale-105"
                                 aria-label="Email"
                             >
                                 <Mail className="w-4 h-4" />
@@ -123,6 +139,16 @@ export const Footer = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Interactive Social QR Code Modal */}
+            <SocialQrModal
+                isOpen={qrModal.isOpen}
+                onClose={() => setQrModal(prev => ({ ...prev, isOpen: false }))}
+                platform={qrModal.platform}
+                url={qrModal.url}
+                customQrUrl={qrModal.customQrUrl}
+                profileName={profile.name || 'Julian Agustino'}
+            />
         </footer>
     );
 };

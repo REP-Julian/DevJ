@@ -1,11 +1,27 @@
 import React, { useState } from 'react';
-import { Mail, Send, CheckCircle2, AlertCircle, Loader2, Github, Facebook, Instagram } from 'lucide-react';
+import { Mail, Send, CheckCircle2, AlertCircle, Loader2, Github, Facebook, Instagram, QrCode } from 'lucide-react';
 import { api } from '../../services/api';
+import SocialQrModal from '../common/SocialQrModal';
 
 export const ContactSection = ({ profile = {} }) => {
     const [formData, setFormData] = useState({ name: '', email: '', message: '' });
     const [honeypot, setHoneypot] = useState('');
     const [status, setStatus] = useState({ loading: false, success: false, error: '' });
+    const [qrModal, setQrModal] = useState({
+        isOpen: false,
+        platform: 'instagram',
+        url: '',
+        customQrUrl: '',
+    });
+
+    const openQr = (platform, url, customQrUrl) => {
+        setQrModal({
+            isOpen: true,
+            platform,
+            url,
+            customQrUrl: customQrUrl || '',
+        });
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -58,66 +74,72 @@ export const ContactSection = ({ profile = {} }) => {
                                 </a>
                             </div>
 
-                            <div className="pt-2 flex items-center flex-wrap gap-3">
-                                {profile.githubUrl && (
-                                    <a
-                                        href={profile.githubUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="w-10 h-10 rounded-xl bg-charcoal-700/60 border border-charcoal-600 flex items-center justify-center text-white hover:text-devyellow-400 hover:border-devyellow-400 transition-colors"
-                                        aria-label="GitHub"
-                                    >
-                                        <Github className="w-4 h-4" />
-                                    </a>
-                                )}
-                                {profile.facebookUrl && (
-                                    <a
-                                        href={profile.facebookUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="w-10 h-10 rounded-xl bg-charcoal-700/60 border border-charcoal-600 flex items-center justify-center text-white hover:text-blue-400 hover:border-blue-400 transition-colors"
-                                        aria-label="Facebook"
-                                    >
-                                        <Facebook className="w-4 h-4" />
-                                    </a>
-                                )}
-                                {profile.instagramUrl && (
-                                    <a
-                                        href={profile.instagramUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="w-10 h-10 rounded-xl bg-charcoal-700/60 border border-charcoal-600 flex items-center justify-center text-white hover:text-pink-400 hover:border-pink-400 transition-colors"
-                                        aria-label="Instagram"
-                                    >
-                                        <Instagram className="w-4 h-4" />
-                                    </a>
-                                )}
-                                {profile.telegramUrl && (
-                                    <a
-                                        href={profile.telegramUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="w-10 h-10 rounded-xl bg-charcoal-700/60 border border-charcoal-600 flex items-center justify-center text-white hover:text-sky-400 hover:border-sky-400 transition-colors"
-                                        aria-label="Telegram"
-                                    >
-                                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.05-.2-.06-.06-.16-.04-.24-.02-.11.02-1.78 1.13-5.03 3.32-.48.33-.91.49-1.3.48-.43-.01-1.25-.24-1.86-.44-.75-.24-1.34-.37-1.29-.79.03-.22.33-.44.9-.68 3.51-1.53 5.86-2.54 7.05-3.04 3.35-1.4 4.05-1.64 4.5-1.65.1 0 .32.02.46.14.12.1.15.24.17.34-.01.07.01.23 0 .36z"/>
-                                        </svg>
-                                    </a>
-                                )}
-                                {profile.whatsappUrl && (
-                                    <a
-                                        href={profile.whatsappUrl}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        className="w-10 h-10 rounded-xl bg-charcoal-700/60 border border-charcoal-600 flex items-center justify-center text-white hover:text-emerald-400 hover:border-emerald-400 transition-colors"
-                                        aria-label="WhatsApp"
-                                    >
-                                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                                            <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.23 8.23 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.03-1.25-.75-.67-1.26-1.5-1.41-1.75-.15-.25-.02-.39.11-.51.11-.11.25-.29.38-.44.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.35-.77-1.85-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.78 2.72 4.31 3.81.6.26 1.07.42 1.44.54.61.19 1.16.16 1.6.1.49-.07 1.47-.6 1.68-1.18.21-.58.21-1.08.15-1.18-.06-.1-.22-.17-.47-.29z"/>
-                                        </svg>
-                                    </a>
-                                )}
+                            <div className="pt-2 space-y-2">
+                                <div className="text-[11px] text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
+                                    <QrCode className="w-3.5 h-3.5 text-devyellow-400" />
+                                    <span>Connect on Socials (Click to view QR)</span>
+                                </div>
+                                <div className="flex items-center flex-wrap gap-2.5">
+                                    {profile.githubUrl && (
+                                        <button
+                                            type="button"
+                                            onClick={() => openQr('github', profile.githubUrl, profile.githubQrUrl)}
+                                            className="w-10 h-10 rounded-xl bg-charcoal-700/60 border border-charcoal-600 flex items-center justify-center text-white hover:text-devyellow-400 hover:border-devyellow-400 transition-all hover:scale-105 active:scale-95 shadow-xs"
+                                            title="Click to view GitHub QR code"
+                                            aria-label="GitHub QR"
+                                        >
+                                            <Github className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                    {profile.facebookUrl && (
+                                        <button
+                                            type="button"
+                                            onClick={() => openQr('facebook', profile.facebookUrl, profile.facebookQrUrl)}
+                                            className="w-10 h-10 rounded-xl bg-charcoal-700/60 border border-charcoal-600 flex items-center justify-center text-white hover:text-blue-400 hover:border-blue-400 transition-all hover:scale-105 active:scale-95 shadow-xs"
+                                            title="Click to view Facebook QR code"
+                                            aria-label="Facebook QR"
+                                        >
+                                            <Facebook className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                    {profile.instagramUrl && (
+                                        <button
+                                            type="button"
+                                            onClick={() => openQr('instagram', profile.instagramUrl, profile.instagramQrUrl)}
+                                            className="w-10 h-10 rounded-xl bg-charcoal-700/60 border border-charcoal-600 flex items-center justify-center text-white hover:text-pink-400 hover:border-pink-400 transition-all hover:scale-105 active:scale-95 shadow-xs"
+                                            title="Click to view Instagram QR code"
+                                            aria-label="Instagram QR"
+                                        >
+                                            <Instagram className="w-4 h-4" />
+                                        </button>
+                                    )}
+                                    {profile.telegramUrl && (
+                                        <button
+                                            type="button"
+                                            onClick={() => openQr('telegram', profile.telegramUrl, profile.telegramQrUrl)}
+                                            className="w-10 h-10 rounded-xl bg-charcoal-700/60 border border-charcoal-600 flex items-center justify-center text-white hover:text-sky-400 hover:border-sky-400 transition-all hover:scale-105 active:scale-95 shadow-xs"
+                                            title="Click to view Telegram QR code"
+                                            aria-label="Telegram QR"
+                                        >
+                                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.05-.2-.06-.06-.16-.04-.24-.02-.11.02-1.78 1.13-5.03 3.32-.48.33-.91.49-1.3.48-.43-.01-1.25-.24-1.86-.44-.75-.24-1.34-.37-1.29-.79.03-.22.33-.44.9-.68 3.51-1.53 5.86-2.54 7.05-3.04 3.35-1.4 4.05-1.64 4.5-1.65.1 0 .32.02.46.14.12.1.15.24.17.34-.01.07.01.23 0 .36z"/>
+                                            </svg>
+                                        </button>
+                                    )}
+                                    {profile.whatsappUrl && (
+                                        <button
+                                            type="button"
+                                            onClick={() => openQr('whatsapp', profile.whatsappUrl, profile.whatsappQrUrl)}
+                                            className="w-10 h-10 rounded-xl bg-charcoal-700/60 border border-charcoal-600 flex items-center justify-center text-white hover:text-emerald-400 hover:border-emerald-400 transition-all hover:scale-105 active:scale-95 shadow-xs"
+                                            title="Click to view WhatsApp QR code"
+                                            aria-label="WhatsApp QR"
+                                        >
+                                            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.23 8.23 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.19 8.19 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m4.52 11.66c-.25-.13-1.47-.72-1.7-.81-.23-.08-.39-.13-.56.13-.17.25-.64.81-.79.97-.14.17-.29.19-.54.06-.25-.13-1.06-.39-2.03-1.25-.75-.67-1.26-1.5-1.41-1.75-.15-.25-.02-.39.11-.51.11-.11.25-.29.38-.44.13-.14.17-.25.25-.42.08-.17.04-.31-.02-.44-.06-.13-.56-1.35-.77-1.85-.2-.49-.41-.42-.56-.43h-.48c-.17 0-.44.06-.67.31-.23.25-.88.86-.88 2.1 0 1.24.9 2.44 1.03 2.61.13.17 1.78 2.72 4.31 3.81.6.26 1.07.42 1.44.54.61.19 1.16.16 1.6.1.49-.07 1.47-.6 1.68-1.18.21-.58.21-1.08.15-1.18-.06-.1-.22-.17-.47-.29z"/>
+                                            </svg>
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
@@ -212,6 +234,16 @@ export const ContactSection = ({ profile = {} }) => {
                     </div>
                 </div>
             </div>
+
+            {/* Interactive Social QR Code Modal */}
+            <SocialQrModal
+                isOpen={qrModal.isOpen}
+                onClose={() => setQrModal(prev => ({ ...prev, isOpen: false }))}
+                platform={qrModal.platform}
+                url={qrModal.url}
+                customQrUrl={qrModal.customQrUrl}
+                profileName={profile.name || 'Julian Agustino'}
+            />
         </section>
     );
 };

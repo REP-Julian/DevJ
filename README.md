@@ -1,79 +1,68 @@
 # 🚀 DevJ — Modern Creative AI & Full-Stack Portfolio
 
-> A high-performance, dynamic portfolio and interactive content management system built with **React**, **Vite**, **TailwindCSS**, **Google Firebase Firestore**, **Cloudinary CDN**, and engineered for **Cloudflare Pages / Vercel**.
+> A high-performance, dynamic portfolio and interactive content management system built with **React**, **Vite**, **TailwindCSS**, **Google Firebase Firestore**, **Cloudinary CDN**, and **Google Gemini Multimodal AI**.
 
 ---
 
 ## 🌟 Key Features
 
 ### 🎨 Creative Frontend & Modern Aesthetics
-- **3D Pop-out Carousels**: Layered visual stages with active center focus and angled depth cards on **Honors & Achievements** and **Featured Projects**.
-- **Hero Multi-Portrait Switcher**: Smooth 2-second portrait switcher with indicators and dynamic fallback handling.
-- **Specialized Frontier AI & Tech Stack**: Authentic vector logos for Google Gemini, ChatGPT, Claude AI, DeepSeek AI, JavaScript, Python, Java, HTML5, CSS3, TypeScript, React, and Node.js.
-- **Full Social Integration**: Direct connection pills for GitHub, Facebook, Instagram, Telegram, WhatsApp, and Email.
+- **3D Pop-out Stage Carousels**: Smooth cubic-bezier interactive card decks on **Honors & Achievements** and **Featured Projects**.
+- **Hero Multi-Portrait Switcher**: Smooth 3D rotating portrait carousel with hover pause and seamless transitions.
+- **Frontier AI & Tech Stack**: Specialized vector badges for Google Gemini, ChatGPT, Claude AI, DeepSeek AI, React, Python, TypeScript, Node.js, and more.
+- **Interactive Social Connect with QR Code Modals**: Visitors can click social channels (GitHub, Facebook, Instagram, Telegram, WhatsApp) to open instant QR codes for mobile scanning or open direct links.
 
-### ☁️ Firebase Firestore & Cloudinary Cloud Integration
-- **Live Database Sync**: Full CRUD synchronization for Profile, Skills, Achievements, Projects, Hobbies, and Inquiries across Google Firebase Firestore.
-- **Lightning Fast Cloud CDN Visual Storage**: Direct pre-compressed image and asset uploads to Cloudinary CDN with 25GB free tier and zero downtime.
-- **Offline & Initial Fallback**: Resilient data layer ensuring zero downtime and immediate out-of-the-box functionality.
+### 🤖 Gemini AI Studio & Multimodal Copilot
+- **Live Contextual Copilot**: AI assistant with real-time awareness across all 6 portfolio modules (Profile, Skills, Projects, Achievements, Hobbies, Inquiries).
+- **Multimodal Computer Vision**: Automatically scans, reads (OCR), and analyzes achievement certificates, awards, diplomas, and photography visuals.
+- **Proactive Live Sync**: Detects newly added portfolio items in real-time and acknowledges them dynamically in chat.
+- **360° Portfolio Audit**: Evaluates portfolio completeness, impact metrics, and provides actionable recruiter-ready suggestions.
 
-### 🛡️ Enterprise Security & Anti-Bypass Suite
-- **Anti-Inspect & DevTools Blocker**: Disables right-click context menu, `F12`, `Ctrl+Shift+I/J/C`, `Ctrl+U`, and auto-clears console logs if DevTools are opened.
-- **Brute-Force Rate Limiter**: 5-attempt security threshold with an automated 3-minute lockout countdown timer on the Admin Portal.
-- **Bot Honeypot Protection**: Hidden trap fields on forms to intercept and drop automated scraping traffic.
-- **Cloudflare Edge Headers**: Pre-configured `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, and strict transport policies.
+### ☁️ Cloud Persistence & Storage
+- **Google Firebase Firestore**: Real-time cloud database synchronization for multi-device management.
+- **Cloudinary CDN**: High-speed image uploads with client-side WebP compression and instant CDN delivery.
+- **Local Fallback Engine**: Unbreakable offline cache ensures zero downtime even during network disconnects.
+
+### 🛡️ Enterprise Security Suite
+- **Zero API Key Exposure**: All sensitive keys remain strictly in local `.env` and are barred from Git by `.gitignore`.
+- **Anti-Inspect & DevTools Protection**: Protects against casual source inspection and context manipulation.
+- **Brute-Force Rate Limiter**: Automated lockout protection on the Admin CMS portal.
 
 ---
 
 ## 🛠️ Technology Stack
 
-- **Frontend Core**: [React 18](https://react.dev/) + [Vite](https://vitejs.dev/)
+- **Frontend**: [React 18](https://react.dev/) + [Vite](https://vitejs.dev/)
 - **Styling**: [TailwindCSS](https://tailwindcss.com/) + Custom Design Tokens
-- **Icons**: [Lucide React](https://lucide.dev/) + Custom SVG Brand Vectors
-- **Database & Auth**: [Google Firebase Firestore](https://firebase.google.com/)
-- **Image Cloud Storage & CDN**: [Cloudinary](https://cloudinary.com/)
-- **Hosting & Global CDN**: [Cloudflare Pages](https://pages.cloudflare.com/) / [Vercel](https://vercel.com/)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Cloud Database**: [Google Firebase Firestore](https://firebase.google.com/)
+- **Image Storage**: [Cloudinary](https://cloudinary.com/)
+- **AI & Vision Engine**: [Google Gemini 3.7 & 3.6 Flash](https://ai.google.dev/) via `@google/genai`
 
 ---
 
-## ⚙️ Environment Variables
+## ⚙️ Environment Setup
 
-Create a `.env` file in the root directory:
+1. Copy the example environment file to create your local `.env`:
+   ```bash
+   cp .env.example .env
+   ```
 
-```env
-PORT=5000
-DATABASE_URL="file:./dev.db"
-JWT_SECRET="your-production-jwt-secret-key"
+2. Open `.env` and fill in your credentials for Firebase, Cloudinary, and Google Gemini API as outlined in `.env.example`.
 
-# Firebase Configuration (Firestore Database & Cloud Auth)
-VITE_FIREBASE_API_KEY="your-firebase-api-key"
-VITE_FIREBASE_AUTH_DOMAIN="your-project-id.firebaseapp.com"
-VITE_FIREBASE_PROJECT_ID="your-project-id"
-VITE_FIREBASE_STORAGE_BUCKET="your-project-id.firebasestorage.app"
-VITE_FIREBASE_MESSAGING_SENDER_ID="your-messaging-sender-id"
-VITE_FIREBASE_APP_ID="your-app-id"
-
-# Cloudinary Configuration (Image Hosting & CDN)
-VITE_CLOUDINARY_CLOUD_NAME="your-cloud-name"
-VITE_CLOUDINARY_API_KEY="your-cloudinary-api-key"
-VITE_CLOUDINARY_UPLOAD_PRESET="your-upload-preset"
-
-# Google Gemini AI Configuration (Admin Copilot & Computer Vision)
-VITE_GEMINI_API_KEY="your-gemini-api-key"
-```
+> [!IMPORTANT]
+> Never commit your `.env` file to version control. The repository's `.gitignore` is pre-configured to strictly ignore `.env`, `.env.local`, and all environment variants.
 
 ---
 
 ## 🚀 Getting Started Locally
 
-### 1. Clone the repository & Install dependencies
+### 1. Install Dependencies
 ```bash
-git clone https://github.com/your-username/devj-portfolio.git
-cd devj-portfolio
 npm install
 ```
 
-### 2. Start the development server
+### 2. Start Development Server
 ```bash
 npm run dev
 ```
@@ -84,7 +73,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 - Default Email: `admin@devj.com`
 - Default Password: `admin123`
 
-### 4. Build for production
+### 4. Build for Production
 ```bash
 npm run build
 ```

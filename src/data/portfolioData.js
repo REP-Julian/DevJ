@@ -8,10 +8,15 @@ export const initialPortfolioData = {
         avatarUrl3: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80',
         email: 'contact@devj.com',
         githubUrl: 'https://github.com',
+        githubQrUrl: '',
         facebookUrl: 'https://facebook.com',
+        facebookQrUrl: '',
         instagramUrl: 'https://instagram.com',
+        instagramQrUrl: '',
         telegramUrl: 'https://t.me/username',
+        telegramQrUrl: '',
         whatsappUrl: 'https://wa.me/1234567890',
+        whatsappQrUrl: '',
     },
     skills: [
         // Specialized AI Tools

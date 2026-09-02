@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import ImageUploader from '../common/ImageUploader';
 import { api } from '../../services/api';
 import { aiService } from '../../services/aiService';
-import { Save, CheckCircle2, AlertCircle, Loader2, Sparkles } from 'lucide-react';
+import { Save, CheckCircle2, AlertCircle, Loader2, Sparkles, QrCode, Trash2, Eye, ExternalLink, Github, Facebook, Instagram } from 'lucide-react';
 
 export const ProfileManager = ({ profile, onUpdated }) => {
     const [formData, setFormData] = useState({
@@ -14,14 +14,20 @@ export const ProfileManager = ({ profile, onUpdated }) => {
         avatarUrl3: profile?.avatarUrl3 || '',
         email: profile?.email || '',
         githubUrl: profile?.githubUrl || '',
+        githubQrUrl: profile?.githubQrUrl || '',
         facebookUrl: profile?.facebookUrl || '',
+        facebookQrUrl: profile?.facebookQrUrl || '',
         instagramUrl: profile?.instagramUrl || '',
+        instagramQrUrl: profile?.instagramQrUrl || '',
         telegramUrl: profile?.telegramUrl || '',
+        telegramQrUrl: profile?.telegramQrUrl || '',
         whatsappUrl: profile?.whatsappUrl || '',
+        whatsappQrUrl: profile?.whatsappQrUrl || '',
     });
 
     const [status, setStatus] = useState({ loading: false, success: false, error: '' });
     const [aiPolishing, setAiPolishing] = useState(false);
+    const [activeSocialTab, setActiveSocialTab] = useState('instagram');
 
     const handleSave = async (e) => {
         e.preventDefault();
@@ -168,68 +174,139 @@ export const ProfileManager = ({ profile, onUpdated }) => {
                     </div>
                 </div>
 
-                {/* Social Media Handles */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-2">
+                {/* Social Media & Interactive QR Codes */}
+                <div className="pt-4 border-t border-gray-100 space-y-4">
                     <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 mb-1">
-                            GitHub URL
-                        </label>
-                        <input
-                            type="text"
-                            placeholder="https://github.com/..."
-                            value={formData.githubUrl}
-                            onChange={(e) => setFormData({ ...formData, githubUrl: e.target.value })}
-                            className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-devorange-500"
-                        />
+                        <div className="flex items-center gap-2">
+                            <QrCode className="w-4 h-4 text-devorange-500" />
+                            <h3 className="text-sm font-black uppercase tracking-wider text-charcoal-800">
+                                Social Media Links & Interactive QR Codes
+                            </h3>
+                        </div>
+                        <p className="text-xs text-charcoal-500 mt-0.5">
+                            When visitors click your social icons on the portfolio, an interactive QR modal opens. You can upload your own custom QR code for each platform (from mobile app), or leave it empty to automatically generate a smart QR code from your link.
+                        </p>
                     </div>
-                    <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 mb-1">
-                            Facebook URL
-                        </label>
-                        <input
-                            type="text"
-                            placeholder="https://facebook.com/..."
-                            value={formData.facebookUrl}
-                            onChange={(e) => setFormData({ ...formData, facebookUrl: e.target.value })}
-                            className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-devorange-500"
-                        />
+
+                    {/* Platform Selector Tabs */}
+                    <div className="flex flex-wrap gap-2">
+                        {[
+                            { id: 'instagram', label: 'Instagram' },
+                            { id: 'github', label: 'GitHub' },
+                            { id: 'telegram', label: 'Telegram' },
+                            { id: 'whatsapp', label: 'WhatsApp' },
+                            { id: 'facebook', label: 'Facebook' },
+                        ].map((tab) => {
+                            const isCustom = Boolean(formData[`${tab.id}QrUrl`]);
+                            const hasUrl = Boolean(formData[`${tab.id}Url`]);
+                            return (
+                                <button
+                                    key={tab.id}
+                                    type="button"
+                                    onClick={() => setActiveSocialTab(tab.id)}
+                                    className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 border transition-all ${
+                                        activeSocialTab === tab.id
+                                            ? 'bg-charcoal-900 text-devyellow-400 border-charcoal-900 shadow-sm'
+                                            : 'bg-white text-charcoal-700 border-gray-200 hover:bg-gray-50'
+                                    }`}
+                                >
+                                    <span className="capitalize">{tab.label}</span>
+                                    {isCustom ? (
+                                        <span className="px-1.5 py-0.2 rounded text-[9px] font-black bg-devyellow-400 text-charcoal-900">
+                                            Custom QR
+                                        </span>
+                                    ) : hasUrl ? (
+                                        <span className="w-2 h-2 rounded-full bg-emerald-500" title="Auto QR Ready" />
+                                    ) : null}
+                                </button>
+                            );
+                        })}
                     </div>
-                    <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 mb-1">
-                            Instagram URL
-                        </label>
-                        <input
-                            type="text"
-                            placeholder="https://instagram.com/..."
-                            value={formData.instagramUrl}
-                            onChange={(e) => setFormData({ ...formData, instagramUrl: e.target.value })}
-                            className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-devorange-500"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 mb-1">
-                            Telegram Link / Username
-                        </label>
-                        <input
-                            type="text"
-                            placeholder="https://t.me/username"
-                            value={formData.telegramUrl}
-                            onChange={(e) => setFormData({ ...formData, telegramUrl: e.target.value })}
-                            className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-devorange-500"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 mb-1">
-                            WhatsApp Direct Link / Number
-                        </label>
-                        <input
-                            type="text"
-                            placeholder="https://wa.me/1234567890"
-                            value={formData.whatsappUrl}
-                            onChange={(e) => setFormData({ ...formData, whatsappUrl: e.target.value })}
-                            className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-devorange-500"
-                        />
-                    </div>
+
+                    {/* Active Platform Settings Card */}
+                    {(() => {
+                        const urlKey = `${activeSocialTab}Url`;
+                        const qrKey = `${activeSocialTab}QrUrl`;
+                        const currentUrl = formData[urlKey] || '';
+                        const currentCustomQr = formData[qrKey] || '';
+                        const autoQrUrl = currentUrl
+                            ? `https://api.qrserver.com/v1/create-qr-code/?data=${encodeURIComponent(currentUrl)}&size=300x300&margin=10&color=0e1117&bgcolor=ffffff`
+                            : '';
+                        const displayQr = currentCustomQr || autoQrUrl;
+
+                        return (
+                            <div className="p-5 bg-gray-50/70 rounded-2xl border border-gray-200 space-y-4">
+                                <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
+                                    <div className="md:col-span-8 space-y-4">
+                                        <div>
+                                            <label className="block text-xs font-bold text-charcoal-800 mb-1 capitalize">
+                                                {activeSocialTab} Profile Link / URL
+                                            </label>
+                                            <input
+                                                type="text"
+                                                placeholder={`https://${activeSocialTab}.com/...`}
+                                                value={currentUrl}
+                                                onChange={(e) => setFormData({ ...formData, [urlKey]: e.target.value })}
+                                                className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs focus:outline-none focus:border-devorange-500 font-mono shadow-2xs"
+                                            />
+                                        </div>
+
+                                        <ImageUploader
+                                            label={`Upload Custom ${activeSocialTab.toUpperCase()} QR Code (Overrides auto-generated QR)`}
+                                            currentImage={currentCustomQr}
+                                            onImageUploaded={(url) => setFormData({ ...formData, [qrKey]: url })}
+                                        />
+
+                                        {currentCustomQr && (
+                                            <button
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, [qrKey]: '' })}
+                                                className="px-3 py-1.5 rounded-xl border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 text-xs font-bold flex items-center gap-1.5 transition-all"
+                                            >
+                                                <Trash2 className="w-3.5 h-3.5" /> Revert to Auto-Generated QR Code
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {/* Live QR Preview Box */}
+                                    <div className="md:col-span-4 flex flex-col items-center justify-center p-4 bg-white rounded-2xl border border-gray-200 shadow-xs text-center space-y-2">
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-charcoal-400">
+                                            Live QR Code Preview
+                                        </span>
+
+                                        <div className="w-36 h-36 rounded-xl border border-gray-100 p-2 flex items-center justify-center bg-gray-50 relative overflow-hidden">
+                                            {displayQr ? (
+                                                <img
+                                                    src={displayQr}
+                                                    alt={`${activeSocialTab} QR Preview`}
+                                                    className="w-full h-full object-contain rounded-lg"
+                                                />
+                                            ) : (
+                                                <div className="text-charcoal-400 flex flex-col items-center justify-center space-y-1">
+                                                    <QrCode className="w-8 h-8 stroke-1" />
+                                                    <span className="text-[10px] font-bold">Enter URL or upload QR</span>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="text-[10px] font-extrabold uppercase">
+                                            {currentCustomQr ? (
+                                                <span className="px-2 py-0.5 rounded-full bg-devyellow-100 text-devorange-700 border border-devyellow-300">
+                                                    Custom Uploaded QR
+                                                </span>
+                                            ) : currentUrl ? (
+                                                <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                    Auto-Generated QR
+                                                </span>
+                                            ) : (
+                                                <span className="text-charcoal-400">Not configured</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })()}
                 </div>
 
                 <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
