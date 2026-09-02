@@ -515,7 +515,7 @@ export const api = {
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
                     let { width, height } = img;
-                    const maxDim = 1400;
+                    const maxDim = 900;
                     if (width > maxDim || height > maxDim) {
                         if (width > height) {
                             height = Math.round((height * maxDim) / width);
@@ -530,10 +530,10 @@ export const api = {
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    const dataUrl = canvas.toDataURL('image/webp', 0.85);
+                    const dataUrl = canvas.toDataURL('image/webp', 0.8);
                     canvas.toBlob((blob) => {
                         resolve({ blob: blob || file, dataUrl });
-                    }, 'image/webp', 0.85);
+                    }, 'image/webp', 0.8);
                 };
                 img.onerror = () => resolve({ blob: file, dataUrl: e.target.result });
                 img.src = e.target.result;
@@ -544,20 +544,16 @@ export const api = {
 
         const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || '';
         const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || '';
-        const apiKey = import.meta.env.VITE_CLOUDINARY_API_KEY || '';
 
-        // Step 2: Upload to Cloudinary with 5s strict timeout
+        // Step 2: Upload to Cloudinary with 8s timeout (unsigned preset)
         if (cloudName && uploadPreset && compressed.blob) {
             try {
                 const formData = new FormData();
                 formData.append('file', compressed.blob, 'image.webp');
                 formData.append('upload_preset', uploadPreset);
-                if (apiKey) {
-                    formData.append('api_key', apiKey);
-                }
 
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000);
+                const timeoutId = setTimeout(() => controller.abort(), 8000);
 
                 const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
                     method: 'POST',

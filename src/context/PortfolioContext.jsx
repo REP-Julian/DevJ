@@ -12,10 +12,15 @@ export const PortfolioProvider = ({ children }) => {
             avatarUrl: '',
             email: 'contact@devj.com',
             githubUrl: 'https://github.com',
+            githubQrUrl: '',
             facebookUrl: 'https://facebook.com',
+            facebookQrUrl: '',
             instagramUrl: 'https://instagram.com',
+            instagramQrUrl: '',
             telegramUrl: 'https://t.me/username',
-            whatsappUrl: 'https://wa.me/1234567890'
+            telegramQrUrl: '',
+            whatsappUrl: 'https://wa.me/1234567890',
+            whatsappQrUrl: ''
         },
         skills: [],
         achievements: [],

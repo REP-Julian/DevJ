@@ -9,10 +9,10 @@ export const ImageUploader = ({ currentImage, onImageUploaded, label = 'Upload I
     const [dragActive, setDragActive] = useState(false);
     const fileInputRef = useRef(null);
 
-    // Keep preview in sync when currentImage changes
+    // Keep preview in sync when currentImage changes (handles switching tabs or clearing)
     useEffect(() => {
-        if (currentImage && !uploading) {
-            setPreview(currentImage);
+        if (!uploading) {
+            setPreview(currentImage || '');
         }
     }, [currentImage, uploading]);
 

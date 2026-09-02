@@ -26,11 +26,81 @@ export const ProfileManager = ({ profile, onUpdated }) => {
     });
 
     const [status, setStatus] = useState({ loading: false, success: false, error: '' });
+    const [qrSaveStatus, setQrSaveStatus] = useState({ loading: false, success: '', error: '' });
     const [aiPolishing, setAiPolishing] = useState(false);
     const [activeSocialTab, setActiveSocialTab] = useState('instagram');
 
+    // Keep formData synchronized if remote profile changes or updates
+    React.useEffect(() => {
+        if (profile) {
+            setFormData(prev => ({
+                ...prev,
+                name: profile.name ?? prev.name,
+                tagline: profile.tagline ?? prev.tagline,
+                description: profile.description ?? prev.description,
+                avatarUrl: profile.avatarUrl ?? prev.avatarUrl,
+                avatarUrl2: profile.avatarUrl2 ?? prev.avatarUrl2,
+                avatarUrl3: profile.avatarUrl3 ?? prev.avatarUrl3,
+                email: profile.email ?? prev.email,
+                githubUrl: profile.githubUrl ?? prev.githubUrl,
+                githubQrUrl: profile.githubQrUrl ?? prev.githubQrUrl,
+                facebookUrl: profile.facebookUrl ?? prev.facebookUrl,
+                facebookQrUrl: profile.facebookQrUrl ?? prev.facebookQrUrl,
+                instagramUrl: profile.instagramUrl ?? prev.instagramUrl,
+                instagramQrUrl: profile.instagramQrUrl ?? prev.instagramQrUrl,
+                telegramUrl: profile.telegramUrl ?? prev.telegramUrl,
+                telegramQrUrl: profile.telegramQrUrl ?? prev.telegramQrUrl,
+                whatsappUrl: profile.whatsappUrl ?? prev.whatsappUrl,
+                whatsappQrUrl: profile.whatsappQrUrl ?? prev.whatsappQrUrl,
+            }));
+        }
+    }, [profile]);
+
+    // Instant auto-save when a custom QR code finishes uploading
+    const handleQrUploaded = async (platformId, url) => {
+        const qrKey = `${platformId}QrUrl`;
+        setQrSaveStatus({ loading: true, success: '', error: '' });
+
+        setFormData(prev => {
+            const updated = { ...prev, [qrKey]: url };
+            // Auto-persist immediately to Firestore and localStorage
+            api.updateProfile(updated)
+                .then(() => {
+                    setQrSaveStatus({ loading: false, success: `✓ Saved ${platformId.toUpperCase()} QR code!`, error: '' });
+                    if (onUpdated) onUpdated();
+                    setTimeout(() => setQrSaveStatus(p => ({ ...p, success: '' })), 4000);
+                })
+                .catch(err => {
+                    console.error('Error auto-saving QR code:', err);
+                    setQrSaveStatus({ loading: false, success: '', error: err.message || 'Failed to save QR code' });
+                });
+            return updated;
+        });
+    };
+
+    // Instant auto-save when reverting a custom QR code
+    const handleQrRemove = async (platformId) => {
+        const qrKey = `${platformId}QrUrl`;
+        setQrSaveStatus({ loading: true, success: '', error: '' });
+
+        setFormData(prev => {
+            const updated = { ...prev, [qrKey]: '' };
+            api.updateProfile(updated)
+                .then(() => {
+                    setQrSaveStatus({ loading: false, success: `✓ Reverted ${platformId.toUpperCase()} to auto QR!`, error: '' });
+                    if (onUpdated) onUpdated();
+                    setTimeout(() => setQrSaveStatus(p => ({ ...p, success: '' })), 4000);
+                })
+                .catch(err => {
+                    console.error('Error reverting QR code:', err);
+                    setQrSaveStatus({ loading: false, success: '', error: err.message || 'Failed to revert QR code' });
+                });
+            return updated;
+        });
+    };
+
     const handleSave = async (e) => {
-        e.preventDefault();
+        if (e && e.preventDefault) e.preventDefault();
         setStatus({ loading: true, success: false, error: '' });
 
         try {
@@ -223,6 +293,20 @@ export const ProfileManager = ({ profile, onUpdated }) => {
                         })}
                     </div>
 
+                    {/* Feedback Alert for QR code saving */}
+                    {qrSaveStatus.success && (
+                        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                            <span>{qrSaveStatus.success}</span>
+                        </div>
+                    )}
+                    {qrSaveStatus.error && (
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-800 text-xs font-bold flex items-center gap-2 animate-in fade-in">
+                            <AlertCircle className="w-4 h-4 text-red-600 shrink-0" />
+                            <span>{qrSaveStatus.error}</span>
+                        </div>
+                    )}
+
                     {/* Active Platform Settings Card */}
                     {(() => {
                         const urlKey = `${activeSocialTab}Url`;
@@ -246,26 +330,42 @@ export const ProfileManager = ({ profile, onUpdated }) => {
                                                 type="text"
                                                 placeholder={`https://${activeSocialTab}.com/...`}
                                                 value={currentUrl}
-                                                onChange={(e) => setFormData({ ...formData, [urlKey]: e.target.value })}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setFormData(prev => ({ ...prev, [urlKey]: val }));
+                                                }}
                                                 className="w-full px-3.5 py-2.5 rounded-xl border border-gray-200 bg-white text-xs focus:outline-none focus:border-devorange-500 font-mono shadow-2xs"
                                             />
                                         </div>
 
                                         <ImageUploader
-                                            label={`Upload Custom ${activeSocialTab.toUpperCase()} QR Code (Overrides auto-generated QR)`}
+                                            key={`${activeSocialTab}-${currentCustomQr ? 'custom' : 'empty'}`}
+                                            label={`Upload Custom ${activeSocialTab.toUpperCase()} QR Code (Auto-saves on upload)`}
                                             currentImage={currentCustomQr}
-                                            onImageUploaded={(url) => setFormData({ ...formData, [qrKey]: url })}
+                                            onImageUploaded={(url) => handleQrUploaded(activeSocialTab, url)}
                                         />
 
-                                        {currentCustomQr && (
+                                        <div className="flex items-center gap-3 pt-1">
+                                            {currentCustomQr && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleQrRemove(activeSocialTab)}
+                                                    className="px-3 py-1.5 rounded-xl border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 text-xs font-bold flex items-center gap-1.5 transition-all"
+                                                >
+                                                    <Trash2 className="w-3.5 h-3.5" /> Revert to Auto-Generated QR
+                                                </button>
+                                            )}
+
                                             <button
                                                 type="button"
-                                                onClick={() => setFormData({ ...formData, [qrKey]: '' })}
-                                                className="px-3 py-1.5 rounded-xl border border-red-200 bg-red-50 text-red-700 hover:bg-red-100 text-xs font-bold flex items-center gap-1.5 transition-all"
+                                                onClick={handleSave}
+                                                disabled={status.loading || qrSaveStatus.loading}
+                                                className="px-3.5 py-1.5 rounded-xl bg-charcoal-900 hover:bg-black text-devyellow-400 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs"
                                             >
-                                                <Trash2 className="w-3.5 h-3.5" /> Revert to Auto-Generated QR Code
+                                                {status.loading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
+                                                <span>Save All Links & QRs</span>
                                             </button>
-                                        )}
+                                        </div>
                                     </div>
 
                                     {/* Live QR Preview Box */}
