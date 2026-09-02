@@ -67,10 +67,10 @@ export const ContactSection = ({ profile = {} }) => {
                                     Email
                                 </div>
                                 <a
-                                    href={`mailto:${profile.email || 'contact@devj.com'}`}
+                                    href={`mailto:${profile.email || 'agustino.julian@outlook.ph'}`}
                                     className="text-base font-bold text-white hover:text-devyellow-400 transition-colors block"
                                 >
-                                    {profile.email || 'contact@devj.com'}
+                                    {profile.email || 'agustino.julian@outlook.ph'}
                                 </a>
                             </div>
 

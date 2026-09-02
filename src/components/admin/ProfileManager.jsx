@@ -41,7 +41,7 @@ export const ProfileManager = ({ profile, onUpdated }) => {
                 avatarUrl: profile.avatarUrl || prev.avatarUrl,
                 avatarUrl2: profile.avatarUrl2 || prev.avatarUrl2,
                 avatarUrl3: profile.avatarUrl3 || prev.avatarUrl3,
-                email: profile.email || prev.email,
+                email: (profile.email && profile.email !== 'contact@devj.com') ? profile.email : (prev.email || profile.email || 'agustino.julian@outlook.ph'),
                 githubUrl: profile.githubUrl || prev.githubUrl,
                 githubQrUrl: profile.githubQrUrl || prev.githubQrUrl || '',
                 facebookUrl: profile.facebookUrl || prev.facebookUrl,

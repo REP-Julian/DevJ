@@ -68,15 +68,29 @@ export const api = {
 
             if (docSnap.exists()) {
                 const data = docSnap.data();
+                const localTime = Number(local.profile?.updatedAt || 0);
+                const remoteTime = Number(data.profile?.updatedAt || 0);
+
+                // Prioritize whichever profile source has newer modifications
+                const baseProfile = (localTime >= remoteTime) ? (data.profile || {}) : (local.profile || {});
+                const topProfile = (localTime >= remoteTime) ? (local.profile || {}) : (data.profile || {});
+
                 const mergedProfile = {
                     ...initialPortfolioData.profile,
-                    ...(local.profile || {}),
-                    ...(data.profile || {})
+                    ...baseProfile,
+                    ...topProfile
                 };
+
+                // Never let obsolete placeholder 'contact@devj.com' overwrite the user's custom email
+                if (mergedProfile.email === 'contact@devj.com' || !mergedProfile.email) {
+                    mergedProfile.email = (local.profile?.email && local.profile.email !== 'contact@devj.com')
+                        ? local.profile.email
+                        : initialPortfolioData.profile.email;
+                }
 
                 // Guarantee QR codes saved in local or Firestore are preserved and never erased
                 ['githubQrUrl', 'facebookQrUrl', 'instagramQrUrl', 'telegramQrUrl', 'whatsappQrUrl'].forEach((k) => {
-                    mergedProfile[k] = data.profile?.[k] || local.profile?.[k] || '';
+                    mergedProfile[k] = local.profile?.[k] || data.profile?.[k] || '';
                 });
 
                 const merged = {
@@ -247,7 +261,8 @@ export const api = {
         current.profile = {
             ...initialPortfolioData.profile,
             ...current.profile,
-            ...profileData
+            ...profileData,
+            updatedAt: Date.now()
         };
         saveStoredPortfolio(current);
 

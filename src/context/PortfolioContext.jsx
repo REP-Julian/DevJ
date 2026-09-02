@@ -10,7 +10,7 @@ export const PortfolioProvider = ({ children }) => {
             tagline: 'Artificial Intelligence Enthusiast, Vibe Developer and Creative Developer',
             description: 'I love turning ideas into interactive experiences and exploring the possibilities of artificial intelligence through creative development.',
             avatarUrl: '',
-            email: 'contact@devj.com',
+            email: 'agustino.julian@outlook.ph',
             githubUrl: 'https://github.com',
             githubQrUrl: '',
             facebookUrl: 'https://facebook.com',
