@@ -575,8 +575,8 @@ export const api = {
             reader.readAsDataURL(file);
         });
 
-        const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || '';
-        const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || '';
+        const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'zfiwn2bt';
+        const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'devj_preset';
 
         // Step 2: Upload to Cloudinary with 8s timeout (unsigned preset)
         if (cloudName && uploadPreset && compressed.blob) {
