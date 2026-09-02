@@ -542,9 +542,9 @@ export const api = {
             reader.readAsDataURL(file);
         });
 
-        const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'zflwn2bt';
-        const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'devj_preset';
-        const apiKey = import.meta.env.VITE_CLOUDINARY_API_KEY || 'g3KEznD774CVulXCc-pA_IZXryE';
+        const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || '';
+        const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || '';
+        const apiKey = import.meta.env.VITE_CLOUDINARY_API_KEY || '';
 
         // Step 2: Upload to Cloudinary with 5s strict timeout
         if (cloudName && uploadPreset && compressed.blob) {

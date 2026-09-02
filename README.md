@@ -43,19 +43,23 @@ Create a `.env` file in the root directory:
 ```env
 PORT=5000
 DATABASE_URL="file:./dev.db"
-JWT_SECRET="devj-production-jwt-secret-key-3d-portfolio-2026"
+JWT_SECRET="your-production-jwt-secret-key"
 
-# Firebase Configuration (Firestore Database)
-VITE_FIREBASE_API_KEY="AIzaSyDGC-Cm6s_PLfgIPMggDcq42Kpjn9N3R0k"
-VITE_FIREBASE_AUTH_DOMAIN="devj-portfolio-c8cf0.firebaseapp.com"
-VITE_FIREBASE_PROJECT_ID="devj-portfolio-c8cf0"
-VITE_FIREBASE_STORAGE_BUCKET="devj-portfolio-c8cf0.firebasestorage.app"
-VITE_FIREBASE_MESSAGING_SENDER_ID="150801261199"
-VITE_FIREBASE_APP_ID="1:150801261199:web:7d583900249252f95fc6fa"
+# Firebase Configuration (Firestore Database & Cloud Auth)
+VITE_FIREBASE_API_KEY="your-firebase-api-key"
+VITE_FIREBASE_AUTH_DOMAIN="your-project-id.firebaseapp.com"
+VITE_FIREBASE_PROJECT_ID="your-project-id"
+VITE_FIREBASE_STORAGE_BUCKET="your-project-id.firebasestorage.app"
+VITE_FIREBASE_MESSAGING_SENDER_ID="your-messaging-sender-id"
+VITE_FIREBASE_APP_ID="your-app-id"
 
-# Cloudinary Configuration (25GB Free Image Hosting)
-VITE_CLOUDINARY_CLOUD_NAME="zflwn2bt"
-VITE_CLOUDINARY_UPLOAD_PRESET="devj_preset"
+# Cloudinary Configuration (Image Hosting & CDN)
+VITE_CLOUDINARY_CLOUD_NAME="your-cloud-name"
+VITE_CLOUDINARY_API_KEY="your-cloudinary-api-key"
+VITE_CLOUDINARY_UPLOAD_PRESET="your-upload-preset"
+
+# Google Gemini AI Configuration (Admin Copilot & Computer Vision)
+VITE_GEMINI_API_KEY="your-gemini-api-key"
 ```
 
 ---

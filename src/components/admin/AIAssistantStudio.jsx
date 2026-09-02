@@ -1647,7 +1647,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                                     type="password"
                                     value={apiKeyInput}
                                     onChange={(e) => setApiKeyInput(e.target.value)}
-                                    placeholder="AIzaSy..."
+                                    placeholder="Paste your Gemini API key here..."
                                     className="w-full px-4 py-2.5 rounded-xl border border-gray-200 text-xs focus:outline-none focus:border-devorange-500 font-mono"
                                 />
                             </div>
