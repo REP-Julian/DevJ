@@ -252,10 +252,10 @@ export const ProjectsSection = ({ projects = [] }) => {
                             <div
                                 onTouchStart={handleTouchStart}
                                 onTouchEnd={handleTouchEnd}
-                                className="relative h-72 sm:h-96 w-full flex items-center justify-center overflow-hidden rounded-2xl touch-pan-y"
+                                className="relative h-[340px] sm:h-96 w-full flex items-center justify-center overflow-hidden rounded-2xl touch-pan-y"
                             >
                                 {/* Ambient Warm Backlight Glow behind active card */}
-                                <div className="absolute w-56 sm:w-80 h-64 sm:h-84 bg-gradient-to-tr from-devorange-400/25 via-devyellow-400/20 to-devorange-500/25 rounded-3xl blur-2xl transform transition-all duration-700 pointer-events-none" />
+                                <div className="absolute w-56 sm:w-80 h-64 sm:h-80 bg-gradient-to-tr from-devorange-400/25 via-devyellow-400/20 to-devorange-500/25 rounded-3xl blur-2xl transform transition-all duration-700 pointer-events-none" />
 
                                 {/* Persistent Multi-Project Carousel Deck */}
                                 {items.map((item, idx) => {
@@ -264,7 +264,7 @@ export const ProjectsSection = ({ projects = [] }) => {
                                         <div
                                             key={item.id || idx}
                                             onClick={() => setCurrentIndex(idx)}
-                                            className={`absolute w-56 sm:w-80 h-64 sm:h-84 transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] will-change-transform rounded-2xl select-none ${style.wrapper}`}
+                                            className={`absolute w-56 sm:w-80 h-64 sm:h-80 transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] will-change-transform rounded-2xl select-none ${style.wrapper}`}
                                         >
                                             <div
                                                 className={`w-full h-full rounded-2xl transition-all duration-700 overflow-hidden ${style.inner}`}

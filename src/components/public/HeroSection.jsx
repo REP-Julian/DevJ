@@ -185,10 +185,10 @@ export const HeroSection = ({ profile }) => {
                             <div
                                 onTouchStart={handleTouchStart}
                                 onTouchEnd={handleTouchEnd}
-                                className="relative h-88 sm:h-96 w-full flex items-center justify-center rounded-2xl bg-white/40 p-4 overflow-hidden touch-pan-y"
+                                className="relative h-[340px] sm:h-96 w-full flex items-center justify-center rounded-2xl bg-white/40 p-4 overflow-hidden touch-pan-y"
                             >
                                 {/* Ambient Warm Backlight Glow behind active portrait */}
-                                <div className="absolute w-48 sm:w-56 h-64 sm:h-76 bg-gradient-to-tr from-devyellow-400/30 via-devorange-400/25 to-devorange-500/30 rounded-3xl blur-2xl transform transition-all duration-700 pointer-events-none" />
+                                <div className="absolute w-44 sm:w-56 h-64 sm:h-76 bg-gradient-to-tr from-devyellow-400/30 via-devorange-400/25 to-devorange-500/30 rounded-3xl blur-2xl transform transition-all duration-700 pointer-events-none" />
 
                                 {/* Persistent Multi-Portrait Carousel Deck */}
                                 {images.map((imgSrc, idx) => {
@@ -197,7 +197,7 @@ export const HeroSection = ({ profile }) => {
                                         <div
                                             key={idx}
                                             onClick={() => setCurrentIndex(idx)}
-                                            className={`absolute w-48 sm:w-56 h-64 sm:h-76 transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] will-change-transform rounded-2xl select-none ${style.wrapper}`}
+                                            className={`absolute w-44 sm:w-56 h-64 sm:h-76 transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] will-change-transform rounded-2xl select-none ${style.wrapper}`}
                                         >
                                             <div
                                                 className={`w-full h-full rounded-2xl transition-all duration-700 ${style.inner}`}

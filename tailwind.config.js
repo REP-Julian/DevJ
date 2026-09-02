@@ -36,6 +36,11 @@ export default {
                 'warm-md': '0 10px 25px -5px rgba(251, 146, 60, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.04)',
                 'warm-lg': '0 20px 35px -8px rgba(234, 88, 12, 0.15), 0 12px 16px -8px rgba(0, 0, 0, 0.04)',
                 'warm-3d': '0 25px 50px -12px rgba(249, 115, 22, 0.25)',
+            },
+            height: {
+                '76': '19rem',
+                '84': '21rem',
+                '88': '22rem',
             }
         },
     },
