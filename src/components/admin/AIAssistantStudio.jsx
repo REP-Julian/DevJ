@@ -55,6 +55,18 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
     const [currentProvider, setCurrentProvider] = useState(aiService.getActiveProvider());
     const messagesEndRef = useRef(null);
 
+    useEffect(() => {
+        const handleProviderUpdate = () => {
+            setCurrentProvider(aiService.getActiveProvider());
+        };
+        window.addEventListener('ai-provider-changed', handleProviderUpdate);
+        window.addEventListener('storage', handleProviderUpdate);
+        return () => {
+            window.removeEventListener('ai-provider-changed', handleProviderUpdate);
+            window.removeEventListener('storage', handleProviderUpdate);
+        };
+    }, []);
+
     // Bio Generator State
     const [bioTone, setBioTone] = useState('innovative and visionary');
     const [generatedBio, setGeneratedBio] = useState(null);

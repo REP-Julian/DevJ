@@ -18,18 +18,39 @@ import {
     Shield
 } from 'lucide-react';
 
+import { aiService } from '../../services/aiService';
+
 export const AdminLayout = ({ children, activeTab, setActiveTab }) => {
     const { logout } = useAuth();
     const navigate = useNavigate();
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
+    const [activeProvider, setActiveProvider] = useState(aiService.getActiveProvider());
+
+    React.useEffect(() => {
+        const handleProviderUpdate = () => {
+            setActiveProvider(aiService.getActiveProvider());
+        };
+        window.addEventListener('ai-provider-changed', handleProviderUpdate);
+        window.addEventListener('storage', handleProviderUpdate);
+        return () => {
+            window.removeEventListener('ai-provider-changed', handleProviderUpdate);
+            window.removeEventListener('storage', handleProviderUpdate);
+        };
+    }, []);
 
     const handleLogout = () => {
         logout();
         navigate('/');
     };
 
+    const providerBadge = activeProvider === 'gemini' ? 'Gemini' :
+                          activeProvider === 'groq' ? 'Groq' :
+                          activeProvider === 'mistral' ? 'Mistral' :
+                          activeProvider === 'openrouter' ? 'OpenRouter' :
+                          'Auto';
+
     const navItems = [
-        { id: 'ai', label: 'AI Studio & Copilot', icon: Sparkles, badge: 'Gemini' },
+        { id: 'ai', label: 'AI Studio & Copilot', icon: Sparkles, badge: providerBadge },
         { id: 'profile', label: 'Profile', icon: User },
         { id: 'skills', label: 'Skills', icon: Wrench },
         { id: 'achievements', label: 'Achievements', icon: Award },

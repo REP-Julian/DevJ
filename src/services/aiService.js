@@ -107,6 +107,9 @@ function setActiveAIProvider(provider) {
     const val = valid.includes(norm) ? norm : 'auto';
     try {
         localStorage.setItem(AI_PROVIDER_STORAGE_KEY, val);
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('ai-provider-changed', { detail: val }));
+        }
     } catch {}
     return val;
 }
@@ -430,13 +433,23 @@ Return ONLY valid JSON (no markdown):
     }
 
     if (endpoint === 'generate-bio') {
+        let liveData = null;
+        try {
+            const raw = localStorage.getItem('devj_portfolio_data_v1');
+            if (raw) liveData = JSON.parse(raw);
+        } catch {}
+        const topSkills = (liveData?.skills || []).slice(0, 8).map(s => s.name).join(', ');
+        const topProjects = (liveData?.projects || []).slice(0, 4).map(p => p.title).join(', ');
+
         const prompt = `Generate a compelling developer portfolio bio with tone: "${payload.tone || 'innovative and visionary'}".
 Profile info: Name: ${payload.currentProfile?.name || 'Julian Agustino'}, Current Tagline: ${payload.currentProfile?.tagline || ''}, About: ${payload.currentProfile?.about || ''}
+Key Skills in Portfolio: ${topSkills || 'Full-Stack & AI Engineering'}
+Key Showcase Projects: ${topProjects || 'Production Web & AI Systems'}
 
 Return ONLY valid JSON:
 {
   "tagline": "A punchy, high-impact one-liner (under 12 words)",
-  "description": "2 to 3 engaging sentences highlighting engineering prowess and creative problem-solving",
+  "description": "2 to 3 engaging sentences highlighting engineering prowess and creative problem-solving grounded in their actual skills and projects",
   "highlights": ["Key differentiator 1", "Key differentiator 2", "Key differentiator 3"]
 }`;
         const res = await executeProviderCascade({ prompt, system: 'You are an elite Silicon Valley tech branding copywriter. Output valid JSON only.' });
