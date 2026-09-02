@@ -67,30 +67,38 @@ export const api = {
             const local = getStoredPortfolio();
 
             if (docSnap.exists()) {
-                const data = docSnap.data();
+                const data = docSnap.data() || {};
+                const remoteProfile = data.profile || {};
+                const local = getStoredPortfolio();
                 const localTime = Number(local.profile?.updatedAt || 0);
-                const remoteTime = Number(data.profile?.updatedAt || 0);
+                const remoteTime = Number(remoteProfile.updatedAt || 0);
 
-                // Prioritize whichever profile source has newer modifications
-                const baseProfile = (localTime >= remoteTime) ? (data.profile || {}) : (local.profile || {});
-                const topProfile = (localTime >= remoteTime) ? (local.profile || {}) : (data.profile || {});
-
+                // Remote Firestore data is the source of truth across all devices/browsers
                 const mergedProfile = {
                     ...initialPortfolioData.profile,
-                    ...baseProfile,
-                    ...topProfile
+                    ...remoteProfile,
                 };
+
+                // Only if the local device has a strictly newer admin modification, apply it
+                if (localTime > remoteTime && localTime > 0) {
+                    Object.assign(mergedProfile, local.profile || {});
+                }
+
+                // Ensure real uploaded portraits from Firestore are ALWAYS preserved over defaults
+                if (remoteProfile.avatarUrl) mergedProfile.avatarUrl = remoteProfile.avatarUrl;
+                if (remoteProfile.avatarUrl2) mergedProfile.avatarUrl2 = remoteProfile.avatarUrl2;
+                if (remoteProfile.avatarUrl3) mergedProfile.avatarUrl3 = remoteProfile.avatarUrl3;
 
                 // Never let obsolete placeholder 'contact@devj.com' overwrite the user's custom email
                 if (mergedProfile.email === 'contact@devj.com' || !mergedProfile.email) {
                     mergedProfile.email = (local.profile?.email && local.profile.email !== 'contact@devj.com')
                         ? local.profile.email
-                        : initialPortfolioData.profile.email;
+                        : (remoteProfile.email && remoteProfile.email !== 'contact@devj.com' ? remoteProfile.email : 'agustino.julian@outlook.ph');
                 }
 
                 // Guarantee QR codes saved in local or Firestore are preserved and never erased
                 ['githubQrUrl', 'facebookQrUrl', 'instagramQrUrl', 'telegramQrUrl', 'whatsappQrUrl'].forEach((k) => {
-                    mergedProfile[k] = local.profile?.[k] || data.profile?.[k] || '';
+                    mergedProfile[k] = remoteProfile[k] || local.profile?.[k] || '';
                 });
 
                 const merged = {
