@@ -4,7 +4,12 @@ import jwt from 'jsonwebtoken';
 import prisma from '../utils/prisma.js';
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'devj-super-secret-production-key-2026';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+    console.error('CRITICAL: JWT_SECRET environment variable is not set!');
+    process.exit(1);
+}
 
 router.post('/login', async (req, res) => {
     try {

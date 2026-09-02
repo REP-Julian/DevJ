@@ -1,7 +1,7 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
-import dotenv from 'dotenv';
 import authRoutes from './routes/auth.js';
 import portfolioRoutes from './routes/portfolio.js';
 import profileRoutes from './routes/profile.js';
@@ -11,8 +11,7 @@ import projectsRoutes from './routes/projects.js';
 import hobbiesRoutes from './routes/hobbies.js';
 import contactRoutes from './routes/contact.js';
 import uploadRoutes from './routes/upload.js';
-
-dotenv.config();
+import aiRoutes from './routes/ai.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -30,6 +29,7 @@ app.use('/api/projects', projectsRoutes);
 app.use('/api/hobbies', hobbiesRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.get('/api/health', (req, res) => {
     res.json({ status: 'healthy', timestamp: new Date().toISOString() });

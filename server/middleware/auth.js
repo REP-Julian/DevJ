@@ -1,6 +1,11 @@
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'devj-super-secret-production-key-2026';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+    console.error('CRITICAL: JWT_SECRET environment variable is not set!');
+    process.exit(1);
+}
 
 export const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];

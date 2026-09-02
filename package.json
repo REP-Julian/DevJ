@@ -14,7 +14,9 @@
         "server:dev": "nodemon server/index.js",
         "db:migrate": "npx prisma migrate dev --name init",
         "db:seed": "node prisma/seed.js",
-        "db:push": "npx prisma db push"
+        "db:push": "npx prisma db push",
+        "deploy": "npm run build && wrangler deploy",
+        "pages:deploy": "npm run build && wrangler pages deploy dist"
     },
     "dependencies": {
         "@google/genai": "^2.20.0",

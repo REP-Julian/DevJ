@@ -70,8 +70,8 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ### 3. Access Admin CMS
 - URL: [http://localhost:5173/login](http://localhost:5173/login)
-- Default Email: `admin@devj.com`
-- Default Password: `admin123`
+- **⚠️ SECURITY:** Change default admin credentials immediately in `src/services/api.js` after first login
+- Ensure `JWT_SECRET` is set in your `.env` file
 
 ### 4. Build for Production
 ```bash

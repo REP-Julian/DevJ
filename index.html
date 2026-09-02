@@ -2,18 +2,99 @@
 <html lang="en" class="scroll-smooth">
 
 <head>
+    <!-- ========== ESSENTIAL META TAGS ========== -->
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231E1E24'/%3E%3Ctext x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='%23FACC15' font-weight='900' font-size='48' font-family='sans-serif'%3EDV%3C/text%3E%3C/svg%3E" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description"
-        content="DevJ — Artificial Intelligence Enthusiast, Vibe Developer and Creative Developer. Interactive portfolio showcasing AI systems, full-stack web applications, and creative visual tech." />
-    <meta property="og:title" content="DevJ — Creative AI & Full-Stack Developer Portfolio" />
-    <meta property="og:description" content="Clean, minimal, 3D interactive portfolio and CMS created by DevJ." />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    
+    <!-- ========== SEO & DESCRIPTION ========== -->
+    <title>DevJ — AI Engineer & Full-Stack Developer Portfolio</title>
+    <meta name="description" content="DevJ is an AI engineer and creative full-stack developer specializing in Generative AI, React, Node.js, and interactive 3D web experiences. View my portfolio of innovative AI systems and modern web applications." />
+    <meta name="keywords" content="AI Developer, Full-Stack Developer, React Developer, Node.js, Generative AI, Portfolio, Web Developer, AI Engineer, Machine Learning, Web Design" />
+    <meta name="author" content="Julian Agustino (DevJ)" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="revisit-after" content="7 days" />
+    <meta name="language" content="English" />
+    <meta name="theme-color" content="#1E1E24" />
+    
+    <!-- ========== CANONICAL & LINKS ========== -->
+    <link rel="canonical" href="https://devj.com/" />
+    <link rel="alternate" hreflang="en" href="https://devj.com/" />
+    
+    <!-- ========== OPEN GRAPH (Social Media) ========== -->
+    <meta property="og:site_name" content="DevJ Portfolio" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://devj.com/" />
+    <meta property="og:title" content="DevJ — AI Engineer & Full-Stack Developer Portfolio" />
+    <meta property="og:description" content="Interactive portfolio featuring Generative AI projects, full-stack web applications, and innovative visual technology built with React, Node.js, and cutting-edge AI frameworks." />
+    <meta property="og:image" content="https://devj.com/og-image.svg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="DevJ Portfolio - AI Engineer & Full-Stack Developer" />
+    
+    <!-- ========== TWITTER CARD ========== -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@devj_ai" />
+    <meta name="twitter:creator" content="@devj_ai" />
+    <meta name="twitter:title" content="DevJ — AI Engineer & Full-Stack Developer Portfolio" />
+    <meta name="twitter:description" content="Interactive portfolio featuring Generative AI projects, full-stack web applications, and innovative visual technology." />
+    <meta name="twitter:image" content="https://devj.com/og-image.svg" />
+    <meta name="twitter:image:alt" content="DevJ Portfolio" />
+    
+    <!-- ========== ICONS & MANIFEST ========== -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%231E1E24'/%3E%3Ctext x='50%25' y='55%25' dominant-baseline='middle' text-anchor='middle' fill='%23FACC15' font-weight='900' font-size='48' font-family='sans-serif'%3EDV%3C/text%3E%3C/svg%3E" />
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='40' fill='%231E1E24'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23FACC15' font-weight='900' font-size='80' font-family='sans-serif'%3EDV%3C/text%3E%3C/svg%3E" />
+    <link rel="manifest" href="/site.webmanifest" />
+    
+    <!-- ========== FONTS & PRECONNECT ========== -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
-        rel="stylesheet">
-    <title>DevJ — Artificial Intelligence Enthusiast, Vibe Developer and Creative Developer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- ========== PERFORMANCE HINTS ========== -->
+    <link rel="dns-prefetch" href="https://cdn.cloudflare.com" />
+    <link rel="dns-prefetch" href="https://firebaseapp.com" />
+    
+    <!-- ========== STRUCTURED DATA (JSON-LD) ========== -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Person",
+        "name": "Julian Agustino (DevJ)",
+        "jobTitle": "AI Engineer & Full-Stack Developer",
+        "url": "https://devj.com",
+        "sameAs": [
+            "https://github.com/devj",
+            "https://linkedin.com/in/devj",
+            "https://twitter.com/devj_ai"
+        ],
+        "description": "Creative AI engineer specializing in Generative AI systems, full-stack web development, and interactive visual experiences.",
+        "knowsAbout": ["Artificial Intelligence", "Generative AI", "React", "Node.js", "Full-Stack Development", "Web Design", "AI/ML"],
+        "worksFor": {
+            "@type": "Organization",
+            "name": "Independent"
+        }
+    }
+    </script>
+    
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "DevJ Portfolio",
+        "url": "https://devj.com",
+        "description": "Interactive portfolio featuring AI projects and full-stack web applications",
+        "potentialAction": {
+            "@type": "SearchAction",
+            "target": "https://devj.com/search?q={search_term_string}",
+            "query-input": "required name=search_term_string"
+        }
+    }
+    </script>
+    
+    <!-- ========== SECURITY HEADERS (CSP) ========== -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https:;" />
 </head>
 
 <body class="bg-[#FAFAFA] text-charcoal-900 antialiased selection:bg-devyellow-300 selection:text-charcoal-900">

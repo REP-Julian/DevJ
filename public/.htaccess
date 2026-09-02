@@ -1,0 +1,119 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  
+  # ========== HTTPS Enforcement ==========
+  RewriteCond %{HTTPS} off
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+  
+  # ========== Remove www ==========
+  RewriteCond %{HTTP_HOST} ^www\.(.*)$ [NC]
+  RewriteRule ^(.*)$ https://%1/$1 [R=301,L]
+  
+  # ========== Trailing Slash ==========
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_URI} !^/$
+  RewriteRule ^(.+)/?$ /$1/ [R=301,L]
+  
+  # ========== SPA Routing (React Router) ==========
+  # Don't apply to existing files/directories
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  # Rewrite to index.html for all requests
+  RewriteRule ^ /index.html [QSA,L]
+</IfModule>
+
+<IfModule mod_headers.c>
+  # ========== SECURITY HEADERS ==========
+  Header set X-Frame-Options "DENY"
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-XSS-Protection "1; mode=block"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set Content-Security-Policy "default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https:;"
+  Header set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+  
+  # ========== PERFORMANCE HEADERS ==========
+  Header set Cache-Control "public, max-age=3600, must-revalidate"
+  Header set Vary "Accept-Encoding"
+  
+  # ========== SEO HEADERS ==========
+  Header set Link "<https://fonts.googleapis.com>; rel=preconnect"
+  Header set Link "<https://fonts.gstatic.com>; rel=preconnect, crossorigin"
+</IfModule>
+
+<IfModule mod_expires.c>
+  ExpiresActive On
+  
+  # ========== HTML FILES - Don't Cache ==========
+  ExpiresByType text/html "now"
+  
+  # ========== CSS/JS - Cache 1 Year ==========
+  ExpiresByType text/css "access plus 1 year"
+  ExpiresByType application/javascript "access plus 1 year"
+  ExpiresByType text/javascript "access plus 1 year"
+  
+  # ========== IMAGES - Cache 1 Year ==========
+  ExpiresByType image/jpg "access plus 1 year"
+  ExpiresByType image/jpeg "access plus 1 year"
+  ExpiresByType image/gif "access plus 1 year"
+  ExpiresByType image/png "access plus 1 year"
+  ExpiresByType image/webp "access plus 1 year"
+  ExpiresByType image/svg+xml "access plus 1 year"
+  
+  # ========== FONTS - Cache 1 Year ==========
+  ExpiresByType application/font-woff "access plus 1 year"
+  ExpiresByType application/font-woff2 "access plus 1 year"
+  ExpiresByType font/ttf "access plus 1 year"
+  ExpiresByType font/otf "access plus 1 year"
+  ExpiresByType font/eot "access plus 1 year"
+  
+  # ========== DEFAULT - Cache 1 Month ==========
+  ExpiresDefault "access plus 1 month"
+</IfModule>
+
+<IfModule mod_gzip.c>
+  mod_gzip_on Yes
+  mod_gzip_dechunk Yes
+  mod_gzip_item_include file .(html?|txt|css|js|json|xml|svg)$
+  mod_gzip_item_include handler ^cgi-script$
+  mod_gzip_item_exclude rspheader ^Content-Encoding:.*gzip
+  mod_gzip_item_exclude mime ^image/
+  mod_gzip_item_exclude mime ^video/
+  mod_gzip_minimum_file_size 300
+  mod_gzip_maximum_file_size 512000
+  mod_gzip_level 6
+  mod_gzip_buffers 16 8k
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/plain
+  AddOutputFilterByType DEFLATE text/html
+  AddOutputFilterByType DEFLATE text/xml
+  AddOutputFilterByType DEFLATE text/css
+  AddOutputFilterByType DEFLATE text/javascript
+  AddOutputFilterByType DEFLATE application/xml
+  AddOutputFilterByType DEFLATE application/xhtml+xml
+  AddOutputFilterByType DEFLATE application/rss+xml
+  AddOutputFilterByType DEFLATE application/javascript
+  AddOutputFilterByType DEFLATE application/x-javascript
+  AddOutputFilterByType DEFLATE application/json
+  AddOutputFilterByType DEFLATE image/svg+xml
+</IfModule>
+
+# ========== SECURITY - Block access to sensitive files ==========
+<FilesMatch "^\.">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+</FilesMatch>
+
+<FilesMatch "\.(env|key|pem|json)$">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+</FilesMatch>
+
+# ========== BLOCK DIRECTORY LISTING ==========
+<IfModule mod_autoindex.c>
+  Options -Indexes
+</IfModule>
