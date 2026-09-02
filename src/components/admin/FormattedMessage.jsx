@@ -3,7 +3,7 @@ import { Copy, Check, Terminal, Lightbulb, Sparkles } from 'lucide-react';
 
 /**
  * Clean, modern FormattedMessage renderer
- * Converts markdown (bold, lists, code blocks, headers) into clean typography without raw ** or # symbols.
+ * Eliminates all raw markdown symbols (**, _, -, |, ###) and renders pure, elegant typography.
  */
 export const FormattedMessage = ({ content = '' }) => {
     const [copiedCodeId, setCopiedCodeId] = useState(null);
@@ -14,68 +14,80 @@ export const FormattedMessage = ({ content = '' }) => {
         setTimeout(() => setCopiedCodeId(null), 2000);
     };
 
-    // Helper to format inline text (removes ** asterisks and converts to styled <strong>, `code`, etc.)
+    // Helper to strip and clean all raw formatting symbols
+    const cleanRawSymbols = (str) => {
+        if (!str) return '';
+        return str
+            .replace(/\*\*/g, '')
+            .replace(/__/g, '')
+            .replace(/\*/g, '')
+            .replace(/\|/g, ' ')
+            .replace(/_/g, ' ')
+            .replace(/[ ]{2,}/g, ' ');
+    };
+
+    // Helper to format inline text with rich typography, strictly eliminating raw syntax
     const renderInline = (text) => {
         if (!text) return null;
 
-        // Clean out any stray triple/double asterisks
         const parts = [];
-        let remaining = text;
         let keyIndex = 0;
 
-        // Regular expression matching **bold**, *italic*, `code`, and [links]
-        const inlineRegex = /(\*\*([^*]+)\*\*)|(\*([^*]+)\*)|(`([^`]+)`)/g;
+        // Match `code`, **bold**, *italic*, _italic_
+        const inlineRegex = /(`([^`]+)`)|(\*\*([^*]+)\*\*)|(__([^_]+)__)|(\*([^*]+)\*)|(_([^_]+)_)/g;
         let match;
         let lastIndex = 0;
 
         while ((match = inlineRegex.exec(text)) !== null) {
-            // Push text before match
             if (match.index > lastIndex) {
-                const plain = text.substring(lastIndex, match.index).replace(/\*\*/g, '');
-                parts.push(<span key={keyIndex++}>{plain}</span>);
+                const plain = text.substring(lastIndex, match.index);
+                const cleaned = cleanRawSymbols(plain);
+                if (cleaned) parts.push(<span key={keyIndex++}>{cleaned}</span>);
             }
 
             if (match[2]) {
-                // Bold match (**text**)
-                parts.push(
-                    <strong key={keyIndex++} className="font-black text-charcoal-950">
-                        {match[2]}
-                    </strong>
-                );
-            } else if (match[4]) {
-                // Italic match (*text*)
-                parts.push(
-                    <em key={keyIndex++} className="italic text-charcoal-800">
-                        {match[4]}
-                    </em>
-                );
-            } else if (match[6]) {
-                // Code match (`text`)
+                // Inline `code`
                 parts.push(
                     <code
                         key={keyIndex++}
-                        className="px-1.5 py-0.5 mx-0.5 rounded-md bg-devyellow-100/80 text-charcoal-900 border border-devyellow-200 font-mono text-[11px] font-bold"
+                        className="px-1.5 py-0.5 mx-0.5 rounded-md bg-devyellow-100/90 text-charcoal-900 border border-devyellow-200 font-mono text-[11px] font-bold"
                     >
-                        {match[6]}
+                        {match[2]}
                     </code>
+                );
+            } else if (match[4] || match[6]) {
+                // **bold** or __bold__
+                const boldContent = match[4] || match[6];
+                parts.push(
+                    <strong key={keyIndex++} className="font-extrabold text-charcoal-950">
+                        {cleanRawSymbols(boldContent)}
+                    </strong>
+                );
+            } else if (match[8] || match[10]) {
+                // *italic* or _italic_
+                const italicContent = match[8] || match[10];
+                parts.push(
+                    <span key={keyIndex++} className="font-semibold text-charcoal-900">
+                        {cleanRawSymbols(italicContent)}
+                    </span>
                 );
             }
 
             lastIndex = match.index + match[0].length;
         }
 
-        // Push any remaining text
         if (lastIndex < text.length) {
-            const plain = text.substring(lastIndex).replace(/\*\*/g, '');
-            parts.push(<span key={keyIndex++}>{plain}</span>);
+            const plain = text.substring(lastIndex);
+            const cleaned = cleanRawSymbols(plain);
+            if (cleaned) parts.push(<span key={keyIndex++}>{cleaned}</span>);
         }
 
-        return parts.length > 0 ? parts : text.replace(/\*\*/g, '');
+        return parts.length > 0 ? parts : cleanRawSymbols(text);
     };
 
-    // Split message into logical blocks (code blocks, lists, paragraphs, headers)
+    // Split message into structured blocks
     const blocks = [];
-    const lines = content.split('\n');
+    const lines = (content || '').split('\n');
     let inCodeBlock = false;
     let codeLanguage = '';
     let codeBuffer = [];
@@ -91,10 +103,9 @@ export const FormattedMessage = ({ content = '' }) => {
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
 
-        // Code block toggle
+        // 1. Code block toggle
         if (line.trim().startsWith('```')) {
             if (inCodeBlock) {
-                // End code block
                 blocks.push({
                     type: 'code',
                     language: codeLanguage || 'javascript',
@@ -104,7 +115,6 @@ export const FormattedMessage = ({ content = '' }) => {
                 codeLanguage = '';
                 inCodeBlock = false;
             } else {
-                // Start code block
                 flushParagraph();
                 inCodeBlock = true;
                 codeLanguage = line.trim().replace('```', '').trim();
@@ -117,23 +127,45 @@ export const FormattedMessage = ({ content = '' }) => {
             continue;
         }
 
-        // Blank lines act as block separators
+        // 2. Blank line
         if (!line.trim()) {
             flushParagraph();
             continue;
         }
 
-        // Headers (#, ##, ###)
-        if (line.startsWith('#')) {
+        // 3. Skip table divider rows (e.g. |---|---| or |:---|---:|)
+        if (/^[-|:\s]+$/.test(line.trim())) {
+            continue;
+        }
+
+        // 4. Horizontal dividers (--- or *** or ___)
+        if (/^[-—_*]{3,}$/.test(line.trim())) {
+            flushParagraph();
+            blocks.push({ type: 'divider' });
+            continue;
+        }
+
+        // 5. Table rows (e.g. | Col 1 | Col 2 |)
+        if (line.includes('|') && line.trim().startsWith('|')) {
+            flushParagraph();
+            const cells = line.split('|').map((c) => c.trim()).filter(Boolean);
+            if (cells.length > 0) {
+                blocks.push({ type: 'table-row', cells });
+            }
+            continue;
+        }
+
+        // 6. Headings (#, ##, ###)
+        if (line.trim().startsWith('#')) {
             flushParagraph();
             const level = (line.match(/^#+/) || ['#'])[0].length;
-            const headingText = line.replace(/^#+\s*/, '').replace(/\*\*/g, '');
+            const headingText = cleanRawSymbols(line.replace(/^#+\s*/, ''));
             blocks.push({ type: 'heading', level, content: headingText });
             continue;
         }
 
-        // Numbered list item (e.g. "1. Item" or "1) Item")
-        const numMatch = line.match(/^(\d+)[\.\)]\s+(.*)/);
+        // 7. Numbered list items (e.g. "1. Item" or "1) Item")
+        const numMatch = line.match(/^[\s]*(\d+)[\.\)]\s+(.*)/);
         if (numMatch) {
             flushParagraph();
             blocks.push({
@@ -144,8 +176,8 @@ export const FormattedMessage = ({ content = '' }) => {
             continue;
         }
 
-        // Bullet point item (e.g. "- Item" or "* Item" or "• Item")
-        const bulletMatch = line.match(/^[-*•]\s+(.*)/);
+        // 8. Bullet items (e.g. "- Item" or "* Item" or "• Item")
+        const bulletMatch = line.match(/^[\s]*[-*•]\s+(.*)/);
         if (bulletMatch) {
             flushParagraph();
             blocks.push({
@@ -155,7 +187,7 @@ export const FormattedMessage = ({ content = '' }) => {
             continue;
         }
 
-        // Callout or Tip line (e.g. starting with "(Note:" or "💡" or ">")
+        // 9. Callout / Tip
         if (line.startsWith('>') || line.includes('💡 Tip:') || line.includes('*(Note:')) {
             flushParagraph();
             blocks.push({
@@ -185,6 +217,25 @@ export const FormattedMessage = ({ content = '' }) => {
                             <Sparkles className="w-3.5 h-3.5 text-devyellow-500 fill-devyellow-400 shrink-0" />
                             <span>{block.content}</span>
                         </h4>
+                    );
+                }
+
+                if (block.type === 'divider') {
+                    return <div key={idx} className="my-2 border-t border-gray-100" />;
+                }
+
+                if (block.type === 'table-row') {
+                    return (
+                        <div key={idx} className="flex flex-wrap items-center gap-2 my-1 p-2 bg-gray-50/70 rounded-xl border border-gray-100">
+                            {block.cells.map((cell, cIdx) => (
+                                <span
+                                    key={cIdx}
+                                    className="px-2.5 py-1 rounded-lg bg-white border border-gray-200/80 text-charcoal-800 font-medium text-[11px] shadow-2xs"
+                                >
+                                    {renderInline(cell)}
+                                </span>
+                            ))}
+                        </div>
                     );
                 }
 
@@ -256,7 +307,6 @@ export const FormattedMessage = ({ content = '' }) => {
                     );
                 }
 
-                // Standard paragraph
                 return (
                     <p key={idx} className="leading-relaxed">
                         {renderInline(block.content)}

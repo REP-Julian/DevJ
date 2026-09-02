@@ -346,6 +346,38 @@ ${messagesText}
 =================================================`;
 }
 
+// Clean raw markdown symbols (**, _, -, |, ###) from AI chat outputs
+export function sanitizeAIChatOutput(text) {
+    if (!text || typeof text !== 'string') return '';
+    let res = text;
+
+    // 1. Remove markdown table divider rows (e.g. |---|---|)
+    res = res.replace(/^[-|:\s]+$/gm, '');
+
+    // 2. Remove pipes (|)
+    res = res.replace(/\|/g, ' ');
+
+    // 3. Clean bold asterisks **word** -> word
+    res = res.replace(/\*\*([^*]+)\*\*/g, (m, p1) => p1);
+    res = res.replace(/\*/g, '');
+
+    // 4. Clean underscores _word_ -> word
+    res = res.replace(/_([^_]+)_/g, (m, p1) => p1);
+    res = res.replace(/_/g, ' ');
+
+    // 5. Replace bullet hyphens (- item) with clean bullet dot (• item)
+    res = res.replace(/^[\s]*[-–—]\s+/gm, '• ');
+
+    // 6. Clean markdown headers (### Header -> Header)
+    res = res.replace(/^[\s]*#{1,6}\s+/gm, '');
+
+    // 7. Clean spacing
+    res = res.replace(/[ ]{2,}/g, ' ');
+    res = res.replace(/\n{3,}/g, '\n\n');
+
+    return res.trim();
+}
+
 // Client-Side Direct Execution Router (for serverless / Cloudflare hosting)
 async function executeDirectAICascade(endpoint, payload) {
     if (endpoint === 'test-connection') {
@@ -359,9 +391,16 @@ async function executeDirectAICascade(endpoint, payload) {
 
 CORE DIRECTIVES:
 1. FULL WEBSITE SYNCHRONIZATION: You are reading the live website database directly via the snapshot below. You know every project, description, tech stack, skill level, certification, and profile detail.
-2. CHECK CHANGES & UPDATES: If the user asks whether their website has changes, asks to inspect recent edits, or asks what has been updated, rigorously check all sections in the live snapshot below, compare them, and highlight any updates, timestamps, additions, or areas needing fresh content.
+2. CHECK CHANGES & UPDATES: If the user asks whether their website has changes, asks to inspect recent edits, or asks what has been updated, check all sections in the live snapshot, compare them, and highlight any updates or additions.
 3. ABSOLUTE FIDELITY: Always answer based on the real portfolio data provided below. Never invent dummy projects or fake skills when real data is available.
-4. ENGAGEMENT: Deliver concise, high-value, beautifully formatted markdown answers with clear structure.
+4. STRICT PROSE FORMATTING (NO RAW MARKDOWN SYNTAX):
+   - Never output raw markdown syntax characters in your response.
+   - Do NOT use double asterisks (**) or single asterisks (*) around words for bold.
+   - Do NOT use underscores (_) around words for italics.
+   - Do NOT use hyphen dashes (-) for lists. Use clean numbered points (1., 2., 3.) or natural paragraphs with line breaks.
+   - Do NOT use table pipes (|). Use clean prose or labeled key-value lines.
+   - Do NOT use hashtag headers (### or ##). Use clean capitalized titles on their own line.
+   - Write in elegant, authoritative, crystal-clear prose with generous spacing.
 
 ${liveSnapshot}`;
 
@@ -373,7 +412,7 @@ ${liveSnapshot}`;
             imageBase64: payload.imageBase64,
             mimeType: payload.mimeType
         });
-        return { text: res.text, provider: res.provider };
+        return { text: sanitizeAIChatOutput(res.text), provider: res.provider };
     }
 
     if (endpoint === 'analyze-achievement-visual') {
@@ -665,33 +704,30 @@ export const aiService = {
             const active = getActiveAIProvider();
             const providerLabels = {
                 auto: 'Auto Smart Failover (Gemini ➡️ Groq ➡️ Mistral ➡️ OpenRouter)',
-                gemini: 'Google Gemini (gemini-3.6-flash / Native Vision enabled)',
-                groq: 'Groq (openai/gpt-oss-120b / Ultra-fast inference)',
-                mistral: 'Mistral AI (mistral-small-latest / Deep reasoning)',
-                openrouter: 'OpenRouter (nvidia/nemotron-3.5-lightning:free / Resilient open-source)'
+                gemini: 'Google Gemini (3.6 Flash / Native Vision enabled)',
+                groq: 'Groq (120B / Ultra-fast inference)',
+                mistral: 'Mistral AI (Small / Deep reasoning)',
+                openrouter: 'OpenRouter (Nemotron 3.5 / Resilient open-source)'
             };
 
-            return `### 🤖 DevJ Multi-Provider AI Engine Commands
+            return `🤖 DevJ Multi-Provider AI Engine Commands
 
-**Current Active Provider**:
-🟢 **${providerLabels[active] || active.toUpperCase()}**
+Current Active Provider:
+🟢 ${providerLabels[active] || active.toUpperCase()}
 
----
-#### ⚡ Category 1: Switch AI Provider
-- \`?gemini\` — Switch priority to **Google Gemini** (3.6 Flash / Native Computer Vision)
-- \`?groq\` — Switch priority to **Groq** (120B / Ultra-fast inference <350ms)
-- \`?mistral\` — Switch priority to **Mistral AI** (Small / Deep code & reasoning)
-- \`?openrouter\` — Switch priority to **OpenRouter** (Nemotron 3.5 / Open-source)
-- \`?auto\` — Reset to **Auto Failover Cascade** (Gemini ➡️ Groq ➡️ Mistral ➡️ OpenRouter)
+⚡ Category 1: Switch AI Provider
+1. ?gemini: Switch priority to Google Gemini (3.6 Flash / Native Computer Vision)
+2. ?groq: Switch priority to Groq (120B / Ultra-fast inference <350ms)
+3. ?mistral: Switch priority to Mistral AI (Small / Deep code and reasoning)
+4. ?openrouter: Switch priority to OpenRouter (Nemotron 3.5 / Open-source)
+5. ?auto: Reset to Auto Failover Cascade (Gemini ➡️ Groq ➡️ Mistral ➡️ OpenRouter)
 
----
-#### 🔍 Category 2: Live Website Sync & Diagnostics
-- \`?\` or \`?status\` — Display this command category guide & current active engine
-- \`?changes\` — Deep scan live website database to check recent changes & modifications
-- \`?audit\` — Instant 360° portfolio quality, presentation & skill gap check
+🔍 Category 2: Live Website Sync & Diagnostics
+1. ?: Display this command category guide and current active engine
+2. ?changes: Deep scan live website database to check recent changes and modifications
+3. ?audit: Instant 360° portfolio quality, presentation and skill gap check
 
----
-*💡 Every active AI provider reads the 100% synchronized live website database across Profile, Skills, Projects, Achievements, Hobbies, and Inquiries.*`;
+💡 Every active AI provider reads the 100% synchronized live website database across Profile, Skills, Projects, Achievements, Hobbies, and Inquiries.`;
         }
 
         if (cleaned === '?changes') {
@@ -707,67 +743,67 @@ export const aiService = {
             const hobbies = data?.hobbies || [];
             const lastUpdated = p.updatedAt ? new Date(p.updatedAt).toLocaleString() : 'Recently updated';
 
-            return `### 🔄 Live Website Data & Change Verification
+            return `🔄 Live Website Data & Change Verification
 
-**Synchronization Status**: 🟢 **100% Up to Date with Live Database**
-- **Profile Owner**: ${p.name || 'Julian Agustino'} (${p.title || 'AI Engineer'})
-- **Last Sync Timestamp**: \`${lastUpdated}\`
+Synchronization Status: 🟢 100% Up to Date with Live Database
+Profile Owner: ${p.name || 'Julian Agustino'} (${p.title || 'AI Engineer'})
+Last Sync Timestamp: ${lastUpdated}
 
-**Current Live Content Inventory**:
-- 🛠️ **Skills**: **${skills.length}** competencies tracked
-- 🚀 **Projects**: **${projects.length}** showcase projects active
-- 🏆 **Milestones & Awards**: **${achievements.length}** verified achievements
-- 🎨 **Hobbies & Lifestyle**: **${hobbies.length}** entries
-- ✉️ **Inquiries**: **${(data?.messages || []).length}** client messages recorded
+Current Live Content Inventory:
+• Skills: ${skills.length} competencies tracked
+• Projects: ${projects.length} showcase projects active
+• Milestones & Awards: ${achievements.length} verified achievements
+• Hobbies & Lifestyle: ${hobbies.length} entries
+• Inquiries: ${(data?.messages || []).length} client messages recorded
 
-*💡 Every active AI model (Gemini, Groq, Mistral, OpenRouter) is directly synchronized with this data snapshot on every prompt.*`;
+💡 Every active AI model (Gemini, Groq, Mistral, OpenRouter) is directly synchronized with this data snapshot on every prompt.`;
         }
 
         if (cleaned === '?audit') {
-            return `### 📊 Live Portfolio 360° Quality Audit
+            return `📊 Live Portfolio 360° Quality Audit
 
 To run a full deep portfolio evaluation with score, strengths, and recommendations:
-1. Switch to the **360° Audit** tab above, or
-2. Simply ask me: *"Audit my portfolio and tell me what needs improvement!"* and your active AI provider will evaluate all live data.`;
+1. Switch to the 360° Audit tab above, or
+2. Simply ask me: "Audit my portfolio and tell me what needs improvement!" and your active AI provider will evaluate all live data.`;
         }
 
         if (cleaned === '?gemini') {
             setActiveAIProvider('gemini');
-            return `⚡ **Switched Active AI Provider to Google Gemini**
-- **Active Model**: \`gemini-3.6-flash\` (with \`gemini-3.5-flash-lite\` failover)
-- **Features**: Native Computer Vision enabled for certificate and image analysis.
-- All portfolio AI generations will now prioritize **Google Gemini**.`;
+            return `⚡ Switched Active AI Provider to Google Gemini
+Model: gemini-3.6-flash (with gemini-3.5-flash-lite failover)
+Features: Native Computer Vision enabled for certificate and image analysis.
+All portfolio AI generations will now prioritize Google Gemini.`;
         }
 
         if (cleaned === '?groq') {
             setActiveAIProvider('groq');
-            return `⚡ **Switched Active AI Provider to Groq**
-- **Active Model**: \`openai/gpt-oss-120b\` (with \`qwen/qwen3.8-27b\` failover)
-- **Features**: Ultra-low latency inference engine running at maximum velocity.
-- All portfolio AI generations will now prioritize **Groq**.`;
+            return `⚡ Switched Active AI Provider to Groq
+Model: openai/gpt-oss-120b (with qwen/qwen3.8-27b failover)
+Features: Ultra-low latency inference engine running at maximum velocity.
+All portfolio AI generations will now prioritize Groq.`;
         }
 
         if (cleaned === '?mistral') {
             setActiveAIProvider('mistral');
-            return `⚡ **Switched Active AI Provider to Mistral AI**
-- **Active Model**: \`mistral-small-latest\` (with \`ministral-8b-latest\` failover)
-- **Features**: Advanced European frontier model specialized in deep reasoning.
-- All portfolio AI generations will now prioritize **Mistral AI**.`;
+            return `⚡ Switched Active AI Provider to Mistral AI
+Model: mistral-small-latest (with ministral-8b-latest failover)
+Features: Advanced European frontier model specialized in deep reasoning.
+All portfolio AI generations will now prioritize Mistral AI.`;
         }
 
         if (cleaned === '?openrouter') {
             setActiveAIProvider('openrouter');
-            return `⚡ **Switched Active AI Provider to OpenRouter**
-- **Active Model**: \`nvidia/nemotron-3.5-lightning:free\` (with \`minimax/minimax-m3:free\` failover)
-- **Features**: Decentralized resilient open-source model routing.
-- All portfolio AI generations will now prioritize **OpenRouter**.`;
+            return `⚡ Switched Active AI Provider to OpenRouter
+Model: nvidia/nemotron-3.5-lightning:free (with minimax/minimax-m3:free failover)
+Features: Decentralized resilient open-source model routing.
+All portfolio AI generations will now prioritize OpenRouter.`;
         }
 
         if (cleaned === '?auto') {
             setActiveAIProvider('auto');
-            return `⚡ **Switched Active AI Provider to Auto Failover Cascade**
-- **Priority Sequence**: Gemini ➡️ Groq ➡️ Mistral ➡️ OpenRouter
-- Automatically failovers if any provider hits rate limits or network issues.`;
+            return `⚡ Switched Active AI Provider to Auto Failover Cascade
+Priority Sequence: Gemini ➡️ Groq ➡️ Mistral ➡️ OpenRouter
+Automatically failovers if any provider hits rate limits or network issues.`;
         }
 
         return null;
@@ -780,7 +816,7 @@ To run a full deep portfolio evaluation with score, strengths, and recommendatio
         if (trimmed.startsWith('?')) {
             const hiddenResult = this.handleHiddenCommand(trimmed);
             if (hiddenResult) {
-                return hiddenResult;
+                return sanitizeAIChatOutput(hiddenResult);
             }
         }
 
@@ -800,7 +836,7 @@ To run a full deep portfolio evaluation with score, strengths, and recommendatio
                 imageBase64,
                 mimeType
             });
-            return response.text || '';
+            return sanitizeAIChatOutput(response.text || '');
         } catch (err) {
             console.warn('[AI Copilot] Live generation failed, using fallback:', err.message);
             return this.getFallbackChatResponse(prompt, portfolioContext);
@@ -1097,6 +1133,10 @@ I can help you:
 - Magnify your Achievement impact statements
 - Draft professional replies to client inquiries
 - Run a full Portfolio SEO & Quality Audit`;
+    },
+
+    sanitizeAIChatOutput(text) {
+        return sanitizeAIChatOutput(text);
     }
 };
 

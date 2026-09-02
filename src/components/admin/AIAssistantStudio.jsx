@@ -47,7 +47,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
     const [messages, setMessages] = useState([
         {
             role: 'model',
-            content: `👋 Welcome to DevJ AI Studio!\n\nI am your DevJ AI Copilot with multi-provider intelligence (Gemini, Groq, Mistral, and OpenRouter). I have live access to your entire portfolio (Profile, Skills, Projects, Achievements, Hobbies, and Inquiries).\n\n💡 *Tip: Type \`?\` to inspect active providers or \`?mistral\`, \`?groq\`, \`?gemini\`, \`?openrouter\` to switch anytime.*\n\nHow can I assist you today?`,
+            content: `👋 Welcome to DevJ AI Studio!\n\nI am your DevJ AI Copilot with multi-provider intelligence (Gemini, Groq, Mistral, and OpenRouter). I have live access to your entire portfolio (Profile, Skills, Projects, Achievements, Hobbies, and Inquiries).\n\n💡 Tip: Type ? to inspect active providers or ?mistral, ?groq, ?gemini, ?openrouter to switch anytime.\n\nHow can I assist you today?`,
         },
     ]);
     const [chatInput, setChatInput] = useState('');
@@ -253,7 +253,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
             }
             
             // Smooth typing reveal
-            const fullText = aiResponse;
+            const fullText = aiService.sanitizeAIChatOutput ? aiService.sanitizeAIChatOutput(aiResponse) : aiResponse;
             const chunkSize = Math.max(1, Math.floor(fullText.length / 35));
             for (let i = 0; i < fullText.length; i += chunkSize) {
                 const currentText = fullText.slice(0, i + chunkSize);
