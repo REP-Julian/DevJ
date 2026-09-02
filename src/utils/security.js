@@ -11,56 +11,7 @@ const MAX_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 3 * 60 * 1000; // 3 minutes
 
 export const initSecurityShield = () => {
-    // 1. Disable Right Click Context Menu
-    document.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        return false;
-    });
-
-    // 2. Disable Keyboard Shortcuts for DevTools
-    document.addEventListener('keydown', (e) => {
-        // F12
-        if (e.key === 'F12' || e.keyCode === 123) {
-            e.preventDefault();
-            e.stopPropagation();
-            return false;
-        }
-
-        // Ctrl + Shift + I (Inspect), Ctrl + Shift + J (Console), Ctrl + Shift + C (Element Inspector)
-        if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) {
-            e.preventDefault();
-            e.stopPropagation();
-            return false;
-        }
-
-        // Mac: Cmd + Option + I / J / C
-        if (e.metaKey && e.altKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) {
-            e.preventDefault();
-            e.stopPropagation();
-            return false;
-        }
-
-        // Ctrl + U (View Source)
-        if ((e.ctrlKey || e.metaKey) && (e.key === 'u' || e.key === 'U')) {
-            e.preventDefault();
-            e.stopPropagation();
-            return false;
-        }
-
-        // Ctrl + S (Save Page)
-        if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
-            e.preventDefault();
-            e.stopPropagation();
-            return false;
-        }
-    });
-
-    // 3. DevTools Open Console Clearer / Warning
-    setInterval(() => {
-        if (window.outerWidth - window.innerWidth > 160 || window.outerHeight - window.innerHeight > 160) {
-            console.clear();
-        }
-    }, 2000);
+    // Non-intrusive initialization (DevTools enabled for debugging)
 };
 
 // Rate Limiter for Login
