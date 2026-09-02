@@ -15,12 +15,6 @@
   # ========== PERFORMANCE HEADERS ==========
   Link: <https://fonts.googleapis.com>; rel=preconnect
   Link: <https://fonts.gstatic.com>; rel=preconnect, crossorigin
-  
-  # ========== CONTENT ENCODING ==========
-  Content-Encoding: gzip, br
-  
-  # ========== VARY HEADER (For Caching) ==========
-  Vary: Accept-Encoding
 
 # ========== HTML FILES - Always Fresh ==========
 /index.html
@@ -30,7 +24,6 @@
 # ========== JS/CSS - Aggressive Caching ==========
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
-  Content-Type: application/javascript; charset=utf-8
 
 # ========== IMAGES - Long Caching ==========
 /images/*
