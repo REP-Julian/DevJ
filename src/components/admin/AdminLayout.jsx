@@ -14,7 +14,8 @@ import {
     ExternalLink,
     Menu,
     X,
-    Sparkles
+    Sparkles,
+    Shield
 } from 'lucide-react';
 
 export const AdminLayout = ({ children, activeTab, setActiveTab }) => {
@@ -28,12 +29,14 @@ export const AdminLayout = ({ children, activeTab, setActiveTab }) => {
     };
 
     const navItems = [
+        { id: 'ai', label: 'AI Studio & Copilot', icon: Sparkles, badge: 'Gemini' },
         { id: 'profile', label: 'Profile', icon: User },
         { id: 'skills', label: 'Skills', icon: Wrench },
         { id: 'achievements', label: 'Achievements', icon: Award },
         { id: 'projects', label: 'Projects', icon: FolderGit2 },
         { id: 'hobbies', label: 'Hobbies', icon: Heart },
         { id: 'messages', label: 'Inquiries', icon: Mail },
+        { id: 'settings', label: 'Security & Login', icon: Shield },
     ];
 
     return (
@@ -57,17 +60,28 @@ export const AdminLayout = ({ children, activeTab, setActiveTab }) => {
                         {navItems.map((item) => {
                             const Icon = item.icon;
                             const isActive = activeTab === item.id;
+                            const isAi = item.id === 'ai';
                             return (
                                 <button
                                     key={item.id}
                                     onClick={() => setActiveTab(item.id)}
-                                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${isActive
+                                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all ${
+                                        isActive
                                             ? 'bg-devyellow-100 text-devorange-600 shadow-sm'
+                                            : isAi
+                                            ? 'text-charcoal-900 bg-devyellow-50/50 hover:bg-devyellow-100/50 border border-devyellow-200/60'
                                             : 'text-charcoal-800 hover:bg-gray-50'
-                                        }`}
+                                    }`}
                                 >
-                                    <Icon className={`w-4 h-4 ${isActive ? 'text-devorange-600' : 'text-charcoal-500'}`} />
-                                    <span>{item.label}</span>
+                                    <div className="flex items-center gap-3">
+                                        <Icon className={`w-4 h-4 ${isActive ? 'text-devorange-600' : isAi ? 'text-devorange-500 fill-devyellow-400' : 'text-charcoal-500'}`} />
+                                        <span>{item.label}</span>
+                                    </div>
+                                    {item.badge && (
+                                        <span className="px-1.5 py-0.5 rounded text-[9px] font-black uppercase bg-devorange-600 text-white shadow-xs">
+                                            {item.badge}
+                                        </span>
+                                    )}
                                 </button>
                             );
                         })}
@@ -78,7 +92,7 @@ export const AdminLayout = ({ children, activeTab, setActiveTab }) => {
                     <div className="px-3 py-2 rounded-xl bg-devyellow-100/50 border border-devyellow-200 flex items-center justify-between text-[10px] font-semibold text-charcoal-900">
                         <span className="flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                            Appwrite Cloud
+                            Firebase & Cloudinary
                         </span>
                         <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-white text-devorange-600 border border-devyellow-300 font-extrabold">
                             Live Sync

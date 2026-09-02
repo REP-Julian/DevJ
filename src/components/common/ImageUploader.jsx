@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Upload, X, Check, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { api } from '../../services/api';
 
@@ -9,20 +9,23 @@ export const ImageUploader = ({ currentImage, onImageUploaded, label = 'Upload I
     const [dragActive, setDragActive] = useState(false);
     const fileInputRef = useRef(null);
 
+    // Keep preview in sync when currentImage changes
+    useEffect(() => {
+        if (currentImage && !uploading) {
+            setPreview(currentImage);
+        }
+    }, [currentImage, uploading]);
+
     const handleFile = async (file) => {
         if (!file) return;
 
-        if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
-            setError('Please upload JPG, PNG, WEBP, or GIF.');
-            return;
-        }
-
-        if (file.size > 5 * 1024 * 1024) {
-            setError('File size must be under 5MB.');
+        if (!file.type.startsWith('image/')) {
+            setError('Please upload a valid image (JPG, PNG, WEBP, GIF).');
             return;
         }
 
         setError('');
+        // Instant local preview
         const localPreviewUrl = URL.createObjectURL(file);
         setPreview(localPreviewUrl);
 
@@ -32,6 +35,7 @@ export const ImageUploader = ({ currentImage, onImageUploaded, label = 'Upload I
             setPreview(serverUrl);
             onImageUploaded(serverUrl);
         } catch (err) {
+            console.error('Upload error:', err);
             setError(err.message || 'Image upload failed');
             setPreview(currentImage || '');
         } finally {
@@ -69,15 +73,16 @@ export const ImageUploader = ({ currentImage, onImageUploaded, label = 'Upload I
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`relative border-2 border-dashed rounded-xl p-4 transition-all cursor-pointer flex flex-col items-center justify-center min-h-[160px] bg-white group ${dragActive
+                className={`relative border-2 border-dashed rounded-xl p-4 transition-all cursor-pointer flex flex-col items-center justify-center min-h-[160px] bg-white group ${
+                    dragActive
                         ? 'border-devorange-500 bg-devorange-100/30'
                         : 'border-gray-200 hover:border-devyellow-400 hover:bg-devyellow-100/20'
-                    }`}
+                }`}
             >
                 <input
                     ref={fileInputRef}
                     type="file"
-                    accept="image/png, image/jpeg, image/webp, image/gif"
+                    accept="image/*"
                     className="hidden"
                     onChange={(e) => handleFile(e.target.files?.[0])}
                 />
@@ -90,13 +95,16 @@ export const ImageUploader = ({ currentImage, onImageUploaded, label = 'Upload I
                             className="max-h-full max-w-full object-contain rounded-lg"
                         />
                         {uploading && (
-                            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center">
-                                <Loader2 className="w-8 h-8 text-devorange-500 animate-spin" />
+                            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center gap-1.5">
+                                <Loader2 className="w-7 h-7 text-devorange-500 animate-spin" />
+                                <span className="text-[11px] font-bold text-charcoal-800">Uploading...</span>
                             </div>
                         )}
-                        <div className="absolute bottom-2 right-2 bg-charcoal-900/80 text-white text-xs px-2.5 py-1 rounded-md flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <Upload className="w-3.5 h-3.5 text-devyellow-400" /> Replace Image
-                        </div>
+                        {!uploading && (
+                            <div className="absolute bottom-2 right-2 bg-charcoal-900/80 text-white text-xs px-2.5 py-1 rounded-md flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Upload className="w-3.5 h-3.5 text-devyellow-400" /> Replace Image
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <div className="text-center py-4">
@@ -107,7 +115,7 @@ export const ImageUploader = ({ currentImage, onImageUploaded, label = 'Upload I
                             Drag & drop or <span className="text-devorange-600 font-semibold underline">browse</span>
                         </p>
                         <p className="text-xs text-charcoal-500 mt-1">
-                            Supports WebP, PNG, JPG up to 5MB
+                            Instant WebP & Cloudinary upload
                         </p>
                     </div>
                 )}

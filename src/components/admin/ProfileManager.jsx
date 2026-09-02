@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import ImageUploader from '../common/ImageUploader';
 import { api } from '../../services/api';
-import { Save, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
+import { aiService } from '../../services/aiService';
+import { Save, CheckCircle2, AlertCircle, Loader2, Sparkles } from 'lucide-react';
 
 export const ProfileManager = ({ profile, onUpdated }) => {
     const [formData, setFormData] = useState({
@@ -20,6 +21,7 @@ export const ProfileManager = ({ profile, onUpdated }) => {
     });
 
     const [status, setStatus] = useState({ loading: false, success: false, error: '' });
+    const [aiPolishing, setAiPolishing] = useState(false);
 
     const handleSave = async (e) => {
         e.preventDefault();
@@ -85,9 +87,38 @@ export const ProfileManager = ({ profile, onUpdated }) => {
                     </div>
                 </div>
 
+                <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold uppercase tracking-wider text-charcoal-800">
+                        Exact Tagline & Bio
+                    </label>
+                    <button
+                        type="button"
+                        onClick={async () => {
+                            setAiPolishing(true);
+                            try {
+                                const res = await aiService.generateProfileBio(formData, 'innovative and visionary');
+                                setFormData(prev => ({
+                                    ...prev,
+                                    tagline: res.tagline || prev.tagline,
+                                    description: res.description || prev.description,
+                                }));
+                            } catch (e) {
+                                alert(e.message || 'AI generation failed');
+                            } finally {
+                                setAiPolishing(false);
+                            }
+                        }}
+                        disabled={aiPolishing}
+                        className="px-3 py-1 rounded-xl bg-devyellow-100 hover:bg-devyellow-200 text-devorange-600 border border-devyellow-300 text-xs font-extrabold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
+                    >
+                        {aiPolishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-devyellow-600 fill-devyellow-400" />}
+                        <span>{aiPolishing ? 'Polishing with Gemini...' : '✨ AI Polish Bio & Tagline'}</span>
+                    </button>
+                </div>
+
                 <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 mb-1">
-                        Exact Tagline
+                    <label className="block text-xs font-bold text-charcoal-700 mb-1">
+                        Tagline
                     </label>
                     <input
                         type="text"
@@ -99,7 +130,7 @@ export const ProfileManager = ({ profile, onUpdated }) => {
                 </div>
 
                 <div>
-                    <label className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 mb-1">
+                    <label className="block text-xs font-bold text-charcoal-700 mb-1">
                         Personal Bio & Overview
                     </label>
                     <textarea

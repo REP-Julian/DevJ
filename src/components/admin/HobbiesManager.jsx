@@ -1,11 +1,14 @@
 import React, { useState } from 'react';
 import ImageUploader from '../common/ImageUploader';
 import { api } from '../../services/api';
-import { Plus, Trash2, Edit2, Save, X } from 'lucide-react';
+import { aiService } from '../../services/aiService';
+import { Plus, Trash2, Edit2, Save, X, Sparkles, Loader2, Eye } from 'lucide-react';
 
 export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
     const [editingId, setEditingId] = useState(null);
     const [isCreating, setIsCreating] = useState(false);
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiVisionScanning, setAiVisionScanning] = useState(false);
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -35,6 +38,48 @@ export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
     const handleCancel = () => {
         setIsCreating(false);
         setEditingId(null);
+    };
+
+    const handleEnhanceHobby = async () => {
+        if (!formData.name.trim()) {
+            alert('Please enter a hobby or creative interest name first');
+            return;
+        }
+        setAiLoading(true);
+        try {
+            const res = await aiService.enhanceHobby(formData);
+            setFormData(prev => ({
+                ...prev,
+                name: res.name || prev.name,
+                description: res.description || prev.description,
+                iconName: res.iconName || prev.iconName,
+            }));
+        } catch (e) {
+            alert(e.message || 'AI hobby enhancement failed');
+        } finally {
+            setAiLoading(false);
+        }
+    };
+
+    const handleScanHobbyVisual = async () => {
+        if (!formData.imageUrl) {
+            alert('Please upload or select an image for this hobby first');
+            return;
+        }
+        setAiVisionScanning(true);
+        try {
+            const res = await aiService.analyzeHobbyVisual(formData.imageUrl, formData);
+            setFormData(prev => ({
+                ...prev,
+                name: res.name || prev.name,
+                description: res.description || prev.description,
+                iconName: res.iconName || prev.iconName,
+            }));
+        } catch (e) {
+            alert(e.message || 'AI vision analysis failed');
+        } finally {
+            setAiVisionScanning(false);
+        }
     };
 
     const handleSubmit = async (e) => {
@@ -82,9 +127,33 @@ export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
 
             {(isCreating || editingId) && (
                 <form onSubmit={handleSubmit} className="p-6 bg-white rounded-2xl border border-devyellow-300 shadow-warm-sm space-y-4">
-                    <h3 className="font-extrabold text-sm text-charcoal-900">
-                        {isCreating ? 'Create Hobby' : 'Edit Hobby'}
-                    </h3>
+                    <div className="flex items-center justify-between">
+                        <h3 className="font-extrabold text-sm text-charcoal-900">
+                            {isCreating ? 'Create Hobby' : 'Edit Hobby'}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                            {formData.imageUrl && (
+                                <button
+                                    type="button"
+                                    onClick={handleScanHobbyVisual}
+                                    disabled={aiVisionScanning}
+                                    className="px-3 py-1 rounded-xl bg-charcoal-900 hover:bg-black text-devyellow-400 border border-charcoal-700 text-xs font-extrabold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 shadow-xs"
+                                >
+                                    {aiVisionScanning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5" />}
+                                    <span>{aiVisionScanning ? 'Scanning Photo...' : '👁️ AI Read Photo'}</span>
+                                </button>
+                            )}
+                            <button
+                                type="button"
+                                onClick={handleEnhanceHobby}
+                                disabled={aiLoading}
+                                className="px-3 py-1 rounded-xl bg-devyellow-100 hover:bg-devyellow-200 text-devorange-600 border border-devyellow-300 text-xs font-extrabold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
+                            >
+                                {aiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-devyellow-600 fill-devyellow-400" />}
+                                <span>{aiLoading ? 'Enhancing Vibe...' : '✨ AI Polish Vibe'}</span>
+                            </button>
+                        </div>
+                    </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
@@ -94,6 +163,7 @@ export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
                                 required
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                placeholder="e.g. Photography, Generative Music, Mechanical Keyboards"
                                 className="w-full px-3 py-2 border rounded-xl text-xs"
                             />
                         </div>
@@ -105,12 +175,12 @@ export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
                                 className="w-full px-3 py-2 border rounded-xl text-xs"
                             >
                                 <option value="Camera">Camera (Photography)</option>
-                                <option value="Music">Music</option>
-                                <option value="Sparkles">Sparkles (AI/Tech)</option>
-                                <option value="Gamepad2">Gaming</option>
-                                <option value="BookOpen">Reading</option>
-                                <option value="Coffee">Coffee</option>
-                                <option value="Heart">Heart</option>
+                                <option value="Music">Music (Audio / Production)</option>
+                                <option value="Sparkles">Sparkles (AI / Creative Tech)</option>
+                                <option value="Gamepad2">Gaming & Esports</option>
+                                <option value="BookOpen">Reading & Literature</option>
+                                <option value="Coffee">Coffee & Lifestyle</option>
+                                <option value="Heart">Heart & Wellbeing</option>
                             </select>
                         </div>
                     </div>
@@ -122,15 +192,37 @@ export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
                             required
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                            placeholder="A concise, personal statement showing passion and balance..."
                             className="w-full px-3 py-2 border rounded-xl text-xs"
                         />
                     </div>
 
-                    <ImageUploader
-                        label="Hobby Image Visual"
-                        currentImage={formData.imageUrl}
-                        onImageUploaded={(url) => setFormData({ ...formData, imageUrl: url })}
-                    />
+                    <div className="space-y-2">
+                        <ImageUploader
+                            label="Hobby Image Visual (Photography, Art, Setup)"
+                            currentImage={formData.imageUrl}
+                            onImageUploaded={(url) => setFormData({ ...formData, imageUrl: url })}
+                        />
+                        {formData.imageUrl && (
+                            <div className="p-3 bg-devyellow-50/80 border border-devyellow-200 rounded-2xl flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-2">
+                                    <Eye className="w-4 h-4 text-devorange-500" />
+                                    <span className="text-[11px] text-charcoal-700 font-bold">
+                                        Gemini Vision can inspect this photo to generate an authentic description.
+                                    </span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleScanHobbyVisual}
+                                    disabled={aiVisionScanning}
+                                    className="px-3 py-1.5 rounded-xl bg-charcoal-900 text-devyellow-400 font-extrabold text-xs flex items-center gap-1.5 hover:bg-black transition-all shrink-0"
+                                >
+                                    {aiVisionScanning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                                    <span>{aiVisionScanning ? 'Analyzing...' : 'Scan Photo with Vision'}</span>
+                                </button>
+                            </div>
+                        )}
+                    </div>
 
                     <div className="flex gap-2 pt-2">
                         <button

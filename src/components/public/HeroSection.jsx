@@ -1,27 +1,85 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Sparkles, Terminal, Code2, Flame } from 'lucide-react';
+import { ArrowRight, Sparkles, Terminal, Code2, Flame, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export const HeroSection = ({ profile }) => {
-    // Array of distinct images to cycle through every 2 seconds
+    // Array of distinct images to cycle through
+    const defaultImages = [
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80',
+    ];
+
     const images = [
-        profile?.avatarUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
-        profile?.avatarUrl2 || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80',
-        profile?.avatarUrl3 || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80',
+        profile?.avatarUrl || defaultImages[0],
+        profile?.avatarUrl2 || defaultImages[1],
+        profile?.avatarUrl3 || defaultImages[2],
     ];
 
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [isHovered, setIsHovered] = useState(false);
 
-    // Auto-switch image every 2 seconds (2000ms)
+    // Auto-switch image every 3.5 seconds with pause on hover
     useEffect(() => {
+        if (isHovered) return;
+
         const timer = setInterval(() => {
             setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
-        }, 2000);
+        }, 3500);
 
         return () => clearInterval(timer);
-    }, [images.length]);
+    }, [images.length, isHovered]);
 
-    const leftIndex = (currentIndex - 1 + images.length) % images.length;
-    const rightIndex = (currentIndex + 1) % images.length;
+    const handlePrev = () => {
+        setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+    };
+
+    const handleNext = () => {
+        setCurrentIndex((prev) => (prev + 1) % images.length);
+    };
+
+    // Calculate fluid positioning for each card in the 3D stage
+    const getCardStyle = (idx) => {
+        const total = images.length;
+        const offset = (idx - currentIndex + total) % total;
+
+        // Active Center Card
+        if (offset === 0) {
+            return {
+                wrapper: 'z-30 opacity-100 scale-100 translate-x-0 rotate-0 cursor-default pointer-events-auto',
+                inner: 'p-[3px] bg-gradient-to-tr from-devyellow-400 via-devorange-400 to-devorange-500 shadow-2xl shadow-devorange-500/20 ring-4 ring-white/80',
+                img: 'grayscale-0 brightness-100 contrast-100',
+                overlay: 'opacity-20',
+            };
+        }
+
+        // Right Background Card
+        if (offset === 1) {
+            return {
+                wrapper: 'z-10 opacity-45 hover:opacity-90 scale-[0.84] translate-x-20 sm:translate-x-28 md:translate-x-32 rotate-6 hover:rotate-3 cursor-pointer pointer-events-auto',
+                inner: 'p-[2px] bg-white/95 border border-gray-200/90 shadow-lg hover:shadow-xl hover:border-devorange-300',
+                img: 'grayscale brightness-90 hover:grayscale-0 hover:brightness-100',
+                overlay: 'opacity-40',
+            };
+        }
+
+        // Left Background Card
+        if (offset === total - 1) {
+            return {
+                wrapper: 'z-10 opacity-45 hover:opacity-90 scale-[0.84] -translate-x-20 sm:-translate-x-28 md:-translate-x-32 -rotate-6 hover:-rotate-3 cursor-pointer pointer-events-auto',
+                inner: 'p-[2px] bg-white/95 border border-gray-200/90 shadow-lg hover:shadow-xl hover:border-devorange-300',
+                img: 'grayscale brightness-90 hover:grayscale-0 hover:brightness-100',
+                overlay: 'opacity-40',
+            };
+        }
+
+        // Hidden cards for lists larger than 3
+        return {
+            wrapper: 'z-0 opacity-0 scale-75 translate-x-0 rotate-0 pointer-events-none',
+            inner: 'p-[2px] bg-white',
+            img: 'grayscale',
+            overlay: 'opacity-0',
+        };
+    };
 
     return (
         <section
@@ -92,9 +150,13 @@ export const HeroSection = ({ profile }) => {
                     </div>
                 </div>
 
-                {/* Right Column: Clean Multi-Portrait Visual Showcase */}
+                {/* Right Column: Smooth 3D Multi-Portrait Visual Showcase */}
                 <div className="lg:col-span-5 flex justify-center">
-                    <div className="w-full max-w-md">
+                    <div
+                        className="w-full max-w-md"
+                        onMouseEnter={() => setIsHovered(true)}
+                        onMouseLeave={() => setIsHovered(false)}
+                    >
                         <div className="relative p-6 sm:p-8 bg-gradient-to-br from-white via-devyellow-100/30 to-devorange-100/20 rounded-3xl border border-gray-100 shadow-warm-md hover:shadow-warm-lg transition-shadow duration-300">
                             {/* Top Badge */}
                             <div className="absolute -top-3 -right-3 z-40 bg-charcoal-900 text-white text-xs font-black px-4 py-2 rounded-xl shadow-warm-md border border-devyellow-400 flex items-center gap-1.5">
@@ -102,47 +164,40 @@ export const HeroSection = ({ profile }) => {
                                 <span>Creative Portfolio</span>
                             </div>
 
-                            {/* Gallery Stage with comfortable padding so borders/shadows are never cut */}
-                            <div className="relative h-88 sm:h-96 w-full flex items-center justify-center rounded-2xl bg-white/40 p-4">
-                                {/* Left Background Card */}
-                                <div className="absolute left-2 sm:left-4 w-36 sm:w-40 h-52 sm:h-60 rounded-2xl overflow-hidden opacity-40 scale-90 transition-all duration-700 ease-in-out border border-gray-200 shadow-md">
-                                    <img
-                                        src={images[leftIndex]}
-                                        alt="Previous portrait"
-                                        onError={(e) => {
-                                            e.currentTarget.src = 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80';
-                                        }}
-                                        className="w-full h-full object-cover grayscale brightness-95"
-                                    />
-                                </div>
+                            {/* Gallery 3D Stage */}
+                            <div className="relative h-88 sm:h-96 w-full flex items-center justify-center rounded-2xl bg-white/40 p-4 overflow-hidden">
+                                {/* Ambient Warm Backlight Glow behind active portrait */}
+                                <div className="absolute w-48 sm:w-56 h-64 sm:h-76 bg-gradient-to-tr from-devyellow-400/30 via-devorange-400/25 to-devorange-500/30 rounded-3xl blur-2xl transform transition-all duration-700 pointer-events-none" />
 
-                                {/* Right Background Card */}
-                                <div className="absolute right-2 sm:right-4 w-36 sm:w-40 h-52 sm:h-60 rounded-2xl overflow-hidden opacity-40 scale-90 transition-all duration-700 ease-in-out border border-gray-200 shadow-md">
-                                    <img
-                                        src={images[rightIndex]}
-                                        alt="Next portrait"
-                                        onError={(e) => {
-                                            e.currentTarget.src = 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80';
-                                        }}
-                                        className="w-full h-full object-cover grayscale brightness-95"
-                                    />
-                                </div>
-
-                                {/* Active Foreground 3D Card with Clean Rounded Gradient Border */}
-                                <div className="relative z-30 w-48 sm:w-56 h-64 sm:h-76 rounded-2xl shadow-2xl p-[3px] bg-gradient-to-tr from-devyellow-400 via-devorange-400 to-devorange-500 transition-all duration-500 hover:scale-105">
-                                    <div className="w-full h-full rounded-[14px] overflow-hidden bg-white relative">
-                                        <img
-                                            key={currentIndex}
-                                            src={images[currentIndex]}
-                                            alt={profile?.name || 'DevJ'}
-                                            onError={(e) => {
-                                                e.currentTarget.src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80';
-                                            }}
-                                            className="w-full h-full object-cover transition-opacity duration-500"
-                                        />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-charcoal-900/30 via-transparent to-transparent pointer-events-none" />
-                                    </div>
-                                </div>
+                                {/* Persistent Multi-Portrait Carousel Deck */}
+                                {images.map((imgSrc, idx) => {
+                                    const style = getCardStyle(idx);
+                                    return (
+                                        <div
+                                            key={idx}
+                                            onClick={() => setCurrentIndex(idx)}
+                                            className={`absolute w-48 sm:w-56 h-64 sm:h-76 transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] will-change-transform rounded-2xl select-none ${style.wrapper}`}
+                                        >
+                                            <div
+                                                className={`w-full h-full rounded-2xl transition-all duration-700 ${style.inner}`}
+                                            >
+                                                <div className="w-full h-full rounded-[14px] overflow-hidden bg-white relative">
+                                                    <img
+                                                        src={imgSrc}
+                                                        alt={`${profile?.name || 'DevJ'} portrait ${idx + 1}`}
+                                                        onError={(e) => {
+                                                            e.currentTarget.src = defaultImages[idx % defaultImages.length];
+                                                        }}
+                                                        className={`w-full h-full object-cover transition-all duration-700 ease-out ${style.img}`}
+                                                    />
+                                                    <div
+                                                        className={`absolute inset-0 bg-gradient-to-t from-charcoal-900/40 via-transparent to-transparent transition-opacity duration-700 pointer-events-none ${style.overlay}`}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
 
                             {/* Bottom Card Controls & Indicators */}
@@ -154,20 +209,38 @@ export const HeroSection = ({ profile }) => {
                                     <p className="text-xs text-charcoal-500">AI Engineer & Creative Developer</p>
                                 </div>
 
-                                {/* Dot Indicators */}
-                                <div className="flex items-center gap-1.5">
-                                    {images.map((_, idx) => (
-                                        <button
-                                            key={idx}
-                                            onClick={() => setCurrentIndex(idx)}
-                                            aria-label={`View photo ${idx + 1}`}
-                                            className={`h-2 rounded-full transition-all duration-300 ${
-                                                idx === currentIndex
-                                                    ? 'w-6 bg-gradient-to-r from-devyellow-400 to-devorange-500'
-                                                    : 'w-2 bg-gray-200 hover:bg-gray-300'
-                                            }`}
-                                        />
-                                    ))}
+                                {/* Controls: Arrows & Dot Indicators */}
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        onClick={handlePrev}
+                                        aria-label="Previous photo"
+                                        className="p-1 rounded-lg text-charcoal-400 hover:text-devorange-600 hover:bg-devyellow-100/50 transition-all active:scale-90"
+                                    >
+                                        <ChevronLeft className="w-4 h-4" />
+                                    </button>
+
+                                    <div className="flex items-center gap-1.5 px-1">
+                                        {images.map((_, idx) => (
+                                            <button
+                                                key={idx}
+                                                onClick={() => setCurrentIndex(idx)}
+                                                aria-label={`View photo ${idx + 1}`}
+                                                className={`h-2 rounded-full transition-all duration-500 ease-out ${
+                                                    idx === currentIndex
+                                                        ? 'w-6 bg-gradient-to-r from-devyellow-400 to-devorange-500 shadow-sm'
+                                                        : 'w-2 bg-gray-200 hover:bg-gray-300'
+                                                }`}
+                                            />
+                                        ))}
+                                    </div>
+
+                                    <button
+                                        onClick={handleNext}
+                                        aria-label="Next photo"
+                                        className="p-1 rounded-lg text-charcoal-400 hover:text-devorange-600 hover:bg-devyellow-100/50 transition-all active:scale-90"
+                                    >
+                                        <ChevronRight className="w-4 h-4" />
+                                    </button>
                                 </div>
                             </div>
                         </div>

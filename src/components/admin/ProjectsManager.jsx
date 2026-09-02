@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import ImageUploader from '../common/ImageUploader';
 import { api } from '../../services/api';
-import { Plus, Trash2, Edit2, Save, X } from 'lucide-react';
+import { aiService } from '../../services/aiService';
+import { Plus, Trash2, Edit2, Save, X, Sparkles, Loader2 } from 'lucide-react';
 
 export const ProjectsManager = ({ projects = [], onUpdated }) => {
     const [editingId, setEditingId] = useState(null);
     const [isCreating, setIsCreating] = useState(false);
+    const [aiLoading, setAiLoading] = useState(false);
     const [formData, setFormData] = useState({
         title: '',
         category: '',
@@ -88,9 +90,40 @@ export const ProjectsManager = ({ projects = [], onUpdated }) => {
 
             {(isCreating || editingId) && (
                 <form onSubmit={handleSubmit} className="p-6 bg-white rounded-2xl border border-devyellow-300 shadow-warm-sm space-y-4">
-                    <h3 className="font-extrabold text-sm text-charcoal-900">
-                        {isCreating ? 'Create Project' : 'Edit Project'}
-                    </h3>
+                    <div className="flex items-center justify-between">
+                        <h3 className="font-extrabold text-sm text-charcoal-900">
+                            {isCreating ? 'Create Project' : 'Edit Project'}
+                        </h3>
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                if (!formData.title.trim()) {
+                                    alert('Please enter a project title or keywords first');
+                                    return;
+                                }
+                                setAiLoading(true);
+                                try {
+                                    const res = await aiService.enhanceProject(formData);
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        title: res.title || prev.title,
+                                        category: res.category || prev.category,
+                                        description: res.description || prev.description,
+                                        technologies: res.technologies || prev.technologies,
+                                    }));
+                                } catch (e) {
+                                    alert(e.message || 'AI generation failed');
+                                } finally {
+                                    setAiLoading(false);
+                                }
+                            }}
+                            disabled={aiLoading}
+                            className="px-3 py-1 rounded-xl bg-devyellow-100 hover:bg-devyellow-200 text-devorange-600 border border-devyellow-300 text-xs font-extrabold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
+                        >
+                            {aiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-devyellow-600 fill-devyellow-400" />}
+                            <span>{aiLoading ? 'Enhancing with Gemini...' : '✨ AI Auto-Fill / Enhance'}</span>
+                        </button>
+                    </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
