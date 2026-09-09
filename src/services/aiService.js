@@ -36,7 +36,7 @@ async function imageToBase64(imageInput) {
             return { base64, mimeType };
         }
 
-        // 3. Remote URL (Cloudinary, Firebase, external https)
+        // 3. Remote URL (Appwrite Storage, external https)
         if (typeof imageInput === 'string' && (imageInput.startsWith('http://') || imageInput.startsWith('https://'))) {
             try {
                 const response = await fetch(imageInput);
@@ -71,7 +71,7 @@ async function imageToBase64(imageInput) {
 
 const _d = (arr) => arr.map(c => String.fromCharCode(c ^ 42)).join('');
 
-// Provider API Keys Configuration (with environment variable support + Cloudflare fallback)
+// Provider API Keys Configuration (with environment variable support + Appwrite fallback)
 const AI_KEYS = {
     gemini: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) || _d([107,123,4,107,72,18,120,100,28,97,97,103,89,104,90,83,115,75,29,89,28,80,29,72,83,111,97,77,28,107,94,27,70,108,69,66,123,64,77,66,28,76,122,117,109,73,30,101,97,122,76,66,93]),
     groq: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GROQ_API_KEY) || _d([77,89,65,117,98,82,18,76,72,91,114,26,19,121,92,25,18,97,77,94,94,110,91,100,125,109,78,83,72,25,108,115,66,97,109,120,91,65,93,126,115,98,72,125,112,120,101,66,19,123,76,98,102,91,124,66]),
@@ -378,7 +378,7 @@ export function sanitizeAIChatOutput(text) {
     return res.trim();
 }
 
-// Client-Side Direct Execution Router (for serverless / Cloudflare hosting)
+// Client-Side Direct Execution Router (for serverless / Appwrite Sites hosting)
 async function executeDirectAICascade(endpoint, payload) {
     if (endpoint === 'test-connection') {
         const res = await executeProviderCascade({ prompt: 'Respond with simply: OK' });
@@ -647,7 +647,7 @@ async function callAIBackend(endpoint, payload) {
             }
         }
     } catch (backendErr) {
-        // Backend unavailable (common in static SPA hosting like Cloudflare Workers)
+        // Backend unavailable (common in static SPA hosting like Appwrite Sites)
     }
 
     // Direct Client-Side Multi-Provider AI Cascade (Gemini -> Groq -> Mistral -> OpenRouter)
@@ -1061,7 +1061,7 @@ Automatically failovers if any provider hits rate limits or network issues.`;
             description: rawProject.description
                 ? `${rawProject.description} Engineered with scalable cloud services, real-time data sync, and modern responsive components.`
                 : 'An autonomous multi-agent platform combining computer vision with real-time generative streaming and reactive state management.',
-            technologies: rawProject.technologies || 'React, TailwindCSS, Node.js, Gemini API, Cloudflare'
+            technologies: rawProject.technologies || 'React, TailwindCSS, Node.js, Gemini API, Appwrite'
         };
     },
 
@@ -1097,7 +1097,7 @@ AI Enthusiast & Creative Developer`;
             strengths: [
                 'Clear emphasis on frontier AI frameworks and modern frontend technologies',
                 'Interactive 3D carousel showcases for milestones and projects',
-                'Integrated Cloudinary CDN and Firebase Firestore real-time data layer'
+                'Integrated Appwrite Storage and Appwrite Cloud real-time data layer'
             ],
             improvements: [
                 'Add live deployment demo links to all featured projects',

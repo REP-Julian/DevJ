@@ -113,7 +113,7 @@ export const AdminLayout = ({ children, activeTab, setActiveTab }) => {
                     <div className="px-3 py-2 rounded-xl bg-devyellow-100/50 border border-devyellow-200 flex items-center justify-between text-[10px] font-semibold text-charcoal-900">
                         <span className="flex items-center gap-1.5">
                             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                            Firebase & Cloudinary
+                            Appwrite Cloud
                         </span>
                         <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-white text-devorange-600 border border-devyellow-300 font-extrabold">
                             Live Sync

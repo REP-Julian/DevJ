@@ -177,7 +177,7 @@ export const initialPortfolioData = {
             title: 'Aura CMS & Dynamic Engine',
             category: 'Creative Full-Stack',
             description: 'A blazing-fast content management suite powering reactive portfolios with native components and zero-rebuild asset updates.',
-            technologies: 'React, Cloudflare Pages, TailwindCSS, Vite',
+            technologies: 'React, Appwrite, TailwindCSS, Vite',
             imageUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80',
             githubUrl: 'https://github.com',
             liveUrl: 'https://example.com',

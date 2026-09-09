@@ -57,7 +57,7 @@ export const SecuritySettings = () => {
             );
             setStatus({
                 type: 'success',
-                message: 'Credentials updated successfully in Firebase Cloud! You can now log in from any phone or computer with these credentials.'
+                message: 'Credentials updated successfully in Appwrite Cloud! You can now log in from any phone or computer with these credentials.'
             });
             setCurrentPassword('');
             setNewPassword('');
@@ -81,7 +81,7 @@ export const SecuritySettings = () => {
                     <div>
                         <h2 className="text-lg font-extrabold text-charcoal-900">Admin Security & Credentials</h2>
                         <p className="text-xs text-charcoal-500">
-                            Synced via Firebase Cloud. Changes apply immediately across all devices (phones, laptops, and tablets).
+                            Synced via Appwrite Cloud Auth. Changes apply immediately across all devices (phones, laptops, and tablets).
                         </p>
                     </div>
                 </div>
@@ -100,7 +100,7 @@ export const SecuritySettings = () => {
                         </p>
                     </div>
                     <span className="text-[10px] uppercase px-2.5 py-1 rounded-full bg-green-50 text-green-700 font-bold border border-green-200 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> Cloud Auth Active
+                        <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" /> Appwrite Auth Active
                     </span>
                 </div>
 
@@ -240,9 +240,9 @@ export const SecuritySettings = () => {
                     <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
                         <Globe className="w-5 h-5" />
                     </div>
-                    <h4 className="font-extrabold text-charcoal-900 text-xs uppercase tracking-wider">Cloud Firestore Persistence</h4>
+                    <h4 className="font-extrabold text-charcoal-900 text-xs uppercase tracking-wider">Appwrite Cloud Backend</h4>
                     <p className="text-xs text-charcoal-600 leading-relaxed">
-                        Credentials and portfolio content are stored in your Google Firebase Firestore cloud. When you update on desktop or phone, changes are instantly live everywhere.
+                        Credentials and portfolio content are secured in your Appwrite.io cloud backend. When you update on desktop or phone, changes are instantly live everywhere.
                     </p>
                 </div>
             </div>

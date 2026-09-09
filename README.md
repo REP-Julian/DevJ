@@ -1,6 +1,6 @@
 # 🚀 DevJ — Modern Creative AI & Full-Stack Portfolio
 
-> A high-performance, dynamic portfolio and interactive content management system built with **React**, **Vite**, **TailwindCSS**, **Google Firebase Firestore**, **Cloudinary CDN**, and **Google Gemini Multimodal AI**.
+> A high-performance, dynamic portfolio and interactive content management system built with **React**, **Vite**, **TailwindCSS**, **Appwrite.io (Auth, Storage & Databases)**, and **Google Gemini Multimodal AI**.
 
 ---
 
@@ -18,9 +18,10 @@
 - **Proactive Live Sync**: Detects newly added portfolio items in real-time and acknowledges them dynamically in chat.
 - **360° Portfolio Audit**: Evaluates portfolio completeness, impact metrics, and provides actionable recruiter-ready suggestions.
 
-### ☁️ Cloud Persistence & Storage
-- **Google Firebase Firestore**: Real-time cloud database synchronization for multi-device management.
-- **Cloudinary CDN**: High-speed image uploads with client-side WebP compression and instant CDN delivery.
+### ☁️ Appwrite.io Cloud Backend & Storage
+- **Appwrite Authentication**: Secure session-based admin authentication with protected endpoints.
+- **Appwrite Storage Buckets**: High-speed image uploads with client-side WebP compression and instant direct delivery.
+- **Appwrite Databases**: Cloud database synchronization for multi-device management.
 - **Local Fallback Engine**: Unbreakable offline cache ensures zero downtime even during network disconnects.
 
 ### 🛡️ Enterprise Security Suite
@@ -35,8 +36,8 @@
 - **Frontend**: [React 18](https://react.dev/) + [Vite](https://vitejs.dev/)
 - **Styling**: [TailwindCSS](https://tailwindcss.com/) + Custom Design Tokens
 - **Icons**: [Lucide React](https://lucide.dev/)
-- **Cloud Database**: [Google Firebase Firestore](https://firebase.google.com/)
-- **Image Storage**: [Cloudinary](https://cloudinary.com/)
+- **Backend & Auth**: [Appwrite.io](https://appwrite.io/)
+- **Image Storage**: [Appwrite Storage](https://appwrite.io/docs/products/storage)
 - **AI & Vision Engine**: [Google Gemini 3.7 & 3.6 Flash](https://ai.google.dev/) via `@google/genai`
 
 ---
@@ -48,7 +49,7 @@
    cp .env.example .env
    ```
 
-2. Open `.env` and fill in your credentials for Firebase, Cloudinary, and Google Gemini API as outlined in `.env.example`.
+2. Open `.env` and fill in your credentials for Appwrite and Google Gemini API as outlined in `.env.example`.
 
 > [!IMPORTANT]
 > Never commit your `.env` file to version control. The repository's `.gitignore` is pre-configured to strictly ignore `.env`, `.env.local`, and all environment variants.

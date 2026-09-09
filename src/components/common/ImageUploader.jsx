@@ -115,7 +115,7 @@ export const ImageUploader = ({ currentImage, onImageUploaded, label = 'Upload I
                             Drag & drop or <span className="text-devorange-600 font-semibold underline">browse</span>
                         </p>
                         <p className="text-xs text-charcoal-500 mt-1">
-                            Instant WebP & Cloudinary upload
+                            Appwrite Cloud Storage & WebP
                         </p>
                     </div>
                 )}

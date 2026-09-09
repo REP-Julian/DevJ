@@ -32,4 +32,4 @@ Simply open `src/data/portfolioData.js` or `src/components/public/HeroSection.js
 ```javascript
 avatarUrl: '/images/profile.jpg'
 ```
-When you push to GitHub, Cloudflare Pages serves these images globally at maximum speed!
+When you push to GitHub, Appwrite Sites serves these images globally at maximum speed!

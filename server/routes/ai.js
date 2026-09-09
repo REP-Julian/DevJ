@@ -362,7 +362,7 @@ Current Category: ${rawSkill.category || ''}
 
 Valid categories: "Specialized Frontier AI", "Programming Languages", "Frameworks & Libraries", "Cloud, DevOps & Databases", "Design & 3D Tools"
 
-Icon names: Brand identifiers like Gemini, ChatGPT, React, Python, JavaScript, TypeScript, Node, Docker, Firebase, Figma, etc.
+Icon names: Brand identifiers like Gemini, ChatGPT, React, Python, JavaScript, TypeScript, Node, Docker, Appwrite, Figma, etc.
 
 Return valid JSON (no markdown):
 {

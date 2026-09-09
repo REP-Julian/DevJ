@@ -1,26 +1,12 @@
 import { initialPortfolioData } from '../data/portfolioData';
-import { db, storage, auth } from './firebase';
-import {
-    doc,
-    getDoc,
-    setDoc,
-    updateDoc,
-    collection,
-    addDoc,
-    getDocs,
-    deleteDoc,
-    query,
-    orderBy
-} from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { account, databases, storage, APPWRITE_CONFIG, ID, Query } from './appwrite';
 
 const PORTFOLIO_STORAGE_KEY = 'devj_portfolio_data_v1';
 const MESSAGES_STORAGE_KEY = 'devj_contact_messages_v1';
 const AUTH_STORAGE_KEY = 'devj_admin_auth_token_v1';
 const ADMIN_PASSWORD_HASH_KEY = 'devj_admin_password_hash_v1';
 
-// Default Admin Credentials (can be changed in admin dashboard)
+// Default Admin Credentials (can be configured in admin dashboard / Appwrite Auth)
 const DEFAULT_ADMIN_EMAIL = 'admin@devj.com';
 const DEFAULT_ADMIN_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'; // sha256 for 'admin123'
 
@@ -32,7 +18,7 @@ async function sha256(message) {
     return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Utility: Local Portfolio Fallback Storage
+// Utility: Local Portfolio Storage (fast offline cache & fallback)
 const getStoredPortfolio = () => {
     try {
         const stored = localStorage.getItem(PORTFOLIO_STORAGE_KEY);
@@ -58,209 +44,249 @@ const saveStoredPortfolio = (data) => {
     }
 };
 
+// Background helper: sync portfolio modifications to Appwrite Databases
+const syncPortfolioToAppwrite = async (portfolioData) => {
+    try {
+        const docId = 'main';
+        const payload = {
+            content: JSON.stringify(portfolioData),
+            updatedAt: new Date().toISOString(),
+        };
+
+        try {
+            await databases.updateDocument(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.collections.portfolio,
+                docId,
+                payload
+            );
+        } catch (updateErr) {
+            if (updateErr.code === 404) {
+                await databases.createDocument(
+                    APPWRITE_CONFIG.databaseId,
+                    APPWRITE_CONFIG.collections.portfolio,
+                    docId,
+                    payload
+                );
+            }
+        }
+    } catch (err) {
+        // Retain silent local fallback if database collection is pending setup in Appwrite Console
+    }
+};
+
 export const api = {
-    // 1. Public Portfolio Data (Firestore with Local Cache Fallback)
+    // 1. Public Portfolio Data (Appwrite Databases with Local Cache Fallback)
     getPortfolio: async () => {
         try {
-            const portfolioDocRef = doc(db, 'portfolio', 'main');
-            const docSnap = await getDoc(portfolioDocRef);
+            const doc = await databases.getDocument(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.collections.portfolio,
+                'main'
+            );
+
             const local = getStoredPortfolio();
 
-            if (docSnap.exists()) {
-                const data = docSnap.data() || {};
-                const remoteProfile = data.profile || {};
-                const local = getStoredPortfolio();
+            if (doc && doc.content) {
+                let remoteData = {};
+                try {
+                    remoteData = JSON.parse(doc.content);
+                } catch {
+                    remoteData = doc;
+                }
+
+                const remoteProfile = remoteData.profile || {};
                 const localTime = Number(local.profile?.updatedAt || 0);
                 const remoteTime = Number(remoteProfile.updatedAt || 0);
 
-                // Remote Firestore data is the source of truth across all devices/browsers
                 const mergedProfile = {
                     ...initialPortfolioData.profile,
                     ...remoteProfile,
                 };
 
-                // Only if the local device has a strictly newer admin modification, apply it
                 if (localTime > remoteTime && localTime > 0) {
                     Object.assign(mergedProfile, local.profile || {});
                 }
 
-                // Ensure real uploaded portraits from Firestore are ALWAYS preserved over defaults
+                // Preserve uploaded portraits from Appwrite Storage over defaults
                 if (remoteProfile.avatarUrl) mergedProfile.avatarUrl = remoteProfile.avatarUrl;
                 if (remoteProfile.avatarUrl2) mergedProfile.avatarUrl2 = remoteProfile.avatarUrl2;
                 if (remoteProfile.avatarUrl3) mergedProfile.avatarUrl3 = remoteProfile.avatarUrl3;
 
-                // Never let obsolete placeholder 'contact@devj.com' overwrite the user's custom email
+                // Protect email from obsolete placeholder
                 if (mergedProfile.email === 'contact@devj.com' || !mergedProfile.email) {
                     mergedProfile.email = (local.profile?.email && local.profile.email !== 'contact@devj.com')
                         ? local.profile.email
                         : (remoteProfile.email && remoteProfile.email !== 'contact@devj.com' ? remoteProfile.email : 'agustino.julian@outlook.ph');
                 }
 
-                // Guarantee QR codes saved in local or Firestore are preserved and never erased
+                // Guarantee QR codes saved in local or Appwrite are preserved
                 ['githubQrUrl', 'facebookQrUrl', 'instagramQrUrl', 'telegramQrUrl', 'whatsappQrUrl'].forEach((k) => {
                     mergedProfile[k] = remoteProfile[k] || local.profile?.[k] || '';
                 });
 
                 const merged = {
                     ...initialPortfolioData,
-                    ...data,
+                    ...remoteData,
                     profile: mergedProfile,
-                    skills: (data.skills && data.skills.length > 0) ? data.skills : (local.skills || initialPortfolioData.skills || []),
-                    achievements: (data.achievements && data.achievements.length > 0) ? data.achievements : (local.achievements || initialPortfolioData.achievements || []),
-                    projects: (data.projects && data.projects.length > 0) ? data.projects : (local.projects || initialPortfolioData.projects || []),
-                    hobbies: (data.hobbies && data.hobbies.length > 0) ? data.hobbies : (local.hobbies || initialPortfolioData.hobbies || [])
+                    skills: (remoteData.skills && remoteData.skills.length > 0) ? remoteData.skills : (local.skills || initialPortfolioData.skills || []),
+                    achievements: (remoteData.achievements && remoteData.achievements.length > 0) ? remoteData.achievements : (local.achievements || initialPortfolioData.achievements || []),
+                    projects: (remoteData.projects && remoteData.projects.length > 0) ? remoteData.projects : (local.projects || initialPortfolioData.projects || []),
+                    hobbies: (remoteData.hobbies && remoteData.hobbies.length > 0) ? remoteData.hobbies : (local.hobbies || initialPortfolioData.hobbies || [])
                 };
+
                 saveStoredPortfolio(merged);
                 return merged;
-            } else {
-                // Initialize Firestore with default portfolio data on first run
-                await setDoc(portfolioDocRef, initialPortfolioData);
-                saveStoredPortfolio(initialPortfolioData);
-                return initialPortfolioData;
             }
         } catch (error) {
-            console.warn('Firestore load failed, using local cache:', error);
-            return getStoredPortfolio();
+            // If Appwrite database collection isn't created yet or network offline, use local storage seamlessly
         }
+
+        return getStoredPortfolio();
     },
 
-    // 2. Authentication (Backed by Firebase Firestore Cloud for multi-device login: phone & desktop)
+    // 2. Authentication (Appwrite Auth Account Service)
     getAdminInfo: async () => {
         try {
-            const adminDoc = await getDoc(doc(db, 'system', 'admin_auth'));
-            if (adminDoc.exists()) {
-                return { email: adminDoc.data().email };
+            const user = await account.get();
+            if (user && user.email) {
+                return { email: user.email, name: user.name, id: user.$id };
             }
         } catch (e) {
-            console.warn('Firestore getAdminInfo notice:', e);
+            // Not logged in or session expired
         }
-        return { email: localStorage.getItem('devj_admin_email') || 'admin@devj.com' };
+        return { email: localStorage.getItem('devj_admin_email') || DEFAULT_ADMIN_EMAIL };
     },
 
     login: async (email, password) => {
         const cleanEmail = email.trim().toLowerCase();
-        const inputHash = await sha256(password);
 
-        // 1. Try Firebase Auth (if enabled)
+        // 1. Authenticate with Appwrite Auth
         try {
-            const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            const token = await userCredential.user.getIdToken();
-            localStorage.setItem(AUTH_STORAGE_KEY, token);
-            localStorage.setItem('devj_admin_email', userCredential.user.email);
-            return { email: userCredential.user.email, token };
-        } catch (firebaseErr) {
-            // Continue to Firestore Cloud Auth
-        }
+            // Delete any stale existing session first
+            try {
+                await account.deleteSession('current');
+            } catch {
+                // Ignore if no existing session
+            }
 
-        // 2. Try Firestore Cloud Credentials
-        try {
-            const adminDocRef = doc(db, 'system', 'admin_auth');
-            const adminSnap = await getDoc(adminDocRef);
-
-            if (adminSnap.exists()) {
-                const cloudData = adminSnap.data();
-                if (
-                    cleanEmail === cloudData.email.toLowerCase() &&
-                    inputHash === cloudData.passwordHash
-                ) {
-                    const token = `token_${Date.now()}_${Math.random().toString(36).substring(2)}`;
-                    localStorage.setItem(AUTH_STORAGE_KEY, token);
-                    localStorage.setItem('devj_admin_email', cloudData.email);
-                    return { email: cloudData.email, token };
-                }
-                throw new Error('Invalid email or password. Please verify your admin credentials.');
+            let session;
+            if (typeof account.createEmailPasswordSession === 'function') {
+                session = await account.createEmailPasswordSession(cleanEmail, password);
+            } else if (typeof account.createEmailSession === 'function') {
+                session = await account.createEmailSession(cleanEmail, password);
             } else {
-                // Initial bootstrap: allow initial login and persist to Firestore Cloud
-                const initialEmail = 'admin@devj.com';
-                const initialHash = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'; // sha256 for admin123
+                session = await account.createSession(cleanEmail, password);
+            }
 
-                if (
-                    (cleanEmail === initialEmail || cleanEmail === 'admin@devj.com') &&
-                    (inputHash === initialHash || password === 'admin123' || password === 'admin')
-                ) {
-                    await setDoc(adminDocRef, {
-                        email: initialEmail,
-                        passwordHash: initialHash,
-                        createdAt: new Date().toISOString()
-                    });
-                    const token = `token_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+            const user = await account.get();
+            const token = session.$id || `appwrite_${Date.now()}`;
+            localStorage.setItem(AUTH_STORAGE_KEY, token);
+            localStorage.setItem('devj_admin_email', user.email);
+
+            return { email: user.email, token, user };
+        } catch (appwriteErr) {
+            console.warn('Appwrite Auth attempt notice:', appwriteErr);
+
+            // Handle invalid credentials error from Appwrite
+            if (appwriteErr.code === 401 || (appwriteErr.message && appwriteErr.message.toLowerCase().includes('invalid credential'))) {
+                throw new Error('Invalid email or password. Please verify your Appwrite admin credentials.');
+            }
+
+            // If user not found in Appwrite Auth on first setup, attempt initial account bootstrap
+            if (appwriteErr.code === 404 || (appwriteErr.message && appwriteErr.message.toLowerCase().includes('not found'))) {
+                try {
+                    await account.create(ID.unique(), cleanEmail, password, 'DevJ Admin');
+                    const newSession = typeof account.createEmailPasswordSession === 'function'
+                        ? await account.createEmailPasswordSession(cleanEmail, password)
+                        : await account.createEmailSession(cleanEmail, password);
+                    const newUser = await account.get();
+                    const token = newSession.$id || `appwrite_${Date.now()}`;
                     localStorage.setItem(AUTH_STORAGE_KEY, token);
-                    localStorage.setItem('devj_admin_email', initialEmail);
-                    return { email: initialEmail, token };
+                    localStorage.setItem('devj_admin_email', newUser.email);
+                    return { email: newUser.email, token, user: newUser };
+                } catch (regErr) {
+                    console.warn('Appwrite auto-bootstrap note:', regErr);
                 }
             }
-        } catch (err) {
-            if (err.message && err.message.includes('Invalid email or password')) {
-                throw err;
+
+            // Fallback for local offline development / initial admin credentials
+            const inputHash = await sha256(password);
+            const storedHash = localStorage.getItem(ADMIN_PASSWORD_HASH_KEY) || DEFAULT_ADMIN_HASH;
+            const storedEmail = localStorage.getItem('devj_admin_email') || DEFAULT_ADMIN_EMAIL;
+
+            if (
+                (cleanEmail === storedEmail.toLowerCase() || cleanEmail === DEFAULT_ADMIN_EMAIL) &&
+                (inputHash === storedHash || password === 'admin123' || password === 'admin')
+            ) {
+                const token = `appwrite_local_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+                localStorage.setItem(AUTH_STORAGE_KEY, token);
+                localStorage.setItem('devj_admin_email', cleanEmail);
+                return { email: cleanEmail, token };
             }
-            console.warn('Firestore cloud auth notice:', err);
-        }
 
-        // 3. Fallback to local cache if offline
-        const storedHash = localStorage.getItem(ADMIN_PASSWORD_HASH_KEY);
-        const storedEmail = localStorage.getItem('devj_admin_email');
-        if (storedHash && storedEmail && cleanEmail === storedEmail.toLowerCase() && inputHash === storedHash) {
-            const token = `token_${Date.now()}_${Math.random().toString(36).substring(2)}`;
-            localStorage.setItem(AUTH_STORAGE_KEY, token);
-            return { email: storedEmail, token };
+            throw new Error(appwriteErr.message || 'Invalid email or password. Please check your credentials.');
         }
-
-        throw new Error('Invalid email or password. Please check your credentials.');
     },
 
     verifyToken: async () => {
-        if (auth.currentUser) return true;
+        try {
+            const user = await account.get();
+            if (user && user.$id) return true;
+        } catch {
+            // Appwrite session inactive
+        }
+
+        // Check local token fallback
         const token = localStorage.getItem(AUTH_STORAGE_KEY);
-        return Boolean(token && (token.startsWith('token_') || token.length > 20));
+        return Boolean(token && (token.startsWith('appwrite_') || token.length > 15));
     },
 
     logout: async () => {
         try {
-            await signOut(auth);
+            await account.deleteSession('current');
         } catch (e) {
-            console.warn('Signout note:', e);
+            console.warn('Appwrite logout note:', e);
         }
         localStorage.removeItem(AUTH_STORAGE_KEY);
     },
 
     changePassword: async (oldPassword, newPassword, newEmail) => {
-        const oldHash = await sha256(oldPassword);
-        const newHash = await sha256(newPassword);
-        const cleanEmail = (newEmail || 'admin@devj.com').trim().toLowerCase();
+        const cleanEmail = (newEmail || '').trim().toLowerCase();
+        let updatedInAppwrite = false;
 
-        // 1. Verify against Firestore Cloud
-        const adminDocRef = doc(db, 'system', 'admin_auth');
-        const adminSnap = await getDoc(adminDocRef);
-
-        let verified = false;
-        if (adminSnap.exists()) {
-            const data = adminSnap.data();
-            if (oldHash === data.passwordHash || oldPassword === 'admin123' || oldPassword === 'admin') {
-                verified = true;
+        // 1. Update in Appwrite Auth
+        try {
+            if (newPassword && newPassword.trim()) {
+                await account.updatePassword(newPassword, oldPassword);
+                updatedInAppwrite = true;
             }
-        } else {
-            const defaultHash = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918';
-            if (oldHash === defaultHash || oldPassword === 'admin123' || oldPassword === 'admin') {
-                verified = true;
+            if (cleanEmail) {
+                const current = await account.get();
+                if (current.email.toLowerCase() !== cleanEmail) {
+                    await account.updateEmail(cleanEmail, newPassword || oldPassword);
+                    updatedInAppwrite = true;
+                }
+            }
+        } catch (err) {
+            console.warn('Appwrite account update notice:', err);
+            const oldHash = await sha256(oldPassword);
+            const storedHash = localStorage.getItem(ADMIN_PASSWORD_HASH_KEY) || DEFAULT_ADMIN_HASH;
+            if (oldHash !== storedHash && oldPassword !== 'admin123' && oldPassword !== 'admin') {
+                throw new Error(err.message || 'Current password is incorrect.');
             }
         }
 
-        if (!verified) {
-            throw new Error('Current password is incorrect.');
+        // 2. Update local cache
+        if (newPassword) {
+            const newHash = await sha256(newPassword);
+            localStorage.setItem(ADMIN_PASSWORD_HASH_KEY, newHash);
+        }
+        if (cleanEmail) {
+            localStorage.setItem('devj_admin_email', cleanEmail);
         }
 
-        // 2. Save custom credentials to Firebase Firestore Cloud
-        await setDoc(adminDocRef, {
-            email: cleanEmail,
-            passwordHash: newHash,
-            updatedAt: new Date().toISOString()
-        }, { merge: true });
-
-        // 3. Update local cache
-        localStorage.setItem(ADMIN_PASSWORD_HASH_KEY, newHash);
-        localStorage.setItem('devj_admin_email', cleanEmail);
-
-        return { success: true, email: cleanEmail };
+        return { success: true, email: cleanEmail || localStorage.getItem('devj_admin_email'), updatedInAppwrite };
     },
 
     // 3. Profile Management
@@ -273,16 +299,7 @@ export const api = {
             updatedAt: Date.now()
         };
         saveStoredPortfolio(current);
-
-        try {
-            const portfolioDocRef = doc(db, 'portfolio', 'main');
-            // Clean undefined values to prevent Firestore rejection
-            const cleanProfile = JSON.parse(JSON.stringify(current.profile));
-            await setDoc(portfolioDocRef, { profile: cleanProfile }, { merge: true });
-        } catch (err) {
-            console.warn('Firestore sync failed, saved locally:', err);
-        }
-
+        await syncPortfolioToAppwrite(current);
         return current.profile;
     },
 
@@ -296,14 +313,7 @@ export const api = {
         };
         current.skills.push(newSkill);
         saveStoredPortfolio(current);
-
-        try {
-            const portfolioDocRef = doc(db, 'portfolio', 'main');
-            await setDoc(portfolioDocRef, { skills: current.skills }, { merge: true });
-        } catch (err) {
-            console.warn('Firestore sync failed, saved locally:', err);
-        }
-
+        await syncPortfolioToAppwrite(current);
         return newSkill;
     },
 
@@ -311,14 +321,7 @@ export const api = {
         const current = getStoredPortfolio();
         current.skills = current.skills.map((s) => (s.id === id ? { ...s, ...skill } : s));
         saveStoredPortfolio(current);
-
-        try {
-            const portfolioDocRef = doc(db, 'portfolio', 'main');
-            await setDoc(portfolioDocRef, { skills: current.skills }, { merge: true });
-        } catch (err) {
-            console.warn('Firestore sync failed, saved locally:', err);
-        }
-
+        await syncPortfolioToAppwrite(current);
         return skill;
     },
 
@@ -326,14 +329,7 @@ export const api = {
         const current = getStoredPortfolio();
         current.skills = current.skills.filter((s) => s.id !== id);
         saveStoredPortfolio(current);
-
-        try {
-            const portfolioDocRef = doc(db, 'portfolio', 'main');
-            await setDoc(portfolioDocRef, { skills: current.skills }, { merge: true });
-        } catch (err) {
-            console.warn('Firestore sync failed, saved locally:', err);
-        }
-
+        await syncPortfolioToAppwrite(current);
         return true;
     },
 
@@ -347,14 +343,7 @@ export const api = {
         };
         current.achievements.push(newAch);
         saveStoredPortfolio(current);
-
-        try {
-            const portfolioDocRef = doc(db, 'portfolio', 'main');
-            await setDoc(portfolioDocRef, { achievements: current.achievements }, { merge: true });
-        } catch (err) {
-            console.warn('Firestore sync failed, saved locally:', err);
-        }
-
+        await syncPortfolioToAppwrite(current);
         return newAch;
     },
 
@@ -362,14 +351,7 @@ export const api = {
         const current = getStoredPortfolio();
         current.achievements = current.achievements.map((a) => (a.id === id ? { ...a, ...data } : a));
         saveStoredPortfolio(current);
-
-        try {
-            const portfolioDocRef = doc(db, 'portfolio', 'main');
-            await setDoc(portfolioDocRef, { achievements: current.achievements }, { merge: true });
-        } catch (err) {
-            console.warn('Firestore sync failed, saved locally:', err);
-        }
-
+        await syncPortfolioToAppwrite(current);
         return data;
     },
 
@@ -377,14 +359,7 @@ export const api = {
         const current = getStoredPortfolio();
         current.achievements = current.achievements.filter((a) => a.id !== id);
         saveStoredPortfolio(current);
-
-        try {
-            const portfolioDocRef = doc(db, 'portfolio', 'main');
-            await setDoc(portfolioDocRef, { achievements: current.achievements }, { merge: true });
-        } catch (err) {
-            console.warn('Firestore sync failed, saved locally:', err);
-        }
-
+        await syncPortfolioToAppwrite(current);
         return true;
     },
 
@@ -398,14 +373,7 @@ export const api = {
         };
         current.projects.push(newProj);
         saveStoredPortfolio(current);
-
-        try {
-            const portfolioDocRef = doc(db, 'portfolio', 'main');
-            await setDoc(portfolioDocRef, { projects: current.projects }, { merge: true });
-        } catch (err) {
-            console.warn('Firestore sync failed, saved locally:', err);
-        }
-
+        await syncPortfolioToAppwrite(current);
         return newProj;
     },
 
@@ -413,14 +381,7 @@ export const api = {
         const current = getStoredPortfolio();
         current.projects = current.projects.map((p) => (p.id === id ? { ...p, ...data } : p));
         saveStoredPortfolio(current);
-
-        try {
-            const portfolioDocRef = doc(db, 'portfolio', 'main');
-            await setDoc(portfolioDocRef, { projects: current.projects }, { merge: true });
-        } catch (err) {
-            console.warn('Firestore sync failed, saved locally:', err);
-        }
-
+        await syncPortfolioToAppwrite(current);
         return data;
     },
 
@@ -428,14 +389,7 @@ export const api = {
         const current = getStoredPortfolio();
         current.projects = current.projects.filter((p) => p.id !== id);
         saveStoredPortfolio(current);
-
-        try {
-            const portfolioDocRef = doc(db, 'portfolio', 'main');
-            await setDoc(portfolioDocRef, { projects: current.projects }, { merge: true });
-        } catch (err) {
-            console.warn('Firestore sync failed, saved locally:', err);
-        }
-
+        await syncPortfolioToAppwrite(current);
         return true;
     },
 
@@ -449,14 +403,7 @@ export const api = {
         };
         current.hobbies.push(newHobby);
         saveStoredPortfolio(current);
-
-        try {
-            const portfolioDocRef = doc(db, 'portfolio', 'main');
-            await setDoc(portfolioDocRef, { hobbies: current.hobbies }, { merge: true });
-        } catch (err) {
-            console.warn('Firestore sync failed, saved locally:', err);
-        }
-
+        await syncPortfolioToAppwrite(current);
         return newHobby;
     },
 
@@ -464,14 +411,7 @@ export const api = {
         const current = getStoredPortfolio();
         current.hobbies = current.hobbies.map((h) => (h.id === id ? { ...h, ...data } : h));
         saveStoredPortfolio(current);
-
-        try {
-            const portfolioDocRef = doc(db, 'portfolio', 'main');
-            await setDoc(portfolioDocRef, { hobbies: current.hobbies }, { merge: true });
-        } catch (err) {
-            console.warn('Firestore sync failed, saved locally:', err);
-        }
-
+        await syncPortfolioToAppwrite(current);
         return data;
     },
 
@@ -479,14 +419,7 @@ export const api = {
         const current = getStoredPortfolio();
         current.hobbies = current.hobbies.filter((h) => h.id !== id);
         saveStoredPortfolio(current);
-
-        try {
-            const portfolioDocRef = doc(db, 'portfolio', 'main');
-            await setDoc(portfolioDocRef, { hobbies: current.hobbies }, { merge: true });
-        } catch (err) {
-            console.warn('Firestore sync failed, saved locally:', err);
-        }
-
+        await syncPortfolioToAppwrite(current);
         return true;
     },
 
@@ -497,12 +430,16 @@ export const api = {
             createdAt: new Date().toISOString(),
         };
 
-        // 1. Save to Firestore messages collection
+        // 1. Save to Appwrite Databases
         try {
-            const docRef = await addDoc(collection(db, 'messages'), newMsg);
-            newMsg.id = docRef.id;
+            const doc = await databases.createDocument(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.collections.messages,
+                ID.unique(),
+                newMsg
+            );
+            newMsg.id = doc.$id;
         } catch (err) {
-            console.warn('Firestore message save note:', err);
             newMsg.id = String(Date.now());
         }
 
@@ -516,27 +453,38 @@ export const api = {
 
     getMessages: async () => {
         try {
-            const q = query(collection(db, 'messages'), orderBy('createdAt', 'desc'));
-            const querySnapshot = await getDocs(q);
-            const messages = [];
-            querySnapshot.forEach((doc) => {
-                messages.push({ id: doc.id, ...doc.data() });
-            });
-            if (messages.length > 0) {
+            const res = await databases.listDocuments(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.collections.messages,
+                [Query.orderDesc('$createdAt'), Query.limit(50)]
+            );
+            if (res.documents && res.documents.length > 0) {
+                const messages = res.documents.map((doc) => ({
+                    id: doc.$id,
+                    name: doc.name,
+                    email: doc.email,
+                    subject: doc.subject,
+                    message: doc.message,
+                    createdAt: doc.createdAt || doc.$createdAt
+                }));
                 localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(messages));
                 return messages;
             }
         } catch (err) {
-            console.warn('Firestore fetch messages notice:', err);
+            // Use local fallback
         }
         return JSON.parse(localStorage.getItem(MESSAGES_STORAGE_KEY) || '[]');
     },
 
     deleteMessage: async (id) => {
         try {
-            await deleteDoc(doc(db, 'messages', id));
+            await databases.deleteDocument(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.collections.messages,
+                id
+            );
         } catch (err) {
-            console.warn('Firestore delete message notice:', err);
+            // Silent fallback
         }
         const stored = JSON.parse(localStorage.getItem(MESSAGES_STORAGE_KEY) || '[]');
         const filtered = stored.filter((m) => m.id !== id);
@@ -544,11 +492,11 @@ export const api = {
         return true;
     },
 
-    // 9. High-Speed Cloudinary Image Uploader (< 1s upload with instant WebP fallback)
+    // 9. Appwrite Storage Image Uploader with client-side WebP compression
     uploadImage: async (file) => {
         if (!file) throw new Error('No file provided');
 
-        // Step 1: Pre-compress image client-side to lightweight WebP (takes ~20ms)
+        // Step 1: Client-side compression to lightweight WebP
         const compressed = await new Promise((resolve) => {
             const reader = new FileReader();
             reader.onload = (e) => {
@@ -556,7 +504,7 @@ export const api = {
                 img.onload = () => {
                     const canvas = document.createElement('canvas');
                     let { width, height } = img;
-                    const maxDim = 900;
+                    const maxDim = 1200;
                     if (width > maxDim || height > maxDim) {
                         if (width > height) {
                             height = Math.round((height * maxDim) / width);
@@ -571,53 +519,45 @@ export const api = {
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    const dataUrl = canvas.toDataURL('image/webp', 0.8);
+                    const dataUrl = canvas.toDataURL('image/webp', 0.85);
                     canvas.toBlob((blob) => {
-                        resolve({ blob: blob || file, dataUrl });
-                    }, 'image/webp', 0.8);
+                        const fileBlob = blob || file;
+                        const fileName = (file.name || 'image').replace(/\.[^/.]+$/, '') + '.webp';
+                        const optimizedFile = new File([fileBlob], fileName, { type: 'image/webp' });
+                        resolve({ file: optimizedFile, dataUrl });
+                    }, 'image/webp', 0.85);
                 };
-                img.onerror = () => resolve({ blob: file, dataUrl: e.target.result });
+                img.onerror = () => resolve({ file, dataUrl: e.target.result });
                 img.src = e.target.result;
             };
-            reader.onerror = () => resolve({ blob: file, dataUrl: null });
+            reader.onerror = () => resolve({ file, dataUrl: null });
             reader.readAsDataURL(file);
         });
 
-        const cloudName = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME || 'zfiwn2bt';
-        const uploadPreset = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET || 'devj_preset';
+        // Step 2: Upload to Appwrite Storage Bucket
+        try {
+            const fileToUpload = compressed.file || file;
+            const fileId = ID.unique();
+            const result = await storage.createFile(
+                APPWRITE_CONFIG.bucketId,
+                fileId,
+                fileToUpload
+            );
 
-        // Step 2: Upload to Cloudinary with 8s timeout (unsigned preset)
-        if (cloudName && uploadPreset && compressed.blob) {
-            try {
-                const formData = new FormData();
-                formData.append('file', compressed.blob, 'image.webp');
-                formData.append('upload_preset', uploadPreset);
-
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-                const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-                    method: 'POST',
-                    body: formData,
-                    signal: controller.signal,
-                });
-                clearTimeout(timeoutId);
-
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.secure_url) {
-                        return data.secure_url;
-                    }
-                } else {
-                    const errData = await response.json().catch(() => ({}));
-                    console.warn('Cloudinary upload warning:', errData);
-                }
-            } catch (err) {
-                console.warn('Cloudinary network / timeout fallback:', err.message);
+            if (result && result.$id) {
+                // Generate public Appwrite file view URL
+                const viewUrl = storage.getFileView(APPWRITE_CONFIG.bucketId, result.$id);
+                return typeof viewUrl === 'string' ? viewUrl : viewUrl.toString();
             }
+        } catch (appwriteStorageErr) {
+            console.warn(
+                'Appwrite Storage upload notice:',
+                appwriteStorageErr.message,
+                '(Check Appwrite Console > Storage to ensure bucket "' + APPWRITE_CONFIG.bucketId + '" exists and has read permissions for Any)'
+            );
         }
 
-        // Step 3: Instant Fallback to high quality compressed WebP URL
+        // Step 3: Resilient fallback to high quality compressed WebP data URL
         return compressed.dataUrl;
     },
 };
