@@ -2,7 +2,7 @@ export const initialPortfolioData = {
     profile: {
         name: 'Julian Agustino',
         tagline: 'Full-Stack Developer & AI Systems Integrator',
-        description: 'Building full-stack web applications with React, Node.js, and Appwrite, integrated with LLM endpoints and custom REST APIs.',
+        description: 'Building resilient full-stack web applications with React, Node.js, and Appwrite—engineering clean API architectures, responsive interfaces, and production-grade LLM integrations.',
         avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
         avatarUrl2: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80',
         avatarUrl3: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80',

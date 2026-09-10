@@ -135,7 +135,7 @@ export const HeroSection = ({ profile }) => {
 
                     <p className="text-base sm:text-lg text-charcoal-500 max-w-xl font-normal leading-relaxed">
                         {profile?.description ||
-                            'Building full-stack web applications with React, Node.js, and Appwrite, integrated with LLM endpoints and custom REST APIs.'}
+                            'Building resilient full-stack web applications with React, Node.js, and Appwrite—engineering clean API architectures, responsive interfaces, and production-grade LLM integrations.'}
                     </p>
 
                     <div className="pt-2 flex flex-wrap items-center gap-3 sm:gap-4">

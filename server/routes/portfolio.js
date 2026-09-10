@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
             profile: profile || {
                 name: 'Julian Agustino',
                 tagline: 'Full-Stack Developer & AI Systems Integrator',
-                description: 'Building full-stack web applications with React, Node.js, and Appwrite, integrated with LLM endpoints and custom REST APIs.',
+                description: 'Building resilient full-stack web applications with React, Node.js, and Appwrite—engineering clean API architectures, responsive interfaces, and production-grade LLM integrations.',
                 avatarUrl: '',
                 email: 'contact@devj.com',
                 githubUrl: 'https://github.com/REP-Julian',

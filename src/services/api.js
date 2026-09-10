@@ -18,12 +18,39 @@ async function sha256(message) {
     return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-// Utility: Local Portfolio Storage (fast offline cache & fallback)
 const getStoredPortfolio = () => {
     try {
         const stored = localStorage.getItem(PORTFOLIO_STORAGE_KEY);
         if (stored) {
             const parsed = JSON.parse(stored);
+            let updated = false;
+
+            // Automatically purge legacy buzzwords from stale local storage
+            if (
+                parsed.profile?.tagline?.includes('Vibe Developer') ||
+                parsed.profile?.tagline?.includes('Enthusiast')
+            ) {
+                if (!parsed.profile) parsed.profile = {};
+                parsed.profile.tagline = initialPortfolioData.profile.tagline;
+                updated = true;
+            }
+            if (
+                parsed.profile?.description?.includes('possibilities of artificial intelligence') ||
+                parsed.profile?.description?.includes('turning ideas into interactive') ||
+                parsed.profile?.description?.includes('custom REST APIs')
+            ) {
+                if (!parsed.profile) parsed.profile = {};
+                parsed.profile.description = initialPortfolioData.profile.description;
+                updated = true;
+            }
+
+            if (updated) {
+                saveStoredPortfolio({
+                    ...initialPortfolioData,
+                    ...parsed,
+                });
+            }
+
             return {
                 ...initialPortfolioData,
                 ...parsed,
@@ -124,6 +151,21 @@ export const api = {
                 ['githubQrUrl', 'facebookQrUrl', 'instagramQrUrl', 'telegramQrUrl', 'whatsappQrUrl'].forEach((k) => {
                     mergedProfile[k] = remoteProfile[k] || local.profile?.[k] || '';
                 });
+
+                // Sanitize legacy buzzwords if saved in remote document or stale profile
+                if (
+                    mergedProfile.tagline?.includes('Vibe Developer') ||
+                    mergedProfile.tagline?.includes('Enthusiast')
+                ) {
+                    mergedProfile.tagline = initialPortfolioData.profile.tagline;
+                }
+                if (
+                    mergedProfile.description?.includes('possibilities of artificial intelligence') ||
+                    mergedProfile.description?.includes('turning ideas into interactive') ||
+                    mergedProfile.description?.includes('custom REST APIs')
+                ) {
+                    mergedProfile.description = initialPortfolioData.profile.description;
+                }
 
                 const merged = {
                     ...initialPortfolioData,
