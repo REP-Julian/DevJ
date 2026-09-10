@@ -7,8 +7,8 @@ export const PortfolioProvider = ({ children }) => {
     const [portfolio, setPortfolio] = useState({
         profile: {
             name: 'Julian Agustino',
-            tagline: 'Artificial Intelligence Enthusiast, Vibe Developer and Creative Developer',
-            description: 'I love turning ideas into interactive experiences and exploring the possibilities of artificial intelligence through creative development.',
+            tagline: 'Full-Stack Developer & AI Systems Integrator',
+            description: 'Building full-stack web applications with React, Node.js, and Appwrite, integrated with LLM endpoints and custom REST APIs.',
             avatarUrl: '',
             email: 'agustino.julian@outlook.ph',
             githubUrl: 'https://github.com',

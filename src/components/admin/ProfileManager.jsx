@@ -7,7 +7,7 @@ import { Save, CheckCircle2, AlertCircle, Loader2, Sparkles, QrCode, Trash2, Eye
 export const ProfileManager = ({ profile, onUpdated }) => {
     const [formData, setFormData] = useState({
         name: profile?.name || '',
-        tagline: profile?.tagline || 'Artificial Intelligence Enthusiast, Vibe Developer and Creative Developer',
+        tagline: profile?.tagline || 'Full-Stack Developer & AI Systems Integrator',
         description: profile?.description || '',
         avatarUrl: profile?.avatarUrl || '',
         avatarUrl2: profile?.avatarUrl2 || '',

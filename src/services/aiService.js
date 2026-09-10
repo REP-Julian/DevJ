@@ -1044,12 +1044,12 @@ Automatically failovers if any provider hits rate limits or network issues.`;
 
     getFallbackBio(currentProfile) {
         return {
-            tagline: 'AI Engineer & Creative Technologist crafting high-velocity digital experiences',
-            description: 'Passionate about engineering frontier artificial intelligence systems, responsive web architectures, and intuitive digital interfaces that bridge human creativity and computational power.',
+            tagline: 'Full-Stack Developer & AI Systems Integrator',
+            description: 'Building full-stack web applications with React, Node.js, and Appwrite, integrated with LLM endpoints and custom REST APIs.',
             highlights: [
-                'Specialized in Generative AI and LLM Agent Workflows',
-                'Full-Stack modern React, Node.js & Cloud Edge architecture',
-                'Immersive 3D UI and micro-interactive design'
+                'LLM Endpoint Integration & Multi-Provider Failover Architectures',
+                'Full-Stack React, Node.js, and Relational & Cloud Database Architecture',
+                'Production RESTful Services & Real-Time SSE Streaming'
             ]
         };
     },
@@ -1086,8 +1086,8 @@ I would love to connect and discuss how we can collaborate. Could you share a bi
 Looking forward to hearing from you!
 
 Best regards,
-DevJ (Julian Agustino)
-AI Enthusiast & Creative Developer`;
+Julian Agustino
+Full-Stack Developer & AI Systems Integrator`;
     },
 
     getFallbackAudit() {

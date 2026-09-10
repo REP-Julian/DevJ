@@ -57,25 +57,18 @@ export const Navbar = () => {
                     ))}
                 </nav>
 
-                {/* Header CTA & Admin Link */}
+                {/* Header CTA & Admin Link (Only visible when authenticated) */}
                 <div className="hidden md:flex items-center gap-2 lg:gap-3">
-                    <Link
-                        to={isAuthenticated ? '/admin' : '/login'}
-                        className="flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 text-xs font-semibold rounded-lg border border-gray-200 text-charcoal-800 hover:border-devorange-400 hover:text-devorange-600 bg-white shadow-sm transition-all"
-                        title={isAuthenticated ? 'Admin Dashboard' : 'Admin Login'}
-                    >
-                        {isAuthenticated ? (
-                            <>
-                                <UserCheck className="w-3.5 h-3.5 text-devorange-600" />
-                                <span>Dashboard</span>
-                            </>
-                        ) : (
-                            <>
-                                <ShieldCheck className="w-3.5 h-3.5 text-charcoal-500" />
-                                <span>Admin</span>
-                            </>
-                        )}
-                    </Link>
+                    {isAuthenticated && (
+                        <Link
+                            to="/admin"
+                            className="flex items-center gap-1.5 px-2.5 lg:px-3 py-1.5 text-xs font-semibold rounded-lg border border-devorange-300 text-devorange-700 bg-devyellow-50/50 shadow-sm transition-all"
+                            title="Admin Dashboard"
+                        >
+                            <UserCheck className="w-3.5 h-3.5 text-devorange-600" />
+                            <span>Dashboard</span>
+                        </Link>
+                    )}
                     <a
                         href="#contact"
                         className="px-3 lg:px-4 py-2 text-xs font-bold uppercase tracking-wider bg-gradient-to-r from-devyellow-400 via-devorange-400 to-devorange-500 text-charcoal-900 rounded-lg hover:shadow-warm-md hover:scale-102 active:scale-98 transition-all flex items-center gap-1"
@@ -108,13 +101,15 @@ export const Navbar = () => {
                         </a>
                     ))}
                     <div className="pt-2 flex flex-col gap-2">
-                        <Link
-                            to={isAuthenticated ? '/admin' : '/login'}
-                            onClick={() => setMobileMenuOpen(false)}
-                            className="w-full py-2.5 text-center text-sm font-semibold rounded-xl border border-gray-200 text-charcoal-800 bg-white"
-                        >
-                            {isAuthenticated ? 'Admin Dashboard' : 'Admin Login'}
-                        </Link>
+                        {isAuthenticated && (
+                            <Link
+                                to="/admin"
+                                onClick={() => setMobileMenuOpen(false)}
+                                className="w-full py-2.5 text-center text-sm font-semibold rounded-xl border border-devorange-200 text-devorange-700 bg-devyellow-50"
+                            >
+                                Admin Dashboard
+                            </Link>
+                        )}
                         <a
                             href="#contact"
                             onClick={() => setMobileMenuOpen(false)}

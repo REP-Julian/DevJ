@@ -110,14 +110,14 @@ export const HeroSection = ({ profile }) => {
                 <div className="lg:col-span-7 space-y-6 text-left">
                     <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-devyellow-300 shadow-warm-sm text-xs font-bold text-devorange-600 uppercase tracking-wider">
                         <Sparkles className="w-3.5 h-3.5 text-devyellow-500 fill-devyellow-400" />
-                        <span>AI Enthusiast & Creative Developer</span>
+                        <span>Full-Stack Developer & AI Systems Integrator</span>
                     </div>
 
                     <div className="space-y-2">
                         <div className="flex items-center gap-3">
                             <span className="font-extrabold text-2xl text-devorange-600">DV</span>
                             <span className="text-sm font-semibold tracking-widest uppercase text-charcoal-500">
-                                / {profile?.name || 'DevJ'}
+                                / {profile?.name || 'Julian Agustino'}
                             </span>
                         </div>
                         <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-charcoal-900 tracking-tight leading-[1.1]">
@@ -130,12 +130,12 @@ export const HeroSection = ({ profile }) => {
 
                     <p className="text-xl sm:text-2xl font-bold text-charcoal-800 leading-snug">
                         {profile?.tagline ||
-                            'Artificial Intelligence Enthusiast, Vibe Developer and Creative Developer'}
+                            'Full-Stack Developer & AI Systems Integrator'}
                     </p>
 
                     <p className="text-base sm:text-lg text-charcoal-500 max-w-xl font-normal leading-relaxed">
                         {profile?.description ||
-                            'I love turning ideas into interactive experiences and exploring the possibilities of artificial intelligence through creative development.'}
+                            'Building full-stack web applications with React, Node.js, and Appwrite, integrated with LLM endpoints and custom REST APIs.'}
                     </p>
 
                     <div className="pt-2 flex flex-wrap items-center gap-4">
@@ -156,13 +156,13 @@ export const HeroSection = ({ profile }) => {
 
                     <div className="pt-8 border-t border-gray-100 flex flex-wrap items-center gap-3 sm:gap-6 text-xs font-semibold text-charcoal-500">
                         <div className="flex items-center gap-1.5">
-                            <Terminal className="w-4 h-4 text-devorange-500 shrink-0" /> Modern AI Architecture
+                            <Terminal className="w-4 h-4 text-devorange-500 shrink-0" /> LLM Endpoint Integration
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <Code2 className="w-4 h-4 text-devyellow-500 shrink-0" /> Interactive Frontend
+                            <Code2 className="w-4 h-4 text-devyellow-500 shrink-0" /> Full-Stack Architecture
                         </div>
                         <div className="flex items-center gap-1.5">
-                            <Flame className="w-4 h-4 text-devorange-600 shrink-0" /> Dynamic CMS Driven
+                            <Flame className="w-4 h-4 text-devorange-600 shrink-0" /> Relational & Cloud Databases
                         </div>
                     </div>
                 </div>
@@ -178,7 +178,7 @@ export const HeroSection = ({ profile }) => {
                             {/* Top Badge */}
                             <div className="absolute -top-3 -right-3 z-40 bg-charcoal-900 text-white text-xs font-black px-4 py-2 rounded-xl shadow-warm-md border border-devyellow-400 flex items-center gap-1.5">
                                 <Sparkles className="w-3.5 h-3.5 text-devyellow-400 animate-pulse" />
-                                <span>Creative Portfolio</span>
+                                <span>Engineering Portfolio</span>
                             </div>
 
                             {/* Gallery 3D Stage with touch swipe support */}
@@ -205,9 +205,9 @@ export const HeroSection = ({ profile }) => {
                                                 <div className="w-full h-full rounded-[14px] overflow-hidden bg-white relative">
                                                     <img
                                                         src={imgSrc}
-                                                        alt={`${profile?.name || 'DevJ'} portrait ${idx + 1}`}
+                                                        alt={`Julian Agustino - Software Engineer portrait ${idx + 1}`}
                                                         onError={(e) => {
-                                                            e.currentTarget.src = defaultImages[idx % defaultImages.length];
+                                                             e.currentTarget.src = defaultImages[idx % defaultImages.length];
                                                         }}
                                                         className={`w-full h-full object-cover transition-all duration-700 ease-out ${style.img}`}
                                                     />
@@ -225,9 +225,9 @@ export const HeroSection = ({ profile }) => {
                             <div className="mt-5 p-4 rounded-xl bg-white/95 backdrop-blur-md border border-gray-100 shadow-warm-sm flex items-center justify-between">
                                 <div>
                                     <h3 className="font-extrabold text-charcoal-900 text-sm">
-                                        {profile?.name || 'DevJ'}
+                                        {profile?.name || 'Julian Agustino'}
                                     </h3>
-                                    <p className="text-xs text-charcoal-500">AI Engineer & Creative Developer</p>
+                                    <p className="text-xs text-charcoal-500 font-medium">Full-Stack Developer & AI Systems</p>
                                 </div>
 
                                 {/* Controls: Arrows & Dot Indicators */}

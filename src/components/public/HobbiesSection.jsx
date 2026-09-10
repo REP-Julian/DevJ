@@ -1,5 +1,5 @@
 import React from 'react';
-import { Camera, Music, Sparkles, Heart, Gamepad2, BookOpen, Coffee } from 'lucide-react';
+import { Camera, Music, Sparkles, Heart, Gamepad2, BookOpen, Coffee, Terminal } from 'lucide-react';
 
 const iconMap = {
     Camera: Camera,
@@ -9,6 +9,7 @@ const iconMap = {
     Gamepad2: Gamepad2,
     BookOpen: BookOpen,
     Coffee: Coffee,
+    Terminal: Terminal,
 };
 
 export const HobbiesSection = ({ hobbies = [] }) => {
@@ -17,13 +18,13 @@ export const HobbiesSection = ({ hobbies = [] }) => {
             <div className="max-w-7xl mx-auto px-6">
                 <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
                     <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-devyellow-100 text-devorange-600 text-xs font-bold uppercase tracking-wider">
-                        Personal Pulse
+                        Personal Pursuits
                     </div>
                     <h2 className="text-3xl sm:text-5xl font-black text-charcoal-900 tracking-tight">
-                        Hobbies & Creative Passions
+                        Hobbies & Engineering Exploration
                     </h2>
-                    <p className="text-charcoal-500 text-base">
-                        What inspires my design intuition outside of the command line.
+                    <p className="text-charcoal-500 text-base max-w-2xl mx-auto">
+                        Exploring architectural photography, analog audio production, and local terminal LLM benchmarking.
                     </p>
                 </div>
 
@@ -42,7 +43,7 @@ export const HobbiesSection = ({ hobbies = [] }) => {
                                         <div className="relative h-44 w-full overflow-hidden bg-gray-100">
                                             <img
                                                 src={hobby.imageUrl}
-                                                alt={hobby.name}
+                                                alt={`${hobby.name} - Julian Agustino`}
                                                 className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                                             />
                                             <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-md text-devorange-600 p-2 rounded-xl shadow-sm">

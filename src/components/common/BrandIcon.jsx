@@ -119,9 +119,71 @@ export const BrandIcon = ({ name = '', className = 'w-6 h-6' }) => {
         );
     }
 
-    // ==========================================
-    // 2. Programming Languages & Tech Stack (theSVG.org)
-    // ==========================================
+    // LangChain
+    if (key.includes('langchain')) {
+        return (
+            <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="24" height="24" rx="6" fill="#1C3C3C" />
+                <path d="M7 12a3 3 0 0 1 3-3h1a1 1 0 1 1 0 2h-1a1 1 0 0 0 0 2h1a1 1 0 1 1 0 2h-1a3 3 0 0 1-3-3Zm6-1a1 1 0 0 1 1-1h1a3 3 0 0 1 0 6h-1a1 1 0 1 1 0-2h1a1 1 0 0 0 0-2h-1a1 1 0 0 1-1-1Zm-3 1a1 1 0 0 1 1-1h2a1 1 0 1 1 0 2h-2a1 1 0 0 1-1-1Z" fill="#00A67E" />
+                <circle cx="17.5" cy="6.5" r="1.5" fill="#FACC15" />
+            </svg>
+        );
+    }
+
+    // Ollama
+    if (key.includes('ollama')) {
+        return (
+            <svg viewBox="0 0 24 24" className={className} fill="currentColor" xmlns="http://www.w3.org/2000/svg" style={{ color: '#111827' }}>
+                <path d="M12 2a4 4 0 0 0-4 4v1.28A6.5 6.5 0 0 0 4 13.5C4 17.09 6.91 20 10.5 20H12v2h2v-2h1.5c3.59 0 6.5-2.91 6.5-6.5a6.5 6.5 0 0 0-4-6.22V6a4 4 0 0 0-4-4Zm-2 4a2 2 0 1 1 4 0v1H10V6Zm-.5 6a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Zm5 0a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3Z" />
+            </svg>
+        );
+    }
+
+    // Hugging Face
+    if (key.includes('huggingface') || key.includes('transformer')) {
+        return (
+            <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="10" fill="#FFD21E" />
+                <ellipse cx="8.5" cy="11.5" rx="1.5" ry="2" fill="#1E1E24" />
+                <ellipse cx="15.5" cy="11.5" rx="1.5" ry="2" fill="#1E1E24" />
+                <path d="M8.5 15.5c1 1.5 2.5 2 3.5 2s2.5-.5 3.5-2" stroke="#1E1E24" strokeWidth="1.6" strokeLinecap="round" />
+                <path d="M4 11.5c.5-2.5 2.5-3 3.5-3M20 11.5c-.5-2.5-2.5-3-3.5-3" stroke="#D97706" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+        );
+    }
+
+    // Pinecone / Vector DB
+    if (key.includes('pinecone') || key.includes('vector')) {
+        return (
+            <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="24" height="24" rx="6" fill="#054740" />
+                <path d="M12 4l3 5h-2l3 5h-2.5l3.5 5H6l3.5-5H7l3-5H8l3-5h1Z" fill="#22C55E" />
+            </svg>
+        );
+    }
+
+    // Appwrite
+    if (key.includes('appwrite')) {
+        return (
+            <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="24" height="24" rx="6" fill="#FD366E" />
+                <path d="M6 14.5c0-3 3-5 6-7 3 2 6 4 6 7a6 6 0 1 1-12 0Z" fill="#FFF" />
+                <circle cx="12" cy="14.5" r="2.5" fill="#FD366E" />
+            </svg>
+        );
+    }
+
+    // SQLite
+    if (key.includes('sqlite')) {
+        return (
+            <svg viewBox="0 0 24 24" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="24" height="24" rx="6" fill="#003B57" />
+                <path d="M7 8c0-1.5 2.2-2.5 5-2.5s5 1 5 2.5v8c0 1.5-2.2 2.5-5 2.5s-5-1-5-2.5V8Z" stroke="#00A98F" strokeWidth="1.5" />
+                <path d="M7 12c0 1.5 2.2 2.5 5 2.5s5-1 5-2.5M7 16c0 1.5 2.2 2.5 5 2.5s5-1 5-2.5" stroke="#00A98F" strokeWidth="1.5" />
+                <path d="M7 8c0 1.5 2.2 2.5 5 2.5s5-1 5-2.5" stroke="#00A98F" strokeWidth="1.5" />
+            </svg>
+        );
+    }
 
     // javascript (source: thesvg.org)
     if (key.includes('javascript') || key === 'js') {

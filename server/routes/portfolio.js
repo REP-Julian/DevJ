@@ -14,8 +14,8 @@ router.get('/', async (req, res) => {
         res.json({
             profile: profile || {
                 name: 'Julian Agustino',
-                tagline: 'Artificial Intelligence Enthusiast, Vibe Developer and Creative Developer',
-                description: 'I love turning ideas into interactive experiences and exploring the possibilities of artificial intelligence through creative development.',
+                tagline: 'Full-Stack Developer & AI Systems Integrator',
+                description: 'Building full-stack web applications with React, Node.js, and Appwrite, integrated with LLM endpoints and custom REST APIs.',
                 avatarUrl: '',
                 email: 'contact@devj.com',
                 githubUrl: 'https://github.com',

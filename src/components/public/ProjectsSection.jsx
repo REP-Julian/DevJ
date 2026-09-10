@@ -5,30 +5,39 @@ export const ProjectsSection = ({ projects = [] }) => {
     const defaultProjects = [
         {
             id: '1',
-            title: 'NeuroCanvas AI',
-            category: 'Generative AI Platform',
-            description: 'Interactive generative canvas tool transforming contextual natural language sketches into production-ready SVG interfaces and layout tokens.',
-            technologies: 'React, Node.js, TailwindCSS, OpenAI API',
-            imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
+            title: 'PawTrack Management System 2.0',
+            category: 'Full-Stack Systems & SQL Database',
+            description: 'Animal rescue operational platform solving paper record loss. Engineered a normalized relational schema for rescue intake, veterinary medical logs, and adoption candidate matching with role-based staff authentication.',
+            problem: 'Paper record fragmentation and delayed medical histories during rescue operations.',
+            architecture: 'Normalized SQLite schema with foreign key cascades, Express REST controllers, JWT middleware, and reactive React interface.',
+            metrics: 'Eliminated manual intake errors; 100% digital audit trail with sub-50ms local database queries.',
+            technologies: 'Node.js, Express, SQLite, React, TailwindCSS, JWT Auth',
+            imageUrl: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=800&q=80',
             githubUrl: 'https://github.com',
             order: 1,
         },
         {
             id: '2',
-            title: 'Aura CMS & Dynamic Engine',
-            category: 'Creative Full-Stack',
-            description: 'A blazing-fast content management suite powering reactive portfolios with native components and zero-rebuild asset updates.',
-            technologies: 'React, Appwrite, TailwindCSS, Vite',
-            imageUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=800&q=80',
+            title: 'DevJ AI Studio & Multi-Provider CMS',
+            category: 'Distributed AI Architecture',
+            description: 'Production Appwrite back-office engine orchestrating multi-provider LLMs (Gemini, Groq, Mistral, OpenRouter) with Server-Sent Events (SSE) streaming, automated fallback routing, token budgeting, and zero-rebuild live portfolio updates.',
+            problem: 'Vendor lock-in, API rate limits, and constant frontend rebuilds required for content edits.',
+            architecture: 'Node.js SSE streaming proxy with automatic fallback between 4 AI providers; Appwrite Cloud database and secure storage integration.',
+            metrics: 'Zero downtime during provider rate limits, live token tracking, and 100% zero-rebuild content synchronizations.',
+            technologies: 'React, Node.js, Express, Appwrite Cloud, SSE Streaming, Google Gen AI SDK',
+            imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
             githubUrl: 'https://github.com',
             order: 2,
         },
         {
             id: '3',
-            title: 'VibeMatrix Workspace',
-            category: 'Interactive UI',
-            description: 'Browser-based developer dashboard with contextual workspaces, clean themes, and productivity tooling.',
-            technologies: 'React, TailwindCSS, Web Audio API, Vite',
+            title: 'VibeMatrix Developer Workspace',
+            category: 'Interactive Web Tooling',
+            description: 'Modular developer dashboard with persistent workspace sessions, custom RESTful endpoints, and reactive state inspection designed for rapid prototyping.',
+            problem: 'Fragmented context switching between terminal benchmarking, API inspection, and note scratchpads.',
+            architecture: 'Client-side state machine with persistent LocalStorage caching, modular widget bus, and lightweight Express mock server.',
+            metrics: 'Sub-16ms render loop with zero layout thrashing across complex dashboard tiles.',
+            technologies: 'React, TailwindCSS, Web Audio API, Vite, Express',
             imageUrl: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80',
             githubUrl: 'https://github.com',
             order: 3,
@@ -173,8 +182,8 @@ export const ProjectsSection = ({ projects = [] }) => {
                     <h2 className="text-3xl sm:text-5xl font-black text-charcoal-900 tracking-tight">
                         Featured Projects
                     </h2>
-                    <p className="text-charcoal-500 text-base">
-                        Explorations across generative AI platforms, spatial interactive UI, and high-velocity web services.
+                    <p className="text-charcoal-500 text-base max-w-2xl mx-auto">
+                        Production full-stack platforms, relational database systems, and distributed multi-provider AI backends.
                     </p>
                 </div>
 
@@ -199,6 +208,36 @@ export const ProjectsSection = ({ projects = [] }) => {
                                 <p className="text-charcoal-600 text-sm sm:text-base leading-relaxed">
                                     {activeItem?.description}
                                 </p>
+
+                                {/* Structured Engineering Breakdown */}
+                                {(activeItem?.problem || activeItem?.architecture || activeItem?.metrics) && (
+                                    <div className="space-y-2 pt-1 text-xs">
+                                        {activeItem.problem && (
+                                            <div className="p-3 rounded-xl bg-white border border-gray-200/90 shadow-sm">
+                                                <span className="font-extrabold text-charcoal-900 block text-[10px] uppercase tracking-wider text-devorange-600 mb-0.5">
+                                                    Core Problem Solved
+                                                </span>
+                                                <span className="text-charcoal-700 leading-normal">{activeItem.problem}</span>
+                                            </div>
+                                        )}
+                                        {activeItem.architecture && (
+                                            <div className="p-3 rounded-xl bg-white border border-gray-200/90 shadow-sm">
+                                                <span className="font-extrabold text-charcoal-900 block text-[10px] uppercase tracking-wider text-devorange-600 mb-0.5">
+                                                    System Architecture
+                                                </span>
+                                                <span className="text-charcoal-700 leading-normal">{activeItem.architecture}</span>
+                                            </div>
+                                        )}
+                                        {activeItem.metrics && (
+                                            <div className="p-3 rounded-xl bg-white border border-gray-200/90 shadow-sm">
+                                                <span className="font-extrabold text-charcoal-900 block text-[10px] uppercase tracking-wider text-devorange-600 mb-0.5">
+                                                    Key Metrics & Impact
+                                                </span>
+                                                <span className="text-charcoal-700 leading-normal">{activeItem.metrics}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
                             </div>
 
                             {/* Tech Stack Pills */}
@@ -463,19 +502,35 @@ export const ProjectsSection = ({ projects = [] }) => {
                             )}
                         </div>
 
-                        {/* Footer with description & links: shrink-0 */}
-                        <div className="shrink-0 px-4 sm:px-6 py-3 bg-charcoal-900 border-t border-charcoal-800 text-xs sm:text-sm text-charcoal-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 z-10">
-                            <p className="line-clamp-2 max-w-3xl leading-relaxed">
-                                {lightboxItem.description}
-                            </p>
+                        {/* Footer with description, specs & links: shrink-0 */}
+                        <div className="shrink-0 px-4 sm:px-6 py-4 bg-charcoal-900 border-t border-charcoal-800 text-xs sm:text-sm text-charcoal-300 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 z-10">
+                            <div className="space-y-1.5 max-w-3xl">
+                                <p className="leading-relaxed text-charcoal-200">
+                                    {lightboxItem.description}
+                                </p>
+                                {(lightboxItem.architecture || lightboxItem.metrics) && (
+                                    <div className="flex flex-wrap gap-2 text-xs text-charcoal-400 pt-1">
+                                        {lightboxItem.architecture && (
+                                            <span className="bg-charcoal-800 px-2.5 py-1 rounded-md text-devyellow-400 font-mono text-[11px] border border-charcoal-700">
+                                                Arch: {lightboxItem.architecture}
+                                            </span>
+                                        )}
+                                        {lightboxItem.metrics && (
+                                            <span className="bg-charcoal-800 px-2.5 py-1 rounded-md text-devorange-400 font-mono text-[11px] border border-charcoal-700">
+                                                Impact: {lightboxItem.metrics}
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                             {lightboxItem.githubUrl && lightboxItem.githubUrl !== '#' && (
                                 <a
                                     href={lightboxItem.githubUrl}
                                     target="_blank"
                                     rel="noreferrer"
-                                    className="shrink-0 px-3.5 py-1.5 rounded-lg bg-charcoal-800 hover:bg-charcoal-700 text-devyellow-400 text-xs font-bold flex items-center gap-1.5 border border-charcoal-700"
+                                    className="shrink-0 px-4 py-2 rounded-xl bg-charcoal-800 hover:bg-charcoal-700 text-devyellow-400 text-xs font-bold flex items-center gap-2 border border-charcoal-700 shadow-sm"
                                 >
-                                    <Github className="w-3.5 h-3.5" /> Source Code
+                                    <Github className="w-4 h-4" /> Source Code
                                 </a>
                             )}
                         </div>

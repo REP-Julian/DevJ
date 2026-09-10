@@ -23,10 +23,10 @@ export const AchievementsSection = ({ achievements = [] }) => {
         },
         {
             id: '3',
-            title: 'Full Stack Systems Certification',
-            category: 'Industry Certification',
+            title: 'Full Stack Systems & Python Certification',
+            category: 'Foundational Milestone',
             date: '2023',
-            description: 'Validated mastery of distributed microservices, secure cryptographic tokens, and scalable cloud databases.',
+            description: 'Validated mastery of distributed microservices, secure cryptographic tokens, and scalable cloud databases. Backed by open-source production code and architectural breakdowns.',
             imageUrl: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=800&q=80',
             order: 3,
         },
@@ -166,8 +166,8 @@ export const AchievementsSection = ({ achievements = [] }) => {
                     <h2 className="text-3xl sm:text-5xl font-black text-charcoal-900 tracking-tight">
                         Honors & Achievements
                     </h2>
-                    <p className="text-charcoal-500 text-base">
-                        Recognitions in artificial intelligence hackathons, design competitions, and technical craftsmanship.
+                    <p className="text-charcoal-500 text-base max-w-2xl mx-auto">
+                        Hackathon recognitions, competitive design awards, and foundational full-stack milestones backed by production code.
                     </p>
                 </div>
 
@@ -203,7 +203,7 @@ export const AchievementsSection = ({ achievements = [] }) => {
                                                 <div className="w-full h-full rounded-xl overflow-hidden relative flex items-center justify-center bg-charcoal-950">
                                                     <img
                                                         src={item.imageUrl || defaultAchievements[idx % defaultAchievements.length]?.imageUrl}
-                                                        alt={item.title}
+                                                        alt={`${item.title} - Julian Agustino`}
                                                         onError={(e) => {
                                                             e.currentTarget.src = 'https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?auto=format&fit=crop&w=800&q=80';
                                                         }}

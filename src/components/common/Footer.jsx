@@ -16,7 +16,7 @@ export const Footer = () => {
                         </div>
                         <div>
                             <span className="font-extrabold text-xl tracking-tight text-charcoal-900">DevJ</span>
-                            <p className="text-xs text-charcoal-500">Creative Web & AI Architecture</p>
+                            <p className="text-xs text-charcoal-500">Full-Stack Development &amp; AI Systems</p>
                         </div>
                     </div>
 
@@ -31,7 +31,7 @@ export const Footer = () => {
                 </div>
 
                 <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-charcoal-500 gap-4">
-                    <p>© {new Date().getFullYear()} DevJ. All rights reserved. Crafted with precision.</p>
+                    <p>© {new Date().getFullYear()} Julian Agustino (DevJ). All rights reserved.</p>
                 </div>
             </div>
         </footer>

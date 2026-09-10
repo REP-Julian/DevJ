@@ -13,10 +13,10 @@ export const SkillsSection = ({ skills = [] }) => {
                         Capabilities & Stack
                     </div>
                     <h2 className="text-3xl sm:text-5xl font-black text-charcoal-900 tracking-tight">
-                        Specialized AI & Technical Stack
+                        Engineering & AI Technical Stack
                     </h2>
-                    <p className="text-charcoal-500 text-base">
-                        Mastery across frontier artificial intelligence models, agentic workflows, and full-stack software architecture.
+                    <p className="text-charcoal-500 text-base max-w-2xl mx-auto">
+                        Building full-stack web applications with React, Node.js, and Appwrite, integrated with LLM endpoints and custom REST APIs.
                     </p>
                 </div>
 
@@ -54,7 +54,7 @@ export const SkillsSection = ({ skills = [] }) => {
                                                         {skill.name}
                                                     </h4>
                                                     <span className="text-[10px] font-bold text-charcoal-400 uppercase tracking-wider block truncate">
-                                                        {isAiCategory ? 'Frontier AI' : 'Language & Tech'}
+                                                        {isAiCategory ? 'AI Engineering' : 'Engineering Stack'}
                                                     </span>
                                                 </div>
                                             </div>
