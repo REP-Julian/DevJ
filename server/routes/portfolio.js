@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
                 description: 'Building full-stack web applications with React, Node.js, and Appwrite, integrated with LLM endpoints and custom REST APIs.',
                 avatarUrl: '',
                 email: 'contact@devj.com',
-                githubUrl: 'https://github.com',
+                githubUrl: 'https://github.com/REP-Julian',
                 linkedinUrl: 'https://linkedin.com',
                 twitterUrl: 'https://twitter.com'
             },

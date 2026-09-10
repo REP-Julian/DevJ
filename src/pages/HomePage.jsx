@@ -50,7 +50,7 @@ export const HomePage = () => {
                 <HobbiesSection hobbies={hobbies} />
                 <ContactSection profile={profile} />
             </main>
-            <Footer />
+            <Footer profile={profile} />
         </div>
     );
 };

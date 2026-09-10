@@ -13,7 +13,7 @@ export const ProjectsSection = ({ projects = [] }) => {
             metrics: 'Eliminated manual intake errors; 100% digital audit trail with sub-50ms local database queries.',
             technologies: 'Node.js, Express, SQLite, React, TailwindCSS, JWT Auth',
             imageUrl: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=800&q=80',
-            githubUrl: 'https://github.com',
+            githubUrl: 'https://github.com/REP-Julian',
             order: 1,
         },
         {
@@ -26,7 +26,7 @@ export const ProjectsSection = ({ projects = [] }) => {
             metrics: 'Zero downtime during provider rate limits, live token tracking, and 100% zero-rebuild content synchronizations.',
             technologies: 'React, Node.js, Express, Appwrite Cloud, SSE Streaming, Google Gen AI SDK',
             imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
-            githubUrl: 'https://github.com',
+            githubUrl: 'https://github.com/REP-Julian/DevJ',
             order: 2,
         },
         {
@@ -39,7 +39,7 @@ export const ProjectsSection = ({ projects = [] }) => {
             metrics: 'Sub-16ms render loop with zero layout thrashing across complex dashboard tiles.',
             technologies: 'React, TailwindCSS, Web Audio API, Vite, Express',
             imageUrl: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80',
-            githubUrl: 'https://github.com',
+            githubUrl: 'https://github.com/REP-Julian',
             order: 3,
         },
     ];

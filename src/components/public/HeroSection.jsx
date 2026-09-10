@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Sparkles, Terminal, Code2, Flame, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowRight, Sparkles, Terminal, Code2, Flame, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 
 export const HeroSection = ({ profile }) => {
     // Array of distinct images to cycle through
@@ -138,19 +138,29 @@ export const HeroSection = ({ profile }) => {
                             'Building full-stack web applications with React, Node.js, and Appwrite, integrated with LLM endpoints and custom REST APIs.'}
                     </p>
 
-                    <div className="pt-2 flex flex-wrap items-center gap-4">
+                    <div className="pt-2 flex flex-wrap items-center gap-3 sm:gap-4">
                         <a
                             href="#projects"
-                            className="px-7 py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider bg-gradient-to-r from-devyellow-400 via-devorange-400 to-devorange-500 text-charcoal-900 shadow-warm-md hover:shadow-warm-lg hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2"
+                            className="px-6 sm:px-7 py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider bg-gradient-to-r from-devyellow-400 via-devorange-400 to-devorange-500 text-charcoal-900 shadow-warm-md hover:shadow-warm-lg hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2"
                         >
                             <span>Explore Works</span>
                             <ArrowRight className="w-4 h-4" />
                         </a>
                         <a
                             href="#contact"
-                            className="px-7 py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider bg-white border border-gray-200 text-charcoal-800 hover:border-devorange-400 hover:text-devorange-600 hover:bg-devyellow-100/30 transition-all shadow-sm hover:-translate-y-0.5"
+                            className="px-6 sm:px-7 py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider bg-white border border-gray-200 text-charcoal-800 hover:border-devorange-400 hover:text-devorange-600 hover:bg-devyellow-100/30 transition-all shadow-sm hover:-translate-y-0.5"
                         >
                             Contact Me
+                        </a>
+                        <a
+                            href={profile?.resumeUrl || `mailto:${profile?.email || 'agustino.julian@outlook.ph'}?subject=Resume%20Request%20-%20Julian%20Agustino`}
+                            target={profile?.resumeUrl ? "_blank" : undefined}
+                            rel="noreferrer"
+                            className="px-5 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider bg-white border border-gray-200 text-charcoal-700 hover:border-charcoal-400 hover:text-charcoal-900 transition-all shadow-xs flex items-center gap-2 hover:-translate-y-0.5"
+                            title="Download or Request Resume / CV"
+                        >
+                            <FileText className="w-4 h-4 text-devorange-600" />
+                            <span>Resume / CV</span>
                         </a>
                     </div>
 

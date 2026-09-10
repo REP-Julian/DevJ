@@ -11,7 +11,7 @@ export const PortfolioProvider = ({ children }) => {
             description: 'Building full-stack web applications with React, Node.js, and Appwrite, integrated with LLM endpoints and custom REST APIs.',
             avatarUrl: '',
             email: 'agustino.julian@outlook.ph',
-            githubUrl: 'https://github.com',
+            githubUrl: 'https://github.com/REP-Julian',
             githubQrUrl: '',
             facebookUrl: 'https://facebook.com',
             facebookQrUrl: '',
