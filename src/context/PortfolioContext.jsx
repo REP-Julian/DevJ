@@ -20,7 +20,8 @@ export const PortfolioProvider = ({ children }) => {
             telegramUrl: 'https://t.me/username',
             telegramQrUrl: '',
             whatsappUrl: 'https://wa.me/1234567890',
-            whatsappQrUrl: ''
+            whatsappQrUrl: '',
+            resumeUrl: ''
         },
         skills: [],
         achievements: [],

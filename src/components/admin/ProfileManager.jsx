@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import ImageUploader from '../common/ImageUploader';
+import ResumeUploader from '../common/ResumeUploader';
 import { api } from '../../services/api';
 import { aiService } from '../../services/aiService';
-import { Save, CheckCircle2, AlertCircle, Loader2, Sparkles, QrCode, Trash2, Eye, ExternalLink, Github, Facebook, Instagram } from 'lucide-react';
+import { Save, CheckCircle2, AlertCircle, Loader2, Sparkles, QrCode, Trash2, Eye, ExternalLink, Github, Facebook, Instagram, FileText } from 'lucide-react';
 
 export const ProfileManager = ({ profile, onUpdated }) => {
     const [formData, setFormData] = useState({
@@ -23,6 +24,7 @@ export const ProfileManager = ({ profile, onUpdated }) => {
         telegramQrUrl: profile?.telegramQrUrl || '',
         whatsappUrl: profile?.whatsappUrl || '',
         whatsappQrUrl: profile?.whatsappQrUrl || '',
+        resumeUrl: profile?.resumeUrl || '',
     });
 
     const [status, setStatus] = useState({ loading: false, success: false, error: '' });
@@ -30,7 +32,7 @@ export const ProfileManager = ({ profile, onUpdated }) => {
     const [aiPolishing, setAiPolishing] = useState(false);
     const [activeSocialTab, setActiveSocialTab] = useState('instagram');
 
-    // Keep formData synchronized without wiping non-empty user QR codes with empty strings
+    // Keep formData synchronized without wiping non-empty user QR codes or resume with empty strings
     React.useEffect(() => {
         if (profile) {
             setFormData(prev => ({
@@ -52,6 +54,7 @@ export const ProfileManager = ({ profile, onUpdated }) => {
                 telegramQrUrl: profile.telegramQrUrl || prev.telegramQrUrl || '',
                 whatsappUrl: profile.whatsappUrl || prev.whatsappUrl,
                 whatsappQrUrl: profile.whatsappQrUrl || prev.whatsappQrUrl || '',
+                resumeUrl: profile.resumeUrl || prev.resumeUrl || '',
             }));
         }
     }, [profile]);
@@ -95,6 +98,21 @@ export const ProfileManager = ({ profile, onUpdated }) => {
                 .catch(err => {
                     console.error('Error reverting QR code:', err);
                     setQrSaveStatus({ loading: false, success: '', error: err.message || 'Failed to revert QR code' });
+                });
+            return updated;
+        });
+    };
+
+    // Instant auto-save when resume document finishes uploading or changes
+    const handleResumeChanged = async (newResumeUrl) => {
+        setFormData(prev => {
+            const updated = { ...prev, resumeUrl: newResumeUrl };
+            api.updateProfile(updated)
+                .then(() => {
+                    if (onUpdated) onUpdated();
+                })
+                .catch(err => {
+                    console.error('Error saving resume:', err);
                 });
             return updated;
         });
@@ -245,8 +263,26 @@ export const ProfileManager = ({ profile, onUpdated }) => {
                     </div>
                 </div>
 
+                {/* Resume / CV Document (Appwrite Storage) */}
+                <div className="pt-6 border-t border-gray-100 space-y-3">
+                    <div className="flex items-center gap-2">
+                        <FileText className="w-5 h-5 text-devorange-500" />
+                        <h3 className="text-sm font-black uppercase tracking-wider text-charcoal-800">
+                            Resume / CV Document (Appwrite Storage)
+                        </h3>
+                    </div>
+                    <p className="text-xs text-charcoal-500">
+                        Upload your PDF or Word document resume directly to your Appwrite Storage bucket. Once uploaded, the <strong>"Resume / CV"</strong> button on your portfolio hero section will immediately link to it.
+                    </p>
+
+                    <ResumeUploader
+                        resumeUrl={formData.resumeUrl}
+                        onResumeChanged={handleResumeChanged}
+                    />
+                </div>
+
                 {/* Social Media & Interactive QR Codes */}
-                <div className="pt-4 border-t border-gray-100 space-y-4">
+                <div className="pt-6 border-t border-gray-100 space-y-4">
                     <div>
                         <div className="flex items-center gap-2">
                             <QrCode className="w-4 h-4 text-devorange-500" />

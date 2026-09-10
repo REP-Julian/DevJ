@@ -17,6 +17,7 @@ export const initialPortfolioData = {
         telegramQrUrl: '',
         whatsappUrl: 'https://wa.me/1234567890',
         whatsappQrUrl: '',
+        resumeUrl: '',
     },
     skills: [
         // AI Engineering & Integration SDKs & Libraries

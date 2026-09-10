@@ -152,6 +152,9 @@ export const api = {
                     mergedProfile[k] = remoteProfile[k] || local.profile?.[k] || '';
                 });
 
+                // Preserve resumeUrl from remote document or local storage
+                mergedProfile.resumeUrl = remoteProfile.resumeUrl || local.profile?.resumeUrl || '';
+
                 // Sanitize legacy buzzwords if saved in remote document or stale profile
                 if (
                     mergedProfile.tagline?.includes('Vibe Developer') ||
@@ -601,6 +604,40 @@ export const api = {
 
         // Step 3: Resilient fallback to high quality compressed WebP data URL
         return compressed.dataUrl;
+    },
+
+    // 10. Appwrite Storage Document / File Uploader (PDF, DOC, DOCX, etc.)
+    uploadFile: async (file) => {
+        if (!file) throw new Error('No file provided');
+
+        // Step 1: Upload to Appwrite Storage Bucket
+        try {
+            const fileId = ID.unique();
+            const result = await storage.createFile(
+                APPWRITE_CONFIG.bucketId,
+                fileId,
+                file
+            );
+
+            if (result && result.$id) {
+                const viewUrl = storage.getFileView(APPWRITE_CONFIG.bucketId, result.$id);
+                return typeof viewUrl === 'string' ? viewUrl : viewUrl.toString();
+            }
+        } catch (appwriteStorageErr) {
+            console.warn(
+                'Appwrite Storage file upload notice:',
+                appwriteStorageErr.message,
+                '(Check Appwrite Console > Storage to ensure bucket "' + APPWRITE_CONFIG.bucketId + '" exists and has read permissions for Any)'
+            );
+        }
+
+        // Step 2: Resilient fallback to local Data URL
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => reject(new Error('Failed to read file locally'));
+            reader.readAsDataURL(file);
+        });
     },
 };
 
