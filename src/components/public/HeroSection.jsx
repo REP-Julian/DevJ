@@ -4,9 +4,9 @@ import { ArrowRight, Sparkles, Terminal, Code2, Flame, ChevronLeft, ChevronRight
 export const HeroSection = ({ profile }) => {
     // Array of distinct images to cycle through
     const defaultImages = [
-        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=800&q=80',
-        'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=800&q=80',
+        'https://sgp.cloud.appwrite.io/v1/storage/buckets/portfolio/files/6aa15e9e001617de4a5f/view?project=6aa1516d001f3ded0bc0',
+        'https://sgp.cloud.appwrite.io/v1/storage/buckets/portfolio/files/6aa15eb6001e7c787293/view?project=6aa1516d001f3ded0bc0',
+        'https://sgp.cloud.appwrite.io/v1/storage/buckets/portfolio/files/6aa15e810016d47a13ee/view?project=6aa1516d001f3ded0bc0',
     ];
 
     const images = [
@@ -217,6 +217,7 @@ export const HeroSection = ({ profile }) => {
                                                         src={imgSrc}
                                                         alt={`Julian Agustino - Software Engineer portrait ${idx + 1}`}
                                                         onError={(e) => {
+                                                             e.currentTarget.onerror = null;
                                                              e.currentTarget.src = defaultImages[idx % defaultImages.length];
                                                         }}
                                                         className={`w-full h-full object-cover transition-all duration-700 ease-out ${style.img}`}

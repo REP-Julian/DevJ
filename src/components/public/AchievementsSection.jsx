@@ -205,6 +205,7 @@ export const AchievementsSection = ({ achievements = [] }) => {
                                                         src={item.imageUrl || defaultAchievements[idx % defaultAchievements.length]?.imageUrl}
                                                         alt={`${item.title} - Julian Agustino`}
                                                         onError={(e) => {
+                                                            e.currentTarget.onerror = null;
                                                             e.currentTarget.src = 'https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?auto=format&fit=crop&w=800&q=80';
                                                         }}
                                                         className={`w-full h-full object-cover ${style.img}`}
@@ -403,6 +404,10 @@ export const AchievementsSection = ({ achievements = [] }) => {
                             <img
                                 src={lightboxItem.imageUrl || defaultAchievements[0]?.imageUrl}
                                 alt={lightboxItem.title}
+                                onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = 'https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?auto=format&fit=crop&w=800&q=80';
+                                }}
                                 className="w-auto h-auto max-w-full max-h-full object-contain rounded-lg shadow-2xl block select-none"
                                 style={{
                                     maxHeight: lightboxZoom === 1 ? 'calc(94vh - 145px)' : 'none',

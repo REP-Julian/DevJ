@@ -15,6 +15,7 @@
         "db:migrate": "npx prisma migrate dev --name init",
         "db:seed": "node prisma/seed.js",
         "db:push": "npx prisma db push",
+        "setup:appwrite": "node scripts/setup-appwrite-db.js",
         "deploy": "npm run build"
     },
     "dependencies": {

@@ -44,6 +44,32 @@ const getStoredPortfolio = () => {
                 updated = true;
             }
 
+            // Automatically upgrade legacy Unsplash stock photos to Appwrite Cloud assets
+            if (
+                parsed.profile?.avatarUrl?.includes('images.unsplash.com') ||
+                !parsed.profile?.avatarUrl
+            ) {
+                if (!parsed.profile) parsed.profile = {};
+                parsed.profile.avatarUrl = initialPortfolioData.profile.avatarUrl;
+                updated = true;
+            }
+            if (
+                parsed.profile?.avatarUrl2?.includes('images.unsplash.com') ||
+                !parsed.profile?.avatarUrl2
+            ) {
+                if (!parsed.profile) parsed.profile = {};
+                parsed.profile.avatarUrl2 = initialPortfolioData.profile.avatarUrl2;
+                updated = true;
+            }
+            if (
+                parsed.profile?.avatarUrl3?.includes('images.unsplash.com') ||
+                !parsed.profile?.avatarUrl3
+            ) {
+                if (!parsed.profile) parsed.profile = {};
+                parsed.profile.avatarUrl3 = initialPortfolioData.profile.avatarUrl3;
+                updated = true;
+            }
+
             if (updated) {
                 saveStoredPortfolio({
                     ...initialPortfolioData,
@@ -71,123 +97,268 @@ const saveStoredPortfolio = (data) => {
     }
 };
 
-// Background helper: sync portfolio modifications to Appwrite Databases
-const syncPortfolioToAppwrite = async (portfolioData) => {
+// Storage file ID for persistent cloud portfolio state
+const CLOUD_STORAGE_FILE_ID = 'portfolio_data';
+
+// Helper to fetch live portfolio state directly from Appwrite Storage
+const getPortfolioFromStorage = async () => {
     try {
-        const docId = 'main';
+        const url = `${APPWRITE_CONFIG.endpoint}/storage/buckets/${APPWRITE_CONFIG.bucketId}/files/${CLOUD_STORAGE_FILE_ID}/view?project=${APPWRITE_CONFIG.projectId}`;
+        const res = await fetch(url, { cache: 'no-cache' });
+        if (res.ok) {
+            return await res.json();
+        }
+    } catch (err) {
+        // storage fetch failed or offline
+    }
+    return null;
+};
+
+// Helper to auto-upload any base64 data: URLs to Appwrite Storage
+const uploadBase64IfAny = async (url, namePrefix) => {
+    if (!url || typeof url !== 'string' || !url.startsWith('data:image/')) {
+        return url;
+    }
+    try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const fileId = ID.unique();
+        const fileName = `${namePrefix}-${Date.now()}.webp`;
+        const file = new File([blob], fileName, { type: blob.type || 'image/webp' });
+        const result = await storage.createFile(APPWRITE_CONFIG.bucketId, fileId, file);
+        if (result && result.$id) {
+            const viewUrl = storage.getFileView(APPWRITE_CONFIG.bucketId, result.$id);
+            return typeof viewUrl === 'string' ? viewUrl : viewUrl.toString();
+        }
+    } catch (err) {
+        console.warn('Notice: Base64 image cloud migration fallback:', err);
+    }
+    return url;
+};
+
+// Sanitize all portfolio image assets before cloud sync
+const sanitizeAndUploadAssets = async (data) => {
+    if (!data) return data;
+    const cloned = JSON.parse(JSON.stringify(data));
+    if (cloned.profile) {
+        if (cloned.profile.avatarUrl) cloned.profile.avatarUrl = await uploadBase64IfAny(cloned.profile.avatarUrl, 'avatar1');
+        if (cloned.profile.avatarUrl2) cloned.profile.avatarUrl2 = await uploadBase64IfAny(cloned.profile.avatarUrl2, 'avatar2');
+        if (cloned.profile.avatarUrl3) cloned.profile.avatarUrl3 = await uploadBase64IfAny(cloned.profile.avatarUrl3, 'avatar3');
+    }
+    if (Array.isArray(cloned.projects)) {
+        for (let i = 0; i < cloned.projects.length; i++) {
+            if (cloned.projects[i].imageUrl) {
+                cloned.projects[i].imageUrl = await uploadBase64IfAny(cloned.projects[i].imageUrl, `project-${i + 1}`);
+            }
+        }
+    }
+    if (Array.isArray(cloned.achievements)) {
+        for (let i = 0; i < cloned.achievements.length; i++) {
+            if (cloned.achievements[i].imageUrl) {
+                cloned.achievements[i].imageUrl = await uploadBase64IfAny(cloned.achievements[i].imageUrl, `achievement-${i + 1}`);
+            }
+        }
+    }
+    if (Array.isArray(cloned.hobbies)) {
+        for (let i = 0; i < cloned.hobbies.length; i++) {
+            if (cloned.hobbies[i].imageUrl) {
+                cloned.hobbies[i].imageUrl = await uploadBase64IfAny(cloned.hobbies[i].imageUrl, `hobby-${i + 1}`);
+            }
+        }
+    }
+    return cloned;
+};
+
+// Helper to sync portfolio state JSON directly to Appwrite Storage Bucket
+const syncPortfolioToStorage = async (portfolioData) => {
+    try {
         const payload = {
-            content: JSON.stringify(portfolioData),
+            ...portfolioData,
             updatedAt: new Date().toISOString(),
         };
+        const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+        const formData = new FormData();
+        formData.append('fileId', CLOUD_STORAGE_FILE_ID);
+        formData.append('file', blob, 'portfolio-data.json');
+        formData.append('permissions[]', 'read("any")');
 
+        // Delete existing cloud file first if exists
         try {
-            await databases.updateDocument(
-                APPWRITE_CONFIG.databaseId,
-                APPWRITE_CONFIG.collections.portfolio,
-                docId,
-                payload
+            await fetch(
+                `${APPWRITE_CONFIG.endpoint}/storage/buckets/${APPWRITE_CONFIG.bucketId}/files/${CLOUD_STORAGE_FILE_ID}`,
+                {
+                    method: 'DELETE',
+                    headers: { 'X-Appwrite-Project': APPWRITE_CONFIG.projectId },
+                }
             );
-        } catch (updateErr) {
-            if (updateErr.code === 404) {
-                await databases.createDocument(
+        } catch (e) {
+            // file didn't exist yet
+        }
+
+        const res = await fetch(
+            `${APPWRITE_CONFIG.endpoint}/storage/buckets/${APPWRITE_CONFIG.bucketId}/files`,
+            {
+                method: 'POST',
+                headers: { 'X-Appwrite-Project': APPWRITE_CONFIG.projectId },
+                body: formData,
+            }
+        );
+
+        return res.ok;
+    } catch (err) {
+        console.warn('Appwrite Storage sync error:', err);
+        return false;
+    }
+};
+
+// Background helper: sync portfolio modifications to Appwrite Storage + Databases (Dual-Cloud Sync)
+const syncPortfolioToAppwrite = async (portfolioData) => {
+    try {
+        const sanitized = await sanitizeAndUploadAssets(portfolioData);
+        saveStoredPortfolio(sanitized);
+
+        // 1. Primary Sync to Appwrite Storage Bucket (Instant cross-device sync)
+        const storageOk = await syncPortfolioToStorage(sanitized);
+
+        // 2. Secondary Sync to Appwrite Database (If collection configured)
+        let dbOk = false;
+        try {
+            const docId = 'main';
+            const payload = {
+                content: JSON.stringify(sanitized),
+                updatedAt: new Date().toISOString(),
+            };
+            try {
+                await databases.updateDocument(
                     APPWRITE_CONFIG.databaseId,
                     APPWRITE_CONFIG.collections.portfolio,
                     docId,
                     payload
                 );
+                dbOk = true;
+            } catch (updateErr) {
+                if (updateErr.code === 404) {
+                    await databases.createDocument(
+                        APPWRITE_CONFIG.databaseId,
+                        APPWRITE_CONFIG.collections.portfolio,
+                        docId,
+                        payload
+                    );
+                    dbOk = true;
+                }
             }
+        } catch (dbErr) {
+            // Database collection pending setup in Appwrite Console
         }
+
+        if (storageOk || dbOk) {
+            return { success: true, storage: storageOk, database: dbOk };
+        }
+        return { success: false, error: 'Could not synchronize to Appwrite Cloud Storage' };
     } catch (err) {
-        // Retain silent local fallback if database collection is pending setup in Appwrite Console
+        console.warn('[Appwrite Cloud Sync Notice]:', err.message);
+        return { success: false, error: err.message };
     }
 };
 
 export const api = {
-    // 1. Public Portfolio Data (Appwrite Databases with Local Cache Fallback)
+    // 1. Public Portfolio Data (Appwrite Storage + Databases Dual Cloud Sync with Local Fallback)
     getPortfolio: async () => {
+        let remoteData = null;
+
+        // 1. Try Appwrite Databases first if collection exists
         try {
             const doc = await databases.getDocument(
                 APPWRITE_CONFIG.databaseId,
                 APPWRITE_CONFIG.collections.portfolio,
                 'main'
             );
-
-            const local = getStoredPortfolio();
-
             if (doc && doc.content) {
-                let remoteData = {};
                 try {
-                    remoteData = JSON.parse(doc.content);
+                    remoteData = typeof doc.content === 'string' ? JSON.parse(doc.content) : doc.content;
                 } catch {
                     remoteData = doc;
                 }
-
-                const remoteProfile = remoteData.profile || {};
-                const localTime = Number(local.profile?.updatedAt || 0);
-                const remoteTime = Number(remoteProfile.updatedAt || 0);
-
-                const mergedProfile = {
-                    ...initialPortfolioData.profile,
-                    ...remoteProfile,
-                };
-
-                if (localTime > remoteTime && localTime > 0) {
-                    Object.assign(mergedProfile, local.profile || {});
-                }
-
-                // Preserve uploaded portraits from Appwrite Storage over defaults
-                if (remoteProfile.avatarUrl) mergedProfile.avatarUrl = remoteProfile.avatarUrl;
-                if (remoteProfile.avatarUrl2) mergedProfile.avatarUrl2 = remoteProfile.avatarUrl2;
-                if (remoteProfile.avatarUrl3) mergedProfile.avatarUrl3 = remoteProfile.avatarUrl3;
-
-                // Protect email from obsolete placeholder
-                if (mergedProfile.email === 'contact@devj.com' || !mergedProfile.email) {
-                    mergedProfile.email = (local.profile?.email && local.profile.email !== 'contact@devj.com')
-                        ? local.profile.email
-                        : (remoteProfile.email && remoteProfile.email !== 'contact@devj.com' ? remoteProfile.email : 'agustino.julian@outlook.ph');
-                }
-
-                // Guarantee QR codes saved in local or Appwrite are preserved
-                ['githubQrUrl', 'facebookQrUrl', 'instagramQrUrl', 'telegramQrUrl', 'whatsappQrUrl'].forEach((k) => {
-                    mergedProfile[k] = remoteProfile[k] || local.profile?.[k] || '';
-                });
-
-                // Preserve resumeUrl from remote document or local storage
-                mergedProfile.resumeUrl = remoteProfile.resumeUrl || local.profile?.resumeUrl || '';
-
-                // Sanitize legacy buzzwords if saved in remote document or stale profile
-                if (
-                    mergedProfile.tagline?.includes('Vibe Developer') ||
-                    mergedProfile.tagline?.includes('Enthusiast')
-                ) {
-                    mergedProfile.tagline = initialPortfolioData.profile.tagline;
-                }
-                if (
-                    mergedProfile.description?.includes('possibilities of artificial intelligence') ||
-                    mergedProfile.description?.includes('turning ideas into interactive') ||
-                    mergedProfile.description?.includes('custom REST APIs')
-                ) {
-                    mergedProfile.description = initialPortfolioData.profile.description;
-                }
-
-                const merged = {
-                    ...initialPortfolioData,
-                    ...remoteData,
-                    profile: mergedProfile,
-                    skills: (remoteData.skills && remoteData.skills.length > 0) ? remoteData.skills : (local.skills || initialPortfolioData.skills || []),
-                    achievements: (remoteData.achievements && remoteData.achievements.length > 0) ? remoteData.achievements : (local.achievements || initialPortfolioData.achievements || []),
-                    projects: (remoteData.projects && remoteData.projects.length > 0) ? remoteData.projects : (local.projects || initialPortfolioData.projects || []),
-                    hobbies: (remoteData.hobbies && remoteData.hobbies.length > 0) ? remoteData.hobbies : (local.hobbies || initialPortfolioData.hobbies || [])
-                };
-
-                saveStoredPortfolio(merged);
-                return merged;
             }
-        } catch (error) {
-            // If Appwrite database collection isn't created yet or network offline, use local storage seamlessly
+        } catch (e) {
+            // Database collection not configured or pending setup
         }
 
-        return getStoredPortfolio();
+        // 2. Try Appwrite Storage Bucket ("portfolio_data")
+        if (!remoteData) {
+            try {
+                remoteData = await getPortfolioFromStorage();
+            } catch (e) {
+                // Storage fetch failed or offline
+            }
+        }
+
+        const local = getStoredPortfolio();
+
+        if (remoteData) {
+            const remoteProfile = remoteData.profile || {};
+            const localTime = Number(local.profile?.updatedAt || 0);
+            const remoteTime = Number(remoteProfile.updatedAt || 0);
+
+            const mergedProfile = {
+                ...initialPortfolioData.profile,
+                ...remoteProfile,
+            };
+
+            if (localTime > remoteTime && localTime > 0) {
+                Object.assign(mergedProfile, local.profile || {});
+            }
+
+            // Preserve uploaded portraits from Appwrite Storage over defaults
+            if (remoteProfile.avatarUrl) mergedProfile.avatarUrl = remoteProfile.avatarUrl;
+            if (remoteProfile.avatarUrl2) mergedProfile.avatarUrl2 = remoteProfile.avatarUrl2;
+            if (remoteProfile.avatarUrl3) mergedProfile.avatarUrl3 = remoteProfile.avatarUrl3;
+
+            // Protect email from obsolete placeholder
+            if (mergedProfile.email === 'contact@devj.com' || !mergedProfile.email) {
+                mergedProfile.email = (local.profile?.email && local.profile.email !== 'contact@devj.com')
+                    ? local.profile.email
+                    : (remoteProfile.email && remoteProfile.email !== 'contact@devj.com' ? remoteProfile.email : 'agustino.julian@outlook.ph');
+            }
+
+            // Guarantee QR codes saved in local or Appwrite are preserved
+            ['githubQrUrl', 'facebookQrUrl', 'instagramQrUrl', 'telegramQrUrl', 'whatsappQrUrl'].forEach((k) => {
+                mergedProfile[k] = remoteProfile[k] || local.profile?.[k] || '';
+            });
+
+            // Preserve resumeUrl from remote document or local storage
+            mergedProfile.resumeUrl = remoteProfile.resumeUrl || local.profile?.resumeUrl || '';
+
+            // Sanitize legacy buzzwords if saved in remote document or stale profile
+            if (
+                mergedProfile.tagline?.includes('Vibe Developer') ||
+                mergedProfile.tagline?.includes('Enthusiast')
+            ) {
+                mergedProfile.tagline = initialPortfolioData.profile.tagline;
+            }
+            if (
+                mergedProfile.description?.includes('possibilities of artificial intelligence') ||
+                mergedProfile.description?.includes('turning ideas into interactive') ||
+                mergedProfile.description?.includes('custom REST APIs')
+            ) {
+                mergedProfile.description = initialPortfolioData.profile.description;
+            }
+
+            const merged = {
+                ...initialPortfolioData,
+                ...remoteData,
+                profile: mergedProfile,
+                skills: (remoteData.skills && remoteData.skills.length > 0) ? remoteData.skills : (local.skills || initialPortfolioData.skills || []),
+                achievements: (remoteData.achievements && remoteData.achievements.length > 0) ? remoteData.achievements : (local.achievements || initialPortfolioData.achievements || []),
+                projects: (remoteData.projects && remoteData.projects.length > 0) ? remoteData.projects : (local.projects || initialPortfolioData.projects || []),
+                hobbies: (remoteData.hobbies && remoteData.hobbies.length > 0) ? remoteData.hobbies : (local.hobbies || initialPortfolioData.hobbies || [])
+            };
+
+            saveStoredPortfolio(merged);
+            return merged;
+        }
+
+        return local;
     },
 
     // 2. Authentication (Appwrite Auth Account Service)
@@ -638,6 +809,44 @@ export const api = {
             reader.onerror = () => reject(new Error('Failed to read file locally'));
             reader.readAsDataURL(file);
         });
+    },
+
+    // 11. Appwrite Cloud Diagnostics & Sync (Storage + Database)
+    checkAppwriteStatus: async () => {
+        // 1. Check Appwrite Storage bucket ("portfolio_data")
+        const storageData = await getPortfolioFromStorage();
+        if (storageData && storageData.profile) {
+            return {
+                connected: true,
+                status: 'synced',
+                target: 'storage',
+                message: 'Appwrite Cloud Storage ("portfolio_data") is connected and synchronized live across all devices!'
+            };
+        }
+
+        // 2. Check Database collection as secondary
+        try {
+            await databases.getDocument(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.collections.portfolio,
+                'main'
+            );
+            return { connected: true, status: 'synced', target: 'database', message: 'Cloud database connected and synced.' };
+        } catch (err) {
+            if (err.code === 404 && err.type === 'collection_not_found') {
+                return {
+                    connected: false,
+                    status: 'missing_collection',
+                    message: 'Click "Sync to Cloud Now" to synchronize your complete portfolio to Appwrite Cloud Storage!'
+                };
+            }
+            return { connected: false, status: 'error', message: err.message };
+        }
+    },
+
+    forceSyncToCloud: async () => {
+        const current = getStoredPortfolio();
+        return await syncPortfolioToAppwrite(current);
     },
 };
 

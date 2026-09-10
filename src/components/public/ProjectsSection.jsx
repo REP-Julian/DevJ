@@ -338,6 +338,7 @@ export const ProjectsSection = ({ projects = [] }) => {
                                                         src={item.imageUrl || defaultProjects[idx % defaultProjects.length]?.imageUrl}
                                                         alt={item.title}
                                                         onError={(e) => {
+                                                            e.currentTarget.onerror = null;
                                                             e.currentTarget.src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80';
                                                         }}
                                                         className={`w-full h-full object-cover ${style.img}`}
@@ -474,6 +475,10 @@ export const ProjectsSection = ({ projects = [] }) => {
                             <img
                                 src={lightboxItem.imageUrl || defaultProjects[0]?.imageUrl}
                                 alt={lightboxItem.title}
+                                onError={(e) => {
+                                    e.currentTarget.onerror = null;
+                                    e.currentTarget.src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80';
+                                }}
                                 className="w-auto h-auto max-w-full max-h-full object-contain rounded-lg shadow-2xl block select-none"
                                 style={{
                                     maxHeight: lightboxZoom === 1 ? 'calc(94vh - 145px)' : 'none',

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Key, Mail, Check, AlertCircle, Loader2, Eye, EyeOff, Smartphone, Globe, Lock } from 'lucide-react';
+import { Shield, Key, Mail, Check, AlertCircle, Loader2, Eye, EyeOff, Smartphone, Globe, Lock, Database, Cloud, RefreshCw, CheckCircle2, AlertTriangle, ExternalLink } from 'lucide-react';
 import { api } from '../../services/api';
 
 export const SecuritySettings = () => {
@@ -15,6 +15,11 @@ export const SecuritySettings = () => {
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState({ type: '', message: '' });
 
+    // Cloud Database Sync Status
+    const [cloudStatus, setCloudStatus] = useState({ loading: true, connected: false, message: '', status: '' });
+    const [syncingCloud, setSyncingCloud] = useState(false);
+    const [syncMessage, setSyncMessage] = useState('');
+
     useEffect(() => {
         const loadInfo = async () => {
             try {
@@ -27,6 +32,39 @@ export const SecuritySettings = () => {
         };
         loadInfo();
     }, []);
+
+    const checkCloud = async () => {
+        setCloudStatus(prev => ({ ...prev, loading: true }));
+        try {
+            const res = await api.checkAppwriteStatus();
+            setCloudStatus({ loading: false, connected: res.connected, message: res.message, status: res.status });
+        } catch (e) {
+            setCloudStatus({ loading: false, connected: false, message: e.message, status: 'error' });
+        }
+    };
+
+    useEffect(() => {
+        checkCloud();
+    }, []);
+
+    const handleForceSync = async () => {
+        setSyncingCloud(true);
+        setSyncMessage('');
+        try {
+            const res = await api.forceSyncToCloud();
+            if (res && res.success) {
+                setSyncMessage('✓ Portfolio successfully synchronized to Appwrite Cloud!');
+                await checkCloud();
+            } else {
+                setSyncMessage('⚠️ Could not sync: ' + (res?.error || 'Appwrite Database collection "portfolio" is not created yet.'));
+            }
+        } catch (e) {
+            setSyncMessage('⚠️ Sync failed: ' + e.message);
+        } finally {
+            setSyncingCloud(false);
+            setTimeout(() => setSyncMessage(''), 8000);
+        }
+    };
 
     const handleUpdateCredentials = async (e) => {
         e.preventDefault();
@@ -222,6 +260,92 @@ export const SecuritySettings = () => {
                         </button>
                     </div>
                 </form>
+            </div>
+
+            {/* Appwrite Cloud Database Diagnostics & Sync */}
+            <div className="bg-white rounded-2xl p-6 border border-gray-200/80 shadow-sm space-y-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-devyellow-100 flex items-center justify-center text-devorange-600">
+                            <Database className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-extrabold text-charcoal-900">Appwrite Cloud Database Sync</h3>
+                            <p className="text-xs text-charcoal-500">Cross-device live synchronization status (Phones, Laptops, Tablets).</p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={checkCloud}
+                            disabled={cloudStatus.loading}
+                            className="px-3 py-1.5 rounded-xl border border-gray-200 hover:border-devorange-400 text-charcoal-700 hover:text-devorange-600 text-xs font-bold flex items-center gap-1.5 transition-all"
+                        >
+                            <RefreshCw className={`w-3.5 h-3.5 ${cloudStatus.loading ? 'animate-spin' : ''}`} />
+                            <span>Check Status</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleForceSync}
+                            disabled={syncingCloud}
+                            className="px-3.5 py-1.5 rounded-xl bg-devorange-500 hover:bg-devorange-600 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs transition-all disabled:opacity-50"
+                        >
+                            <Cloud className="w-3.5 h-3.5" />
+                            <span>{syncingCloud ? 'Syncing...' : 'Sync to Cloud Now'}</span>
+                        </button>
+                    </div>
+                </div>
+
+                {syncMessage && (
+                    <div className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${syncMessage.startsWith('✓') ? 'bg-emerald-50 border border-emerald-200 text-emerald-800' : 'bg-amber-50 border border-amber-200 text-amber-800'}`}>
+                        {syncMessage.startsWith('✓') ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />}
+                        <span>{syncMessage}</span>
+                    </div>
+                )}
+
+                {/* Status Alert */}
+                {cloudStatus.loading ? (
+                    <div className="p-4 bg-gray-50 rounded-xl flex items-center gap-2.5 text-xs text-charcoal-600 font-medium">
+                        <Loader2 className="w-4 h-4 text-devorange-500 animate-spin" />
+                        <span>Verifying Appwrite Cloud Database collection status...</span>
+                    </div>
+                ) : cloudStatus.connected ? (
+                    <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+                        <div className="space-y-1">
+                            <h4 className="text-xs font-bold text-emerald-900">Appwrite Cloud Synced & Active</h4>
+                            <p className="text-xs text-emerald-700 leading-relaxed">
+                                {cloudStatus.message || 'Your portfolio content and media are synchronized to Appwrite Cloud. Visitors on any phone, tablet, or browser will see your live portfolio data!'}
+                            </p>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="p-4 bg-amber-50 border border-amber-200/90 rounded-xl space-y-3">
+                        <div className="flex items-start gap-3">
+                            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                            <div className="space-y-1">
+                                <h4 className="text-xs font-bold text-amber-900">
+                                    Appwrite Collection "portfolio" Not Connected
+                                </h4>
+                                <p className="text-xs text-amber-800 leading-relaxed">
+                                    Your edits are currently stored in <strong>this computer's local browser memory only</strong>. When you open your portfolio on a phone or other device, it falls back to default data because the cloud collection has not been set up in Appwrite.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="bg-white/80 rounded-xl p-3 border border-amber-200/60 space-y-2 text-xs text-charcoal-700">
+                            <p className="font-bold text-charcoal-900">Quick 2-Minute Setup in Appwrite Console:</p>
+                            <ol className="list-decimal list-inside space-y-1 pl-1 text-[11px] leading-relaxed">
+                                <li>Open <strong>Appwrite Console</strong> &rarr; Select Database <strong>"portfolio"</strong></li>
+                                <li>Click <strong>+ Create collection</strong> &rarr; Name: <code>portfolio</code>, Collection ID: <code>portfolio</code></li>
+                                <li>In collection <strong>Settings &rarr; Permissions</strong>: Add role <code>Any</code> and check <strong>Read</strong></li>
+                                <li>In <strong>Attributes</strong>: Create String attribute <code>content</code> (size: <code>1000000</code>) and <code>updatedAt</code> (size: <code>100</code>)</li>
+                                <li>Return here and click <strong>"Sync to Cloud Now"</strong> to push your portfolio data live!</li>
+                            </ol>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* Mobile & Public Access Guide */}
