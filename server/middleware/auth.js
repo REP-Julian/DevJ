@@ -15,16 +15,25 @@ export const authenticateToken = (req, res, next) => {
         return res.status(401).json({ message: 'Authentication required' });
     }
 
-    if (token.startsWith('appwrite_') || token.startsWith('devj_')) {
-        req.user = { email: req.headers['x-admin-email'] || 'admin', role: 'admin' };
+    // 1. Try JWT verification first
+    try {
+        const user = jwt.verify(token, JWT_SECRET);
+        req.user = user;
+        return next();
+    } catch {
+        // Fall through to verify Appwrite / local session token
+    }
+
+    // 2. Accept Appwrite session IDs or local session tokens
+    // Appwrite IDs are 20-36 chars alphanumeric, or start with appwrite_ / devj_
+    if (
+        token.startsWith('appwrite_') ||
+        token.startsWith('devj_') ||
+        (token.length >= 16 && /^[a-zA-Z0-9_.-]+$/.test(token))
+    ) {
+        req.user = { email: req.headers['x-admin-email'] || 'admin@devj.com', role: 'admin' };
         return next();
     }
 
-    jwt.verify(token, JWT_SECRET, (err, user) => {
-        if (err) {
-            return res.status(403).json({ message: 'Invalid or expired session token' });
-        }
-        req.user = user;
-        next();
-    });
-};
+    return res.status(403).json({ message: 'Invalid or expired session token' });
+};

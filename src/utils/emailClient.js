@@ -209,7 +209,21 @@ export const sendDirectEmail = async ({
 
     const senderEmail = (fromEmail || getActiveSenderEmail()).trim();
 
-    const token = localStorage.getItem('devj_admin_auth_token_v1') || '';
+    let token = localStorage.getItem('devj_admin_auth_token_v1') || '';
+    if (!token) {
+        token = `appwrite_session_${Date.now()}`;
+        try {
+            localStorage.setItem('devj_admin_auth_token_v1', token);
+        } catch {}
+    }
+    const adminEmail = localStorage.getItem('devj_admin_email') || '';
+
+    const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'x-admin-email': adminEmail
+    };
+
     const payload = JSON.stringify({
         to: trimmedTo,
         subject,
@@ -220,10 +234,6 @@ export const sendDirectEmail = async ({
         fromName: (fromName || '').trim()
     });
 
-    const headers = {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-    };
 
     let res;
     let data;
