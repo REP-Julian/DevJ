@@ -9,6 +9,7 @@ export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
     const [isCreating, setIsCreating] = useState(false);
     const [aiLoading, setAiLoading] = useState(false);
     const [aiVisionScanning, setAiVisionScanning] = useState(false);
+    const [localImageFile, setLocalImageFile] = useState(null);
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -20,12 +21,14 @@ export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
     const handleEdit = (hobby) => {
         setEditingId(hobby.id);
         setIsCreating(false);
+        setLocalImageFile(null);
         setFormData(hobby);
     };
 
     const handleCreateNew = () => {
         setIsCreating(true);
         setEditingId(null);
+        setLocalImageFile(null);
         setFormData({
             name: '',
             description: '',
@@ -38,6 +41,7 @@ export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
     const handleCancel = () => {
         setIsCreating(false);
         setEditingId(null);
+        setLocalImageFile(null);
     };
 
     const handleEnhanceHobby = async () => {
@@ -62,13 +66,14 @@ export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
     };
 
     const handleScanHobbyVisual = async () => {
-        if (!formData.imageUrl) {
+        const imageToScan = localImageFile || formData.imageUrl;
+        if (!imageToScan) {
             alert('Please upload or select an image for this hobby first');
             return;
         }
         setAiVisionScanning(true);
         try {
-            const res = await aiService.analyzeHobbyVisual(formData.imageUrl, formData);
+            const res = await aiService.analyzeHobbyVisual(imageToScan, formData);
             setFormData(prev => ({
                 ...prev,
                 name: res.name || prev.name,
@@ -201,9 +206,12 @@ export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
                         <ImageUploader
                             label="Hobby Image Visual (Photography, Art, Setup)"
                             currentImage={formData.imageUrl}
-                            onImageUploaded={(url) => setFormData({ ...formData, imageUrl: url })}
+                            onImageUploaded={(url, file) => {
+                                setFormData(prev => ({ ...prev, imageUrl: url }));
+                                if (file) setLocalImageFile(file);
+                            }}
                         />
-                        {formData.imageUrl && (
+                        {(formData.imageUrl || localImageFile) && (
                             <div className="p-3 bg-devyellow-50/80 border border-devyellow-200 rounded-2xl flex items-center justify-between gap-3">
                                 <div className="flex items-center gap-2">
                                     <Eye className="w-4 h-4 text-devorange-500" />

@@ -88,6 +88,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
     const [achievementTitle, setAchievementTitle] = useState('');
     const [achievementNotes, setAchievementNotes] = useState('');
     const [achievementVisual, setAchievementVisual] = useState('');
+    const [achievementVisualFile, setAchievementVisualFile] = useState(null);
     const [generatedAchievement, setGeneratedAchievement] = useState(null);
     const [achievementLoading, setAchievementLoading] = useState(false);
     const [achievementApplying, setAchievementApplying] = useState(false);
@@ -96,6 +97,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
     const [hobbyName, setHobbyName] = useState('');
     const [hobbyDescription, setHobbyDescription] = useState('');
     const [hobbyVisual, setHobbyVisual] = useState('');
+    const [hobbyVisualFile, setHobbyVisualFile] = useState(null);
     const [generatedHobby, setGeneratedHobby] = useState(null);
     const [hobbyLoading, setHobbyLoading] = useState(false);
     const [hobbyApplying, setHobbyApplying] = useState(false);
@@ -379,13 +381,14 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
 
     // Scan & Analyze Achievement Visual with Gemini Vision
     const handleScanAchievementVisual = async () => {
-        if (!achievementVisual) {
+        const imageToScan = achievementVisualFile || achievementVisual;
+        if (!imageToScan) {
             alert('Please upload or select an achievement visual first');
             return;
         }
         setAchievementLoading(true);
         try {
-            const res = await aiService.analyzeAchievementVisual(achievementVisual, {
+            const res = await aiService.analyzeAchievementVisual(imageToScan, {
                 title: achievementTitle,
                 description: achievementNotes,
             });
@@ -417,6 +420,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
             setAchievementTitle('');
             setAchievementNotes('');
             setAchievementVisual('');
+            setAchievementVisualFile(null);
         } catch (err) {
             alert(err.message || 'Failed to save achievement');
         } finally {
@@ -449,19 +453,19 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
             });
             onUpdated();
             setSkillsGapList(prev => prev.filter(s => s.name !== skillItem.name));
-            alert(`🎉 Added ${skillItem.name} to Skills & Tech Stack!`);
-        } catch (e) {
-            alert(e.message || 'Failed to add skill');
+            alert(`✅ Added "${skillItem.name}" to skills inventory!`);
+        } catch (err) {
+            alert(err.message || 'Failed to add skill');
         }
     };
 
     // Hobbies Studio Handlers
     const handleGenerateHobbyInStudio = async () => {
-        if (!hobbyName.trim() && !hobbyDescription.trim() && !hobbyVisual) {
+        if (!hobbyName.trim() && !hobbyDescription.trim() && !hobbyVisual && !hobbyVisualFile) {
             alert('Please enter a hobby name or upload a photo');
             return;
         }
-        if (hobbyVisual) {
+        if (hobbyVisual || hobbyVisualFile) {
             return handleScanHobbyVisualInStudio();
         }
         setHobbyLoading(true);
@@ -476,13 +480,14 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
     };
 
     const handleScanHobbyVisualInStudio = async () => {
-        if (!hobbyVisual) {
+        const imageToScan = hobbyVisualFile || hobbyVisual;
+        if (!imageToScan) {
             alert('Please upload a hobby image first');
             return;
         }
         setHobbyLoading(true);
         try {
-            const res = await aiService.analyzeHobbyVisual(hobbyVisual, { name: hobbyName, description: hobbyDescription });
+            const res = await aiService.analyzeHobbyVisual(imageToScan, { name: hobbyName, description: hobbyDescription });
             setGeneratedHobby(res);
             if (res.name && !hobbyName) setHobbyName(res.name);
         } catch (e) {
@@ -1086,7 +1091,10 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                         <ImageUploader
                             label="Certificate / Trophy / Award Visual"
                             currentImage={achievementVisual}
-                            onImageUploaded={(url) => setAchievementVisual(url)}
+                            onImageUploaded={(url, file) => {
+                                setAchievementVisual(url);
+                                if (file) setAchievementVisualFile(file);
+                            }}
                         />
 
                         {/* Existing Portfolio Visual Selector */}
@@ -1347,7 +1355,10 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                         <ImageUploader
                             label="Hobby Image Visual (Photography, Art, Setup)"
                             currentImage={hobbyVisual}
-                            onImageUploaded={(url) => setHobbyVisual(url)}
+                            onImageUploaded={(url, file) => {
+                                setHobbyVisual(url);
+                                if (file) setHobbyVisualFile(file);
+                            }}
                         />
 
                         <div>

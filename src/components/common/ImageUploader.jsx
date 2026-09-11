@@ -33,7 +33,7 @@ export const ImageUploader = ({ currentImage, onImageUploaded, label = 'Upload I
             setUploading(true);
             const serverUrl = await api.uploadImage(file);
             setPreview(serverUrl);
-            onImageUploaded(serverUrl);
+            onImageUploaded(serverUrl, file);
         } catch (err) {
             console.error('Upload error:', err);
             setError(err.message || 'Image upload failed');

@@ -10,10 +10,12 @@ export const AchievementsManager = ({ achievements = [], onUpdated }) => {
     const [aiLoading, setAiLoading] = useState(false);
     const [aiVisionScanning, setAiVisionScanning] = useState(false);
     const [visualReport, setVisualReport] = useState(null);
+    const [localImageFile, setLocalImageFile] = useState(null);
     const [formData, setFormData] = useState({
         title: '',
         category: '',
         date: '2025',
+        issuer: '',
         description: '',
         imageUrl: '',
         order: 0,
@@ -23,6 +25,7 @@ export const AchievementsManager = ({ achievements = [], onUpdated }) => {
         setEditingId(item.id);
         setIsCreating(false);
         setVisualReport(null);
+        setLocalImageFile(null);
         setFormData(item);
     };
 
@@ -30,10 +33,12 @@ export const AchievementsManager = ({ achievements = [], onUpdated }) => {
         setIsCreating(true);
         setEditingId(null);
         setVisualReport(null);
+        setLocalImageFile(null);
         setFormData({
             title: '',
             category: 'Hackathon Award',
             date: new Date().getFullYear().toString(),
+            issuer: '',
             description: '',
             imageUrl: '',
             order: achievements.length + 1,
@@ -44,21 +49,24 @@ export const AchievementsManager = ({ achievements = [], onUpdated }) => {
         setIsCreating(false);
         setEditingId(null);
         setVisualReport(null);
+        setLocalImageFile(null);
     };
 
     const handleScanVisual = async () => {
-        if (!formData.imageUrl) {
+        const imageToScan = localImageFile || formData.imageUrl;
+        if (!imageToScan) {
             alert('Please upload or select an achievement visual first');
             return;
         }
         setAiVisionScanning(true);
         try {
-            const res = await aiService.analyzeAchievementVisual(formData.imageUrl, formData);
+            const res = await aiService.analyzeAchievementVisual(imageToScan, formData);
             setFormData(prev => ({
                 ...prev,
                 title: res.title || prev.title,
                 category: res.category || prev.category,
                 date: res.date || prev.date,
+                issuer: res.issuer || prev.issuer || '',
                 description: res.description || prev.description,
             }));
             setVisualReport(res);
@@ -222,7 +230,10 @@ export const AchievementsManager = ({ achievements = [], onUpdated }) => {
                         <ImageUploader
                             label="Achievement Visual (Certificate / Award / Trophy / Plaque)"
                             currentImage={formData.imageUrl}
-                            onImageUploaded={(url) => setFormData({ ...formData, imageUrl: url })}
+                            onImageUploaded={(url, file) => {
+                                setFormData(prev => ({ ...prev, imageUrl: url }));
+                                if (file) setLocalImageFile(file);
+                            }}
                         />
 
                         {formData.imageUrl && (

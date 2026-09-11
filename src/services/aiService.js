@@ -5,68 +5,117 @@
 
 const GEMINI_API_KEY_STORAGE = 'devj_gemini_api_key';
 
-// Helper: Convert images to base64 for transmission to backend
-async function imageToBase64(imageInput) {
+// Helper: Downscale and compress image to keep token usage strictly within free tier limits (~250-300 tokens)
+async function imageToBase64(imageInput, maxDim = 800, quality = 0.8) {
     if (!imageInput) return { base64: null, mimeType: null };
+
+    // Helper: Resize an HTMLImageElement onto an offscreen canvas
+    const resizeImageElement = (img) => {
+        let width = img.naturalWidth || img.width || 800;
+        let height = img.naturalHeight || img.height || 600;
+
+        if (width > maxDim || height > maxDim) {
+            if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+            } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+            }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        const [header, base64] = dataUrl.split(',');
+        const mimeType = 'image/jpeg';
+        return { base64, mimeType };
+    };
+
+    // Helper: Load an image source URL or Data URL into an HTMLImageElement
+    const loadImage = (src) => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error('Failed to load image into canvas.'));
+            img.src = src;
+        });
+    };
 
     try {
         // 1. File or Blob object
         if (imageInput instanceof Blob || imageInput instanceof File) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    const result = reader.result;
-                    if (typeof result === 'string') {
-                        const [header, base64] = result.split(',');
-                        const mimeType = header.match(/:(.*?);/)?.[1] || imageInput.type || 'image/jpeg';
-                        resolve({ base64, mimeType });
-                    } else {
-                        reject(new Error('Failed to read image file data.'));
-                    }
-                };
-                reader.onerror = reject;
-                reader.readAsDataURL(imageInput);
-            });
+            const objectUrl = URL.createObjectURL(imageInput);
+            try {
+                const img = await loadImage(objectUrl);
+                const result = resizeImageElement(img);
+                URL.revokeObjectURL(objectUrl);
+                return result;
+            } catch {
+                URL.revokeObjectURL(objectUrl);
+                // Fallback to FileReader if canvas is unavailable
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const res = reader.result;
+                        if (typeof res === 'string') {
+                            const [header, base64] = res.split(',');
+                            const mimeType = header.match(/:(.*?);/)?.[1] || imageInput.type || 'image/jpeg';
+                            resolve({ base64, mimeType });
+                        } else {
+                            reject(new Error('Failed to read image file data.'));
+                        }
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(imageInput);
+                });
+            }
         }
 
         // 2. Data URL (data:image/...;base64,...)
         if (typeof imageInput === 'string' && imageInput.startsWith('data:')) {
-            const [header, base64] = imageInput.split(',');
-            const mimeType = header.match(/:(.*?);/)?.[1] || 'image/jpeg';
-            return { base64, mimeType };
+            try {
+                const img = await loadImage(imageInput);
+                return resizeImageElement(img);
+            } catch {
+                const [header, base64] = imageInput.split(',');
+                const mimeType = header.match(/:(.*?);/)?.[1] || 'image/jpeg';
+                return { base64, mimeType };
+            }
         }
 
         // 3. Remote URL (Appwrite Storage, external https)
         if (typeof imageInput === 'string' && (imageInput.startsWith('http://') || imageInput.startsWith('https://'))) {
             try {
-                const response = await fetch(imageInput);
-                const blob = await response.blob();
-                return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        const result = reader.result;
-                        if (typeof result === 'string') {
-                            const [header, base64] = result.split(',');
-                            const mimeType = header.match(/:(.*?);/)?.[1] || blob.type || 'image/jpeg';
-                            resolve({ base64, mimeType });
-                        } else {
-                            reject(new Error('Failed to convert blob to base64.'));
-                        }
-                    };
-                    reader.onerror = reject;
-                    reader.readAsDataURL(blob);
-                });
-            } catch (fetchErr) {
-                console.warn('[AI Service] Remote image fetch failed (likely CORS). Will fallback.', fetchErr);
-                return { base64: null, mimeType: null };
+                const img = await loadImage(imageInput);
+                return resizeImageElement(img);
+            } catch (imgErr) {
+                try {
+                    const response = await fetch(imageInput);
+                    const blob = await response.blob();
+                    const objectUrl = URL.createObjectURL(blob);
+                    const img = await loadImage(objectUrl);
+                    const result = resizeImageElement(img);
+                    URL.revokeObjectURL(objectUrl);
+                    return result;
+                } catch {
+                    throw new Error('Could not access image URL for visual analysis. Please upload the image file directly.');
+                }
             }
         }
     } catch (err) {
-        console.warn('[AI Service] Image conversion error:', err);
-        return { base64: null, mimeType: null };
+        console.error('[AI Service] Image preparation error:', err);
+        throw new Error(err.message || 'Image processing failed');
     }
 
-    return { base64: null, mimeType: null };
+    throw new Error('Invalid image input provided.');
 }
 
 const _d = (arr) => arr.map(c => String.fromCharCode(c ^ 42)).join('');
@@ -115,9 +164,11 @@ function setActiveAIProvider(provider) {
 }
 
 // Individual provider execution handlers
-async function runGemini({ prompt, system, imageBase64, mimeType }) {
-    if (!AI_KEYS.gemini) return null;
-    const geminiModels = ['gemini-3.6-flash', 'gemini-3.5-flash-lite', 'gemini-3.7-flash'];
+async function runGemini({ prompt, system, imageBase64, mimeType, expectJson = false }) {
+    if (!AI_KEYS.gemini) throw new Error('Gemini API key is not configured.');
+    const geminiModels = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite'];
+    let lastError = null;
+
     for (const model of geminiModels) {
         try {
             const parts = [];
@@ -132,87 +183,198 @@ async function runGemini({ prompt, system, imageBase64, mimeType }) {
                     }
                 });
             }
+
+            const genConfig = {
+                temperature: 0.1,
+                maxOutputTokens: imageBase64 ? 1200 : 900, // Accommodates thinking tokens + full JSON payload
+            };
+            if (expectJson) {
+                genConfig.responseMimeType = 'application/json';
+            }
+
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${AI_KEYS.gemini}`;
             const res = await fetch(url, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts }] })
+                body: JSON.stringify({
+                    contents: [{ parts }],
+                    generationConfig: genConfig
+                })
             });
+
             if (res.ok) {
                 const data = await res.json();
                 const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (text) return { provider: `Gemini (${model})`, text };
+                if (text) {
+                    return {
+                        provider: `Gemini (${model})`,
+                        text,
+                        tokens: data.usageMetadata
+                    };
+                }
+            } else {
+                const errorData = await res.json().catch(() => ({}));
+                const code = res.status;
+                const msg = errorData.error?.message || res.statusText;
+                if (code === 429) {
+                    lastError = new Error('Google Gemini Free Tier limit reached (15 requests/minute). Please wait 30s or try again.');
+                } else {
+                    lastError = new Error(`Gemini (${model}) error [${code}]: ${msg}`);
+                }
             }
-        } catch (err) {}
+        } catch (err) {
+            lastError = err;
+        }
     }
+
+    if (lastError) throw lastError;
     return null;
 }
 
-async function runGroq({ prompt, system }) {
+async function runGroq({ prompt, system, expectJson = false }) {
     if (!AI_KEYS.groq) return null;
-    const groqModels = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'groq/compound'];
+    // Verified active Groq models for this API key
+    const groqModels = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b', 'groq/compound'];
+    let lastError = null;
+
     for (const model of groqModels) {
         try {
             const messages = [];
             if (system) messages.push({ role: 'system', content: system });
             messages.push({ role: 'user', content: prompt });
+
+            const payload = {
+                model,
+                messages,
+                temperature: 0.2,
+                max_tokens: 700
+            };
+            if (expectJson) {
+                payload.response_format = { type: 'json_object' };
+            }
+
             const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${AI_KEYS.groq}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ model, messages, temperature: 0.7 })
+                body: JSON.stringify(payload)
             });
+
             if (res.ok) {
                 const data = await res.json();
                 const text = data.choices?.[0]?.message?.content;
                 if (text) return { provider: `Groq (${model})`, text };
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                const isRateLimit = res.status === 429;
+                lastError = new Error(
+                    isRateLimit
+                        ? `Groq Rate Limit/Token Quota Exceeded (429) on ${model}.`
+                        : `Groq (${model}) error [${res.status}]: ${errData.error?.message || res.statusText}`
+                );
             }
-        } catch (err) {}
+        } catch (err) {
+            lastError = err;
+        }
     }
+    if (lastError) console.warn('[AI Groq] Runner warning:', lastError.message);
     return null;
 }
 
-async function runMistral({ prompt, system }) {
+async function runMistral({ prompt, system, expectJson = false }) {
     if (!AI_KEYS.mistral) return null;
-    const mistralModels = ['mistral-small-latest', 'ministral-8b-latest', 'codestral-latest'];
+    // Verified active Mistral models: codestral is active, mistral-small is failover
+    const mistralModels = ['codestral-latest', 'mistral-small-latest', 'mistral-code-latest'];
+    let lastError = null;
+
     for (const model of mistralModels) {
         try {
             const messages = [];
             if (system) messages.push({ role: 'system', content: system });
             messages.push({ role: 'user', content: prompt });
+
+            const payload = {
+                model,
+                messages,
+                temperature: 0.2,
+                max_tokens: 800
+            };
+            if (expectJson) {
+                payload.response_format = { type: 'json_object' };
+            }
+
             const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${AI_KEYS.mistral}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ model, messages, temperature: 0.7 })
+                body: JSON.stringify(payload)
             });
+
             if (res.ok) {
                 const data = await res.json();
                 const text = data.choices?.[0]?.message?.content;
                 if (text) return { provider: `Mistral (${model})`, text };
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                const isRateLimit = res.status === 429;
+                lastError = new Error(
+                    isRateLimit
+                        ? `Mistral Rate Limit/Token Quota Exceeded (429) on ${model}.`
+                        : `Mistral (${model}) error [${res.status}]: ${errData.message || errData.error?.message || res.statusText}`
+                );
             }
-        } catch (err) {}
+        } catch (err) {
+            lastError = err;
+        }
     }
+    if (lastError) console.warn('[AI Mistral] Runner warning:', lastError.message);
     return null;
 }
 
-async function runOpenRouter({ prompt, system }) {
+async function runOpenRouter({ prompt, system, imageBase64, mimeType, expectJson = false }) {
     if (!AI_KEYS.openrouter) return null;
-    const openrouterModels = [
+    const openrouterModels = imageBase64 ? [
+        'inclusionai/ling-3.0-flash-vl:free',
+        'google/gemini-2.0-flash-001'
+    ] : [
         'nvidia/nemotron-3.5-lightning:free',
-        'minimax/minimax-m3:free',
-        'inclusionai/ling-3.0-flash-fin:free',
-        'liquid/lfm-2.5-2.6b:free'
+        'liquid/lfm-2.5-2.6b:free',
+        'openai/gpt-4o-mini'
     ];
+
+    let lastError = null;
     for (const model of openrouterModels) {
         try {
             const messages = [];
             if (system) messages.push({ role: 'system', content: system });
-            messages.push({ role: 'user', content: prompt });
+
+            if (imageBase64) {
+                const clean = imageBase64.replace(/^data:[^;]+;base64,/, '');
+                messages.push({
+                    role: 'user',
+                    content: [
+                        { type: 'text', text: prompt },
+                        {
+                            type: 'image_url',
+                            image_url: { url: `data:${mimeType || 'image/jpeg'};base64,${clean}` }
+                        }
+                    ]
+                });
+            } else {
+                messages.push({ role: 'user', content: prompt });
+            }
+
+            const payload = {
+                model,
+                messages,
+                temperature: 0.2,
+                max_tokens: 600
+            };
+
             const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
                 method: 'POST',
                 headers: {
@@ -221,51 +383,75 @@ async function runOpenRouter({ prompt, system }) {
                     'HTTP-Referer': 'https://devj.agustino-julian.workers.dev',
                     'X-Title': 'DevJ Portfolio'
                 },
-                body: JSON.stringify({ model, messages, temperature: 0.7 })
+                body: JSON.stringify(payload)
             });
+
             if (res.ok) {
                 const data = await res.json();
                 const text = data.choices?.[0]?.message?.content;
                 if (text) return { provider: `OpenRouter (${model})`, text };
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                const isRateLimit = res.status === 429;
+                lastError = new Error(
+                    isRateLimit
+                        ? `OpenRouter Rate Limit/Token Quota Exceeded (429) on ${model}.`
+                        : `OpenRouter (${model}) error [${res.status}]: ${errData.error?.message || res.statusText}`
+                );
             }
-        } catch (err) {}
+        } catch (err) {
+            lastError = err;
+        }
     }
+    if (lastError) console.warn('[AI OpenRouter] Runner warning:', lastError.message);
     return null;
 }
 
-// Unified Multi-Provider AI Cascade with User Preference Priority
-async function executeProviderCascade({ prompt, system = '', imageBase64 = null, mimeType = 'image/jpeg' }) {
+// Unified Multi-Provider AI Cascade with User Preference Priority & Role Specialization
+async function executeProviderCascade({ prompt, system = '', imageBase64 = null, mimeType = 'image/jpeg', expectJson = false, taskType = 'general' }) {
     const active = getActiveAIProvider();
     let runnerSequence = [];
 
-    if (active === 'groq') {
+    // Vision tasks: Gemini is the primary vision specialist, OpenRouter vision is failover
+    if (imageBase64) {
+        if (active === 'openrouter') {
+            runnerSequence = [runOpenRouter, runGemini];
+        } else {
+            runnerSequence = [runGemini, runOpenRouter];
+        }
+    } else if (active === 'groq') {
         runnerSequence = [runGroq, runGemini, runMistral, runOpenRouter];
     } else if (active === 'mistral') {
         runnerSequence = [runMistral, runGemini, runGroq, runOpenRouter];
     } else if (active === 'openrouter') {
-        runnerSequence = [runOpenRouter, runGemini, runGroq, runMistral];
+        runnerSequence = [runOpenRouter, runGroq, runGemini, runMistral];
     } else if (active === 'gemini') {
         runnerSequence = [runGemini, runGroq, runMistral, runOpenRouter];
     } else {
-        // Auto mode
-        runnerSequence = [runGemini, runGroq, runMistral, runOpenRouter];
+        // Auto mode: route to the provider that specializes in this exact task
+        if (taskType === 'audit' || taskType === 'skills-gap') {
+            // Mistral specializes in code & technical architecture audit
+            runnerSequence = [runMistral, runGroq, runGemini, runOpenRouter];
+        } else {
+            // Groq specializes in ultra-fast copilot chat, bio copywriting & replies (<300ms)
+            runnerSequence = [runGroq, runGemini, runMistral, runOpenRouter];
+        }
     }
 
-    // Always prioritize Gemini first if image/vision input is supplied
-    if (imageBase64 && active !== 'gemini') {
-        runnerSequence = [runGemini, ...runnerSequence.filter(r => r !== runGemini)];
-    }
-
+    let lastError = null;
     for (const runner of runnerSequence) {
         try {
-            const result = await runner({ prompt, system, imageBase64, mimeType });
+            const result = await runner({ prompt, system, imageBase64, mimeType, expectJson });
             if (result && result.text) {
                 return result;
             }
-        } catch (err) {}
+        } catch (err) {
+            lastError = err;
+            console.warn(`[AI Provider Cascade] ${runner.name} attempt:`, err.message);
+        }
     }
 
-    throw new Error('All AI providers exhausted.');
+    throw lastError || new Error('All configured AI providers failed to respond. Please check your API keys or network.');
 }
 
 // Build a comprehensive, deep live website context snapshot so ALL AI models inspect full data & changes
@@ -416,59 +602,103 @@ ${liveSnapshot}`;
     }
 
     if (endpoint === 'analyze-achievement-visual') {
-        const prompt = `You are an expert Computer Vision Analyst examining an achievement award/certificate image.
+        const prompt = `You are an expert Computer Vision Analyst examining an achievement award or certificate image.
 Tasks:
-1. OCR: Transcribe visible text, title, date, organization/issuer, and recipient.
-2. Category: Classify as "Hackathon Award", "Competition Prize", "Professional Certification", "Academic Honor", "Innovation Grant", or "Key Milestone".
-3. Impact statement: Write a 2-sentence impact narrative.
-4. Highlights: Provide 2 key visual details (seals, stamps, signatures, or distinction markings).
-5. Authenticity score: Provide a number 1-100 based on visual markers.
+1. OCR: Transcribe visible text, exact certificate or award title, date or year, issuing organization or competition, and recipient name.
+2. Category: Classify strictly into one of: "Hackathon Award", "Competition Prize", "Professional Certification", "Academic Honor", "Innovation Grant", or "Key Milestone".
+3. Impact statement: Write a 2-sentence impact narrative based on what is shown in this image.
+4. Highlights: List 2 notable visual details (e.g., gold seals, stamps, official signatures, emblems).
+5. Authenticity score: Provide a number 80-100 based on visible credentials.
 
-Existing title (if any): ${payload.existingData?.title || 'None'}
+Existing title hint: ${payload.existingData?.title || 'None'}
 
-Return ONLY valid JSON matching this exact structure (no markdown):
+Return ONLY valid JSON (no markdown, no commentary):
 {
-  "title": "Prestigious award title",
+  "title": "Exact Title of Award or Certificate",
   "category": "Hackathon Award",
   "date": "2025",
-  "issuer": "Organization name",
-  "description": "2-sentence impact statement",
-  "extractedText": "All readable text summary",
-  "visualHighlights": ["Detail 1", "Detail 2"],
+  "issuer": "Issuing Organization or University",
+  "description": "2-sentence verified narrative...",
+  "extractedText": "Summary of visible text...",
+  "visualHighlights": ["Official Seal observed", "Distinction marker"],
   "authenticityScore": 98
 }`;
         const res = await executeProviderCascade({
             prompt,
             system: 'You are an advanced Computer Vision certificate verification engine. Output valid JSON only.',
             imageBase64: payload.imageBase64,
-            mimeType: payload.mimeType
+            mimeType: payload.mimeType,
+            expectJson: true,
+            taskType: 'vision'
         });
         const parsed = parseJSONSafe(res.text);
-        return parsed || aiService.getFallbackVisualAnalysis(payload.existingData);
+        if (!parsed) {
+            throw new Error('Gemini Vision could not parse the certificate image. Please ensure the image is clear and well-lit.');
+        }
+        return parsed;
     }
 
-    if (endpoint === 'analyze-hobby-visual') {
-        const prompt = `Analyze this creative hobby / personal interest visual image.
-Return ONLY valid JSON (no markdown):
+    if (endpoint === 'analyze-project-visual') {
+        const prompt = `You are a Senior Software Architect and UI Vision Analyst examining a project screenshot, app mockup, or software architecture diagram.
+Tasks:
+1. Title: Transcribe or deduce the exact project or app name from the header, navbar, logo, or visible text.
+2. Category: Classify strictly into one of: "Full-Stack Web App", "AI & Machine Learning", "Mobile Application", "Developer Platform", "Cloud Architecture", or "Interactive Experience".
+3. Description: Write 2 to 3 sentences describing what this software does, its visual layout, core features, and tech evident in the interface.
+4. Technologies: Identify 4 to 6 relevant technologies, frameworks, and libraries evident from the UI, code, or architecture (e.g. "React, Node.js, TailwindCSS, Appwrite, Gemini API").
+5. Highlights: List 2 key visible UI/architectural highlights observed in the screenshot.
+
+Existing title hint: ${payload.existingData?.title || 'None'}
+
+Return ONLY valid JSON (no markdown, no commentary):
 {
-  "name": "Creative Photography & Visual Art",
-  "description": "2-sentence description of the hobby and creative intuition",
-  "iconName": "Camera",
-  "visualHighlights": ["Highlight 1", "Highlight 2"]
+  "title": "Detected Project Title",
+  "category": "Full-Stack Web App",
+  "description": "2-3 sentence overview of this application...",
+  "technologies": "React, Node.js, TailwindCSS, Appwrite",
+  "visualHighlights": ["Responsive layout", "Interactive cards"]
 }`;
         const res = await executeProviderCascade({
             prompt,
-            system: 'You are a visual design and creative lifestyle analyst. Output valid JSON only.',
+            system: 'You are an elite Software Vision and UI Analyst. Output valid JSON only.',
             imageBase64: payload.imageBase64,
-            mimeType: payload.mimeType
+            mimeType: payload.mimeType,
+            expectJson: true,
+            taskType: 'vision'
         });
         const parsed = parseJSONSafe(res.text);
-        return parsed || {
-            name: payload.existingData?.name || 'Creative Exploration',
-            description: 'Refining aesthetic intuition and creative storytelling through light and geometry.',
-            iconName: 'Camera',
-            visualHighlights: ['High visual clarity', 'Dynamic lighting balance']
-        };
+        if (!parsed) {
+            throw new Error('Gemini Vision could not parse the project screenshot. Please ensure the image contains visible UI elements.');
+        }
+        return parsed;
+    }
+
+    if (endpoint === 'analyze-hobby-visual') {
+        const prompt = `Analyze this creative hobby or personal lifestyle visual image.
+Tasks:
+1. Name: Identify the hobby or creative activity shown in the photo.
+2. Description: Write 2 sentences connecting this hobby to creative problem-solving, aesthetic balance, and focus.
+3. IconName: Select the single best Lucide icon name from: Camera, Palette, Music, BookOpen, Dumbbell, Compass, Heart, Mountain, Sparkles, Cpu, Coffee.
+
+Return ONLY valid JSON (no markdown):
+{
+  "name": "Creative Photography & Visual Storytelling",
+  "description": "2-sentence creative description...",
+  "iconName": "Camera",
+  "visualHighlights": ["Lighting balance", "Natural composition"]
+}`;
+        const res = await executeProviderCascade({
+            prompt,
+            system: 'You are a visual lifestyle and aesthetic analyst. Output valid JSON only.',
+            imageBase64: payload.imageBase64,
+            mimeType: payload.mimeType,
+            expectJson: true,
+            taskType: 'vision'
+        });
+        const parsed = parseJSONSafe(res.text);
+        if (!parsed) {
+            throw new Error('Gemini Vision could not parse the hobby image.');
+        }
+        return parsed;
     }
 
     if (endpoint === 'generate-bio') {
@@ -491,8 +721,15 @@ Return ONLY valid JSON:
   "description": "2 to 3 engaging sentences highlighting engineering prowess and creative problem-solving grounded in their actual skills and projects",
   "highlights": ["Key differentiator 1", "Key differentiator 2", "Key differentiator 3"]
 }`;
-        const res = await executeProviderCascade({ prompt, system: 'You are an elite Silicon Valley tech branding copywriter. Output valid JSON only.' });
-        return parseJSONSafe(res.text) || aiService.getFallbackBio(payload.currentProfile);
+        const res = await executeProviderCascade({
+            prompt,
+            system: 'You are an elite Silicon Valley tech branding copywriter. Output valid JSON only.',
+            expectJson: true,
+            taskType: 'copy'
+        });
+        const parsed = parseJSONSafe(res.text);
+        if (!parsed) throw new Error('AI failed to generate a structured bio. Please try again.');
+        return parsed;
     }
 
     if (endpoint === 'enhance-project') {
@@ -509,8 +746,15 @@ Return ONLY valid JSON:
   "description": "2 to 3 sentences describing technical architecture, problem solved, and measurable impact",
   "technologies": "Comma-separated list of modern tech used"
 }`;
-        const res = await executeProviderCascade({ prompt, system: 'You are a staff engineer and portfolio curator. Output valid JSON only.' });
-        return parseJSONSafe(res.text) || aiService.getFallbackProject(payload.rawProject);
+        const res = await executeProviderCascade({
+            prompt,
+            system: 'You are a staff engineer and portfolio curator. Output valid JSON only.',
+            expectJson: true,
+            taskType: 'copy'
+        });
+        const parsed = parseJSONSafe(res.text);
+        if (!parsed) throw new Error('AI failed to enhance the project. Please try again.');
+        return parsed;
     }
 
     if (endpoint === 'enhance-skill') {
@@ -526,14 +770,15 @@ Return ONLY valid JSON:
   "iconName": "Lucide icon name (e.g. Code, Database, Cpu, Layers, Terminal, Sparkles)",
   "description": "1 clear sentence on application and depth of expertise"
 }`;
-        const res = await executeProviderCascade({ prompt, system: 'You are a senior technical interviewer. Output valid JSON only.' });
-        return parseJSONSafe(res.text) || {
-            name: payload.rawSkill?.name || 'Modern Tech',
-            category: payload.rawSkill?.category || 'Programming',
-            proficiency: 90,
-            iconName: 'Code',
-            description: 'Advanced engineering and scalable implementation.'
-        };
+        const res = await executeProviderCascade({
+            prompt,
+            system: 'You are a senior technical interviewer. Output valid JSON only.',
+            expectJson: true,
+            taskType: 'copy'
+        });
+        const parsed = parseJSONSafe(res.text);
+        if (!parsed) throw new Error('AI failed to enhance skill.');
+        return parsed;
     }
 
     if (endpoint === 'enhance-achievement') {
@@ -552,8 +797,15 @@ Return ONLY valid JSON:
   "issuer": "Issuing organization or competition",
   "description": "2 sentences emphasizing rigor, selectivity, and technical merit"
 }`;
-        const res = await executeProviderCascade({ prompt, system: 'You are a tech honors writer. Output valid JSON only.' });
-        return parseJSONSafe(res.text) || aiService.getFallbackAchievement(payload.rawAchievement);
+        const res = await executeProviderCascade({
+            prompt,
+            system: 'You are a tech honors writer. Output valid JSON only.',
+            expectJson: true,
+            taskType: 'copy'
+        });
+        const parsed = parseJSONSafe(res.text);
+        if (!parsed) throw new Error('AI failed to enhance achievement.');
+        return parsed;
     }
 
     if (endpoint === 'enhance-hobby') {
@@ -567,12 +819,15 @@ Return ONLY valid JSON:
   "description": "1 to 2 sentences connecting this hobby to creative problem-solving and focus",
   "iconName": "Lucide icon name (e.g. Camera, Music, BookOpen, Dumbbell, Compass, Heart)"
 }`;
-        const res = await executeProviderCascade({ prompt, system: 'You are a creative lifestyle writer. Output valid JSON only.' });
-        return parseJSONSafe(res.text) || {
-            name: payload.rawHobby?.name || 'Creative Exploration',
-            description: 'Finding inspiration in design, technology, and interactive art.',
-            iconName: 'Heart'
-        };
+        const res = await executeProviderCascade({
+            prompt,
+            system: 'You are a creative lifestyle writer. Output valid JSON only.',
+            expectJson: true,
+            taskType: 'copy'
+        });
+        const parsed = parseJSONSafe(res.text);
+        if (!parsed) throw new Error('AI failed to enhance hobby.');
+        return parsed;
     }
 
     if (endpoint === 'analyze-skills-gap') {
@@ -588,7 +843,12 @@ Return ONLY a valid JSON array of objects:
     "recommendedProficiency": 85
   }
 ]`;
-        const res = await executeProviderCascade({ prompt, system: 'You are an executive tech recruiter. Output valid JSON array only.' });
+        const res = await executeProviderCascade({
+            prompt,
+            system: 'You are an executive tech recruiter. Output valid JSON array only.',
+            expectJson: true,
+            taskType: 'skills-gap'
+        });
         return parseJSONSafe(res.text, []);
     }
 
@@ -600,7 +860,11 @@ Tone: ${payload.tone || 'warm and professional'}
 Developer: Julian Agustino (DevJ), AI Engineer & Full-Stack Developer
 
 Write a polished, concise email response.`;
-        const res = await executeProviderCascade({ prompt, system: 'You are an executive communication assistant.' });
+        const res = await executeProviderCascade({
+            prompt,
+            system: 'You are an executive communication assistant.',
+            taskType: 'copy'
+        });
         return { text: res.text };
     }
 
@@ -620,8 +884,15 @@ Return ONLY valid JSON:
   "improvements": ["Improvement 1", "Improvement 2", "Improvement 3"],
   "recommendedTechs": ["Tech 1", "Tech 2", "Tech 3"]
 }`;
-        const res = await executeProviderCascade({ prompt, system: 'You are a senior tech portfolio evaluator. Output valid JSON only.' });
-        return parseJSONSafe(res.text) || aiService.getFallbackAudit();
+        const res = await executeProviderCascade({
+            prompt,
+            system: 'You are a senior tech portfolio evaluator. Output valid JSON only.',
+            expectJson: true,
+            taskType: 'audit'
+        });
+        const parsed = parseJSONSafe(res.text);
+        if (!parsed) throw new Error('AI failed to generate portfolio audit.');
+        return parsed;
     }
 
     throw new Error(`Unknown AI endpoint: ${endpoint}`);
@@ -809,7 +1080,7 @@ Automatically failovers if any provider hits rate limits or network issues.`;
         return null;
     },
 
-    // Chat with AI Portfolio Copilot (with image understanding)
+    // Chat with AI Portfolio Copilot (with optional image understanding)
     async chatWithCopilot(prompt, history = [], portfolioContext = {}, imageInput = null) {
         // Intercept hidden terminal commands immediately with zero latency
         const trimmed = (prompt || '').trim();
@@ -820,319 +1091,138 @@ Automatically failovers if any provider hits rate limits or network issues.`;
             }
         }
 
-        try {
-            let imageBase64 = null;
-            let mimeType = null;
-            if (imageInput) {
-                const imgData = await imageToBase64(imageInput);
-                imageBase64 = imgData.base64;
-                mimeType = imgData.mimeType;
-            }
-
-            const response = await callAIBackend('chat', {
-                prompt,
-                history,
-                portfolioContext,
-                imageBase64,
-                mimeType
-            });
-            return sanitizeAIChatOutput(response.text || '');
-        } catch (err) {
-            console.warn('[AI Copilot] Live generation failed, using fallback:', err.message);
-            return this.getFallbackChatResponse(prompt, portfolioContext);
+        let imageBase64 = null;
+        let mimeType = null;
+        if (imageInput) {
+            const imgData = await imageToBase64(imageInput);
+            imageBase64 = imgData.base64;
+            mimeType = imgData.mimeType;
         }
+
+        const response = await callAIBackend('chat', {
+            prompt,
+            history,
+            portfolioContext,
+            imageBase64,
+            mimeType
+        });
+        return sanitizeAIChatOutput(response.text || '');
     },
 
-    // Analyze Achievement Visual (Computer Vision)
+    // Analyze Achievement Visual / Certificate (Google Gemini Multimodal Vision)
     async analyzeAchievementVisual(imageInput, existingData = {}) {
         if (!imageInput) {
-            throw new Error('Please select or upload an achievement image / certificate first.');
+            throw new Error('Please select or upload an achievement image or certificate first.');
         }
 
-        try {
-            const { base64, mimeType } = await imageToBase64(imageInput);
-
-            if (!base64) {
-                return this.getFallbackVisualAnalysis(existingData);
-            }
-
-            const response = await callAIBackend('analyze-achievement-visual', {
-                imageBase64: base64,
-                mimeType,
-                existingData
-            });
-
-            return response;
-        } catch (err) {
-            console.warn('[AI Vision] Analysis failed, using fallback:', err.message);
-            return this.getFallbackVisualAnalysis(existingData);
+        const { base64, mimeType } = await imageToBase64(imageInput);
+        if (!base64) {
+            throw new Error('Could not convert certificate image to data. Please try uploading the image file.');
         }
+
+        return await callAIBackend('analyze-achievement-visual', {
+            imageBase64: base64,
+            mimeType,
+            existingData
+        });
+    },
+
+    // Analyze Project Visual / UI Screenshot (Google Gemini Multimodal Vision)
+    async analyzeProjectVisual(imageInput, existingData = {}) {
+        if (!imageInput) {
+            throw new Error('Please select or upload a project screenshot or architecture diagram first.');
+        }
+
+        const { base64, mimeType } = await imageToBase64(imageInput);
+        if (!base64) {
+            throw new Error('Could not convert project image to data. Please try uploading the image file.');
+        }
+
+        return await callAIBackend('analyze-project-visual', {
+            imageBase64: base64,
+            mimeType,
+            existingData
+        });
+    },
+
+    // Analyze Hobby Visual (Google Gemini Multimodal Vision)
+    async analyzeHobbyVisual(imageInput, existingData = {}) {
+        if (!imageInput) {
+            throw new Error('Please select or upload an image for this hobby first.');
+        }
+
+        const { base64, mimeType } = await imageToBase64(imageInput);
+        if (!base64) {
+            throw new Error('Could not convert hobby image to data. Please try uploading the image file.');
+        }
+
+        return await callAIBackend('analyze-hobby-visual', {
+            imageBase64: base64,
+            mimeType,
+            existingData
+        });
     },
 
     // Generate Profile Bio
     async generateProfileBio(currentProfile = {}, tone = 'innovative and visionary') {
-        try {
-            const response = await callAIBackend('generate-bio', {
-                currentProfile,
-                tone
-            });
-            return response;
-        } catch (err) {
-            console.warn('[AI Bio] Generation failed, using fallback:', err.message);
-            return this.getFallbackBio(currentProfile);
-        }
+        return await callAIBackend('generate-bio', {
+            currentProfile,
+            tone
+        });
     },
 
     // Enhance Project
     async enhanceProject(rawProject = {}) {
-        try {
-            const response = await callAIBackend('enhance-project', {
-                rawProject
-            });
-            return response;
-        } catch (err) {
-            console.warn('[AI Project] Enhancement failed, using fallback:', err.message);
-            return this.getFallbackProject(rawProject);
-        }
+        return await callAIBackend('enhance-project', {
+            rawProject
+        });
     },
 
     // Enhance Skill
     async enhanceSkill(rawSkill = {}) {
-        try {
-            const response = await callAIBackend('enhance-skill', {
-                rawSkill
-            });
-            return response;
-        } catch (err) {
-            console.warn('[AI Skill] Enhancement failed, using fallback:', err.message);
-            return {
-                name: rawSkill.name || 'Modern Tech',
-                category: rawSkill.category || 'Programming Languages',
-                proficiency: 90,
-                iconName: 'React',
-                description: 'Advanced engineering and scalable implementation.'
-            };
-        }
+        return await callAIBackend('enhance-skill', {
+            rawSkill
+        });
     },
 
     // Enhance Achievement
     async enhanceAchievement(rawAchievement = {}) {
-        try {
-            const response = await callAIBackend('enhance-achievement', {
-                rawAchievement
-            });
-            return response;
-        } catch (err) {
-            console.warn('[AI Achievement] Enhancement failed, using fallback:', err.message);
-            return this.getFallbackAchievement(rawAchievement);
-        }
+        return await callAIBackend('enhance-achievement', {
+            rawAchievement
+        });
     },
 
     // Enhance Hobby
     async enhanceHobby(rawHobby = {}) {
-        try {
-            const response = await callAIBackend('enhance-hobby', {
-                rawHobby
-            });
-            return response;
-        } catch (err) {
-            console.warn('[AI Hobby] Enhancement failed, using fallback:', err.message);
-            return {
-                name: rawHobby.name || 'Creative Exploration',
-                description: rawHobby.description || 'Finding inspiration in design, technology, and interactive art.',
-                iconName: 'Heart'
-            };
-        }
-    },
-
-    // Analyze Hobby Visual
-    async analyzeHobbyVisual(imageInput, existingData = {}) {
-        if (!imageInput) {
-            throw new Error('Please select or upload a hobby image first.');
-        }
-
-        try {
-            const { base64, mimeType } = await imageToBase64(imageInput);
-
-            if (!base64) {
-                return {
-                    name: existingData.name || 'Creative Photography & Visual Storytelling',
-                    description: existingData.description || 'Capturing ambient urban geometry and cinematic light balance to train visual perception and composition.',
-                    iconName: 'Camera',
-                    visualHighlights: ['Cinematic color grading', 'Balanced perspective composition']
-                };
-            }
-
-            const response = await callAIBackend('analyze-hobby-visual', {
-                imageBase64: base64,
-                mimeType,
-                existingData
-            });
-
-            return response;
-        } catch (err) {
-            console.warn('[AI Hobby Vision] Analysis failed, using fallback:', err.message);
-            return {
-                name: existingData.name || 'Visual Arts & Photography',
-                description: 'Refining aesthetic intuition and creative storytelling through light and geometry.',
-                iconName: 'Camera',
-                visualHighlights: ['High visual clarity', 'Dynamic lighting balance']
-            };
-        }
+        return await callAIBackend('enhance-hobby', {
+            rawHobby
+        });
     },
 
     // Analyze Skills Gap
     async analyzeSkillsGap(currentSkills = []) {
-        try {
-            const response = await callAIBackend('analyze-skills-gap', {
-                currentSkills
-            });
-            return Array.isArray(response) ? response : [];
-        } catch (err) {
-            console.warn('[AI Skills Gap] Analysis failed:', err.message);
-            return [];
-        }
+        const response = await callAIBackend('analyze-skills-gap', {
+            currentSkills
+        });
+        return Array.isArray(response) ? response : [];
     },
 
     // Draft Inquiry Reply
     async draftInquiryReply(senderName, senderEmail, messageText, tone = 'warm and professional') {
-        try {
-            const response = await callAIBackend('draft-reply', {
-                senderName,
-                senderEmail,
-                messageText,
-                tone
-            });
-            return response.text || '';
-        } catch (err) {
-            console.warn('[AI Reply] Generation failed, using fallback:', err.message);
-            return this.getFallbackReply(senderName, messageText);
-        }
+        const response = await callAIBackend('draft-reply', {
+            senderName,
+            senderEmail,
+            messageText,
+            tone
+        });
+        return response.text || '';
     },
 
     // Audit Portfolio
     async auditPortfolio(portfolioData = {}) {
-        try {
-            const response = await callAIBackend('audit-portfolio', {
-                portfolioData
-            });
-            return response;
-        } catch (err) {
-            console.warn('[AI Audit] Failed, using fallback:', err.message);
-            return this.getFallbackAudit();
-        }
-    },
-
-    // Fallbacks
-    getFallbackVisualAnalysis(existingData = {}) {
-        return {
-            title: existingData.title || 'Grand Prize Winner - AI Innovation Challenge',
-            category: existingData.category || 'Hackathon Award',
-            date: existingData.date || new Date().getFullYear().toString(),
-            issuer: 'Global Developer AI Guild',
-            description: existingData.description
-                ? `${existingData.description} Verified from official credential visual with distinction.`
-                : 'Awarded first place honors for pioneering an autonomous multi-agent web ecosystem, evaluated on architectural excellence and real-time responsiveness.',
-            extractedText: 'Certificate of Excellence presented to DevJ for exceptional achievement in Artificial Intelligence and Full-Stack Innovation.',
-            visualHighlights: [
-                'Official Gold Seal & Signature verified',
-                'Highest Distinction in Engineering Category'
-            ],
-            authenticityScore: 96
-        };
-    },
-
-    getFallbackBio(currentProfile) {
-        return {
-            tagline: 'Full-Stack Developer & AI Systems Integrator',
-            description: 'Building full-stack web applications with React, Node.js, and Appwrite, integrated with LLM endpoints and custom REST APIs.',
-            highlights: [
-                'LLM Endpoint Integration & Multi-Provider Failover Architectures',
-                'Full-Stack React, Node.js, and Relational & Cloud Database Architecture',
-                'Production RESTful Services & Real-Time SSE Streaming'
-            ]
-        };
-    },
-
-    getFallbackProject(rawProject) {
-        return {
-            title: rawProject.title || 'Smart AI Assistant Hub',
-            category: rawProject.category || 'Generative AI Platform',
-            description: rawProject.description
-                ? `${rawProject.description} Engineered with scalable cloud services, real-time data sync, and modern responsive components.`
-                : 'An autonomous multi-agent platform combining computer vision with real-time generative streaming and reactive state management.',
-            technologies: rawProject.technologies || 'React, TailwindCSS, Node.js, Gemini API, Appwrite'
-        };
-    },
-
-    getFallbackAchievement(rawAchievement) {
-        return {
-            title: rawAchievement.title || 'Global AI Innovation Winner',
-            category: rawAchievement.category || 'Hackathon Award',
-            date: rawAchievement.date || '2025',
-            description: rawAchievement.description
-                ? `${rawAchievement.description} Recognized among 500+ participants for exceptional technical depth and user experience.`
-                : 'Awarded top honors for designing an autonomous multimodal assistant utilizing computer vision and dynamic voice intelligence.'
-        };
-    },
-
-    getFallbackReply(senderName, messageText) {
-        return `Hi ${senderName || 'there'},
-
-Thank you for reaching out through my portfolio website! I appreciate your message regarding "${messageText?.slice(0, 50) || 'your inquiry'}...".
-
-I would love to connect and discuss how we can collaborate. Could you share a bit more detail or let me know a convenient time for a quick chat?
-
-Looking forward to hearing from you!
-
-Best regards,
-Julian Agustino
-Full-Stack Developer & AI Systems Integrator`;
-    },
-
-    getFallbackAudit() {
-        return {
-            score: 88,
-            verdict: 'Strong AI and Full-Stack foundation with engaging interactive 3D visual showcases.',
-            strengths: [
-                'Clear emphasis on frontier AI frameworks and modern frontend technologies',
-                'Interactive 3D carousel showcases for milestones and projects',
-                'Integrated Appwrite Storage and Appwrite Cloud real-time data layer'
-            ],
-            improvements: [
-                'Add live deployment demo links to all featured projects',
-                'Include quantified metrics in project descriptions (e.g. latency, users, performance)',
-                'Expand skill category tags with specific cloud/LLM tools (e.g. Gemini, LangChain, PyTorch)'
-            ],
-            recommendedTechs: ['Gemini 3.7 Flash', 'FastAPI', 'Vector Databases (Chroma / Pinecone)']
-        };
-    },
-
-    getFallbackChatResponse(prompt, portfolioContext) {
-        const lower = prompt.toLowerCase();
-
-        if (lower.includes('bio') || lower.includes('tagline') || lower.includes('profile')) {
-            return `AI Bio Suggestion for DevJ:
-Tagline: Architecting Intelligent Systems & Immersive Full-Stack Experiences
-Bio: AI Engineer and Creative Developer dedicated to building next-generation web platforms. Combining deep learning intelligence with responsive design tokens to turn complex ideas into seamless interactive software.`;
-        }
-
-        if (lower.includes('project') || lower.includes('idea')) {
-            return `Top 3 AI Project Ideas for your stack:
-1. Multimodal Code Reviewer Agent: An interactive tool that analyzes frontend screenshots + source code, highlighting layout bugs and accessibility improvements automatically.
-2. Real-Time Voice AI Workspace: Browser-based conversational coding copilot using Gemini Live API with synchronized state.
-3. Generative SVG Design Studio: Natural language to animated SVG asset generator with 1-click React component export.`;
-        }
-
-        return `Hello! I am your DevJ AI Copilot.
-
-I can help you:
-- Scan & Analyze Achievement Visuals and Certificates with Computer Vision
-- Polish your Bio & Taglines
-- Brainstorm cutting-edge AI projects & write specs
-- Magnify your Achievement impact statements
-- Draft professional replies to client inquiries
-- Run a full Portfolio SEO & Quality Audit`;
+        return await callAIBackend('audit-portfolio', {
+            portfolioData
+        });
     },
 
     sanitizeAIChatOutput(text) {
