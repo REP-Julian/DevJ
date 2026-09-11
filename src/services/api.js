@@ -767,9 +767,24 @@ export const api = {
 
         const data = await res.json();
         if (!res.ok) {
-            throw new Error(data.error || data.message || 'Failed to dispatch email via Outlook SMTP.');
+            throw new Error(data.error || data.message || 'Failed to dispatch email directly.');
         }
         return data;
+    },
+
+    getSmtpStatus: async () => {
+        const token = localStorage.getItem(AUTH_STORAGE_KEY) || '';
+        try {
+            const res = await fetch('/api/contact/smtp-status', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (res.ok) {
+                return await res.json();
+            }
+        } catch {}
+        return { configured: false, hasEnvCredentials: false };
     },
 
     // 9. Appwrite Storage Image Uploader with client-side WebP compression

@@ -6,6 +6,8 @@
  */
 
 export const EMAIL_CLIENT_PREF_KEY = 'devj_preferred_email_client';
+export const GMAIL_USER_KEY = 'devj_gmail_user_v1';
+export const GMAIL_APP_PASSWORD_KEY = 'devj_gmail_app_password_v1';
 export const OUTLOOK_APP_PASSWORD_KEY = 'devj_outlook_app_password_v1';
 
 /**
@@ -32,6 +34,15 @@ export const EMAIL_CLIENTS = [
             `https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(to)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
     },
     {
+        id: 'gmail-web',
+        name: 'Gmail Web',
+        shortName: 'Gmail Web',
+        description: 'Opens mail.google.com in browser with draft pre-filled',
+        badge: 'Webmail',
+        buildUrl: ({ to, subject, body }) =>
+            `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
+    },
+    {
         id: 'outlook-desktop',
         name: 'Outlook Desktop / Windows Mail',
         shortName: 'Outlook Desktop',
@@ -48,15 +59,6 @@ export const EMAIL_CLIENTS = [
         badge: 'M365',
         buildUrl: ({ to, subject, body }) =>
             `https://outlook.office.com/mail/deeplink/compose?to=${encodeURIComponent(to)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
-    },
-    {
-        id: 'gmail-web',
-        name: 'Gmail Web',
-        shortName: 'Gmail Web',
-        description: 'Opens mail.google.com in browser with draft pre-filled',
-        badge: 'Webmail',
-        buildUrl: ({ to, subject, body }) =>
-            `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(to)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
     }
 ];
 
@@ -135,37 +137,63 @@ export const dispatchEmail = async ({
     };
 };
 
-export const getStoredOutlookAppPassword = () => {
+export const getStoredGmailUser = () => {
     try {
-        return localStorage.getItem(OUTLOOK_APP_PASSWORD_KEY) || '';
+        return localStorage.getItem(GMAIL_USER_KEY) || '';
     } catch {
         return '';
     }
 };
 
-export const setStoredOutlookAppPassword = (pwd = '') => {
+export const setStoredGmailUser = (email = '') => {
     try {
-        if (pwd && pwd.trim()) {
-            localStorage.setItem(OUTLOOK_APP_PASSWORD_KEY, pwd.trim());
+        if (email && email.trim()) {
+            localStorage.setItem(GMAIL_USER_KEY, email.trim());
         } else {
-            localStorage.removeItem(OUTLOOK_APP_PASSWORD_KEY);
+            localStorage.removeItem(GMAIL_USER_KEY);
         }
     } catch (e) {
-        console.warn('Failed to save Outlook app password:', e);
+        console.warn('Failed to save Gmail account:', e);
     }
 };
 
-export const hasStoredOutlookAppPassword = () => {
-    return Boolean(getStoredOutlookAppPassword());
+export const getStoredGmailAppPassword = () => {
+    try {
+        return localStorage.getItem(GMAIL_APP_PASSWORD_KEY) || localStorage.getItem(OUTLOOK_APP_PASSWORD_KEY) || '';
+    } catch {
+        return '';
+    }
 };
 
+export const setStoredGmailAppPassword = (pwd = '') => {
+    try {
+        if (pwd && pwd.trim()) {
+            localStorage.setItem(GMAIL_APP_PASSWORD_KEY, pwd.trim());
+        } else {
+            localStorage.removeItem(GMAIL_APP_PASSWORD_KEY);
+        }
+    } catch (e) {
+        console.warn('Failed to save Gmail app password:', e);
+    }
+};
+
+export const hasStoredGmailCredentials = () => {
+    return Boolean(getStoredGmailAppPassword());
+};
+
+// Aliases for backward compatibility
+export const getStoredOutlookAppPassword = getStoredGmailAppPassword;
+export const setStoredOutlookAppPassword = setStoredGmailAppPassword;
+export const hasStoredOutlookAppPassword = hasStoredGmailCredentials;
+
 /**
- * Sends email directly over Outlook SMTP without opening any browser tab or client
+ * Sends email directly in-app using Gmail SMTP without opening any external browser window
  */
-export const sendDirectOutlookEmail = async ({
+export const sendDirectEmail = async ({
     to = '',
     subject = '',
     body = '',
+    gmailUser = '',
     appPassword = '',
     fromEmail = '',
     fromName = ''
@@ -176,44 +204,78 @@ export const sendDirectOutlookEmail = async ({
     }
 
     const cleanBody = cleanEmailBody(body);
-    const password = appPassword || getStoredOutlookAppPassword();
-
-    if (!password) {
-        throw new Error('Outlook App Password is required to send directly. Please configure it in settings.');
-    }
+    const password = appPassword || getStoredGmailAppPassword();
+    const gUser = (gmailUser || getStoredGmailUser()).trim();
 
     const senderEmail = (fromEmail || getActiveSenderEmail()).trim();
-    if (!senderEmail) {
-        throw new Error('Sender email is required. Please verify your account email address.');
-    }
 
     const token = localStorage.getItem('devj_admin_auth_token_v1') || '';
-    const res = await fetch('/api/contact/send-direct', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-            to: trimmedTo,
-            subject,
-            body: cleanBody,
-            appPassword: password,
-            fromEmail: senderEmail,
-            fromName: (fromName || '').trim()
-        })
+    const payload = JSON.stringify({
+        to: trimmedTo,
+        subject,
+        body: cleanBody,
+        gmailUser: gUser,
+        appPassword: password,
+        fromEmail: senderEmail,
+        fromName: (fromName || '').trim()
     });
 
-    const data = await res.json();
-    if (!res.ok) {
-        throw new Error(data.error || 'Failed to dispatch email directly via Outlook SMTP.');
+    const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+    };
+
+    let res;
+    let data;
+
+    // 1. Try relative /api route first
+    try {
+        res = await fetch('/api/contact/send-direct', {
+            method: 'POST',
+            headers,
+            body: payload
+        });
+        const contentType = res.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            data = await res.json();
+        }
+    } catch {
+        // Fall through to port 5000 fallback
+    }
+
+    // 2. If proxy was bypassed or returned non-JSON, try http://localhost:5000 directly
+    if (!data) {
+        try {
+            res = await fetch('http://localhost:5000/api/contact/send-direct', {
+                method: 'POST',
+                headers,
+                body: payload
+            });
+            const contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
+                data = await res.json();
+            } else {
+                throw new Error('API server returned unexpected HTML. Please ensure backend server on port 5000 is active.');
+            }
+        } catch (backendErr) {
+            throw new Error(backendErr.message || 'Could not connect to the backend email service on port 5000.');
+        }
+    }
+
+    if (!res || !res.ok) {
+        const errorMsg = data?.error || data?.message || 'Failed to dispatch email directly via Gmail SMTP.';
+        throw new Error(errorMsg);
     }
 
     return {
         success: true,
         messageId: data.messageId,
         to: trimmedTo,
-        fromEmail: senderEmail,
+        fromEmail: senderEmail || gUser,
         subject
     };
 };
+
+// Backward compatibility alias
+export const sendDirectOutlookEmail = sendDirectEmail;
+

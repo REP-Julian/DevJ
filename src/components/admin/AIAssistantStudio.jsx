@@ -4,7 +4,7 @@ import { api } from '../../services/api';
 import { notify } from '../../services/notificationService';
 import FormattedMessage from './FormattedMessage';
 import ImageUploader from '../common/ImageUploader';
-import { dispatchEmail, cleanEmailBody, getActiveSenderEmail, sendDirectOutlookEmail, getStoredOutlookAppPassword } from '../../utils/emailClient';
+import { dispatchEmail, cleanEmailBody, getActiveSenderEmail, sendDirectEmail, getStoredGmailAppPassword, getStoredGmailUser } from '../../utils/emailClient';
 import {
     Sparkles,
     Send,
@@ -1630,21 +1630,16 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                                 <div className="flex flex-col sm:flex-row gap-2">
                                     <button
                                         onClick={async () => {
-                                            const pwd = getStoredOutlookAppPassword();
-                                            if (!pwd) {
-                                                notify.error(
-                                                    'To send directly, please configure your 16-character Microsoft App Password in the Direct Inquiries manager.',
-                                                    'App Password Required'
-                                                );
-                                                return;
-                                            }
+                                            const pwd = getStoredGmailAppPassword();
+                                            const gUser = getStoredGmailUser();
                                             const activeSender = portfolio?.profile?.email || getActiveSenderEmail() || '';
                                             const activeSenderName = portfolio?.profile?.name || '';
                                             try {
-                                                await sendDirectOutlookEmail({
+                                                await sendDirectEmail({
                                                     to: selectedInquiry.email,
                                                     subject: `Re: Portfolio Inquiry from ${selectedInquiry.name}`,
                                                     body: inquiryDraft,
+                                                    gmailUser: gUser,
                                                     appPassword: pwd,
                                                     fromEmail: activeSender,
                                                     fromName: activeSenderName
@@ -1653,7 +1648,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                                                     await api.markMessageReplied(selectedInquiry.id || selectedInquiry.$id, true);
                                                 }
                                                 notify.success(
-                                                    `Email delivered directly to ${selectedInquiry.email}${activeSender ? ` from ${activeSender}` : ''}!`,
+                                                    `Email delivered directly to ${selectedInquiry.email}${activeSender ? ` (replies will route to ${activeSender})` : ''}!`,
                                                     'Direct Email Delivered'
                                                 );
                                             } catch (e) {
@@ -1662,7 +1657,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                                         }}
                                         className="flex-1 py-2.5 rounded-xl bg-charcoal-900 hover:bg-black text-devyellow-400 font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all"
                                     >
-                                        <Zap className="w-3.5 h-3.5 fill-devyellow-400 text-devyellow-400" /> Send Directly (No Outlook App Needed)
+                                        <Zap className="w-3.5 h-3.5 fill-devyellow-400 text-devyellow-400" /> Send Directly (No Mail App Needed)
                                     </button>
                                     <button
                                         onClick={async () => {

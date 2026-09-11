@@ -8,10 +8,13 @@ import {
     dispatchEmail,
     cleanEmailBody,
     isValidEmail,
+    sendDirectEmail,
     sendDirectOutlookEmail,
-    getStoredOutlookAppPassword,
-    setStoredOutlookAppPassword,
-    hasStoredOutlookAppPassword,
+    getStoredGmailUser,
+    setStoredGmailUser,
+    getStoredGmailAppPassword,
+    setStoredGmailAppPassword,
+    hasStoredGmailCredentials,
     getActiveSenderEmail
 } from '../../utils/emailClient';
 import {
@@ -66,10 +69,12 @@ export const MessagesManager = () => {
     const [senderEmail, setSenderEmail] = useState(() => getActiveSenderEmail());
     const [senderName, setSenderName] = useState('');
 
-    // Direct Sending (Without opening Outlook) State
+    // Direct Sending (Gmail SMTP) State
     const [directSending, setDirectSending] = useState(false);
     const [showSmtpSettings, setShowSmtpSettings] = useState(false);
-    const [appPasswordInput, setAppPasswordInput] = useState(() => getStoredOutlookAppPassword());
+    const [serverSmtpConfigured, setServerSmtpConfigured] = useState(false);
+    const [gmailUserInput, setGmailUserInput] = useState(() => getStoredGmailUser());
+    const [appPasswordInput, setAppPasswordInput] = useState(() => getStoredGmailAppPassword());
     const [showPasswordText, setShowPasswordText] = useState(false);
     const [savePasswordToDevice, setSavePasswordToDevice] = useState(true);
 
@@ -101,6 +106,12 @@ export const MessagesManager = () => {
         const profile = api.getStoredPortfolio()?.profile || {};
         if (profile.email) setSenderEmail(profile.email);
         if (profile.name) setSenderName(profile.name);
+
+        api.getSmtpStatus().then((status) => {
+            if (status?.configured) {
+                setServerSmtpConfigured(true);
+            }
+        }).catch(() => {});
     }, []);
 
     const handleDelete = async (id) => {
@@ -159,8 +170,8 @@ export const MessagesManager = () => {
         if (activeEmail) setSenderEmail(activeEmail);
         if (activeName) setSenderName(activeName);
 
-        // Auto open password settings if none stored yet
-        if (!hasStoredOutlookAppPassword()) {
+        // Auto open password settings only if neither local storage nor server .env has credentials
+        if (!hasStoredGmailCredentials() && !serverSmtpConfigured) {
             setShowSmtpSettings(true);
         }
 
@@ -212,7 +223,7 @@ export const MessagesManager = () => {
         setTimeout(() => setCopied(false), 2500);
     };
 
-    // 1. Direct In-App Send (WITHOUT opening Outlook)
+    // 1. Direct In-App Send (WITHOUT opening external email client)
     const handleSendDirectly = async () => {
         if (!activeMsg) return;
 
@@ -221,28 +232,29 @@ export const MessagesManager = () => {
             return;
         }
 
-        const password = appPasswordInput.trim() || getStoredOutlookAppPassword();
-        if (!password) {
+        const password = appPasswordInput.trim() || getStoredGmailAppPassword();
+        const gUser = gmailUserInput.trim() || getStoredGmailUser();
+
+        if (!password && !serverSmtpConfigured) {
             setShowSmtpSettings(true);
-            notify.error(
-                'To send directly without opening Outlook, please enter your 16-character Microsoft App Password below.',
-                'App Password Required'
-            );
+            notify.error('Please enter your 16-character Google App Password in the Direct Send settings.', 'App Password Required');
             return;
         }
 
         try {
             setDirectSending(true);
 
-            // Persist app password if opted
+            // Persist credentials if opted
             if (savePasswordToDevice) {
-                setStoredOutlookAppPassword(password);
+                if (password) setStoredGmailAppPassword(password);
+                if (gUser) setStoredGmailUser(gUser);
             }
 
-            await sendDirectOutlookEmail({
+            await sendDirectEmail({
                 to: replyRecipient,
                 subject: replySubject,
                 body: draftedReply,
+                gmailUser: gUser,
                 appPassword: password,
                 fromEmail: senderEmail,
                 fromName: senderName
@@ -259,7 +271,7 @@ export const MessagesManager = () => {
             );
 
             notify.success(
-                `Letter successfully sent directly to ${replyRecipient} from your account (${senderEmail})!\n\nNo browser tab or client was needed. Status recorded as Replied.`,
+                `Letter successfully sent directly to ${replyRecipient}!\n\nAll collaborator replies will route directly to your account (${senderEmail || gUser}). Status recorded as Replied.`,
                 'Email Delivered Directly'
             );
 
@@ -267,7 +279,7 @@ export const MessagesManager = () => {
         } catch (err) {
             console.error(err);
             notify.error(
-                err.message || 'Failed to send email directly via Outlook SMTP.',
+                err.message || 'Failed to send email directly via Gmail SMTP.',
                 'Direct Send Error'
             );
         } finally {
@@ -570,22 +582,22 @@ export const MessagesManager = () => {
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-2 border-b border-gray-200/60">
                                 <span className="text-charcoal-500 font-semibold flex items-center gap-1.5">
                                     <ShieldCheck className="w-3.5 h-3.5 text-devorange-600" />
-                                    From (Your Outlook Account):
+                                    Reply-To (Your Inbox):
                                 </span>
                                 <div className="flex items-center gap-1.5">
                                     <input
                                         type="email"
                                         value={senderEmail}
                                         onChange={(e) => setSenderEmail(e.target.value)}
-                                        placeholder="your-email@domain.com"
+                                        placeholder="your-email@outlook.ph"
                                         className="font-mono font-bold text-charcoal-900 bg-white px-2.5 py-0.5 rounded-lg border border-gray-200 text-xs focus:outline-none focus:border-devorange-500 max-w-[220px]"
-                                        title="Your Outlook account email address"
+                                        title="Your primary email where collaborator replies will be delivered"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowSmtpSettings(!showSmtpSettings)}
                                         className="p-1 text-charcoal-500 hover:text-charcoal-900 bg-white rounded-md border border-gray-200 hover:bg-gray-50 transition-colors"
-                                        title="Configure Outlook SMTP App Password"
+                                        title="Configure Gmail Direct Send Settings"
                                     >
                                         <KeyRound className="w-3.5 h-3.5 text-devorange-600" />
                                     </button>
@@ -629,13 +641,13 @@ export const MessagesManager = () => {
                             </div>
                         </div>
 
-                        {/* Collapsible Outlook App Password Configuration Drawer */}
+                        {/* Collapsible Gmail App Password Configuration Drawer */}
                         {showSmtpSettings && (
                             <div className="bg-devyellow-50/60 border border-devyellow-300/80 rounded-2xl p-4 space-y-3 animate-in fade-in duration-200">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-1.5 text-xs font-bold text-charcoal-900">
                                         <KeyRound className="w-4 h-4 text-devorange-600" />
-                                        <span>Direct Send Authentication (Outlook SMTP)</span>
+                                        <span>Direct Send Settings (Gmail SMTP + App Password)</span>
                                     </div>
                                     <button
                                         type="button"
@@ -647,24 +659,50 @@ export const MessagesManager = () => {
                                 </div>
 
                                 <p className="text-[11px] text-charcoal-600 leading-relaxed">
-                                    To send emails directly from <strong>{senderEmail || 'your email account'}</strong> without opening the Outlook app, enter a 16-character Microsoft <strong>App Password</strong>.
+                                    Direct background sending is powered by <strong>Gmail SMTP</strong>. Emails are sent to <strong>any recipient worldwide</strong> without domain verification. Collaborator replies route directly to <strong>{senderEmail || 'your email account'}</strong>.
                                 </p>
 
-                                <div className="relative">
-                                    <input
-                                        type={showPasswordText ? 'text' : 'password'}
-                                        value={appPasswordInput}
-                                        onChange={(e) => setAppPasswordInput(e.target.value)}
-                                        placeholder="Enter 16-character Microsoft App Password..."
-                                        className="w-full pl-3 pr-10 py-2 rounded-xl border border-devyellow-300 text-xs font-mono bg-white focus:outline-none focus:border-devorange-500 text-charcoal-900"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setShowPasswordText(!showPasswordText)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-charcoal-400 hover:text-charcoal-700"
-                                    >
-                                        {showPasswordText ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                                    </button>
+                                {serverSmtpConfigured && (
+                                    <div className="flex items-center gap-1.5 px-3 py-2 bg-emerald-50/90 border border-emerald-200 rounded-xl text-emerald-800 text-[11px] font-semibold">
+                                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                        <span>Gmail SMTP is verified &amp; active on server. Ready for 1-click in-app sending!</span>
+                                    </div>
+                                )}
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-charcoal-600 uppercase tracking-wider mb-1">
+                                            Gmail Address
+                                        </label>
+                                        <input
+                                            type="email"
+                                            value={gmailUserInput}
+                                            onChange={(e) => setGmailUserInput(e.target.value)}
+                                            placeholder="your-name@gmail.com"
+                                            className="w-full px-3 py-2 rounded-xl border border-devyellow-300 text-xs font-sans bg-white focus:outline-none focus:border-devorange-500 text-charcoal-900"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-[10px] font-bold text-charcoal-600 uppercase tracking-wider mb-1">
+                                            Google App Password (16 chars)
+                                        </label>
+                                        <div className="relative">
+                                            <input
+                                                type={showPasswordText ? 'text' : 'password'}
+                                                value={appPasswordInput}
+                                                onChange={(e) => setAppPasswordInput(e.target.value)}
+                                                placeholder="16-character App Password..."
+                                                className="w-full pl-3 pr-10 py-2 rounded-xl border border-devyellow-300 text-xs font-mono bg-white focus:outline-none focus:border-devorange-500 text-charcoal-900"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowPasswordText(!showPasswordText)}
+                                                className="absolute right-3 top-1/2 -translate-y-1/2 text-charcoal-400 hover:text-charcoal-700"
+                                            >
+                                                {showPasswordText ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] pt-1 border-t border-devyellow-200/60">
@@ -675,15 +713,15 @@ export const MessagesManager = () => {
                                             onChange={(e) => setSavePasswordToDevice(e.target.checked)}
                                             className="rounded text-devorange-600 focus:ring-devorange-500"
                                         />
-                                        <span>Remember password on this device</span>
+                                        <span>Remember credentials on this device</span>
                                     </label>
                                     <a
-                                        href="https://account.microsoft.com/security"
+                                        href="https://myaccount.google.com/apppasswords"
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="text-devorange-600 hover:underline font-bold flex items-center gap-1"
                                     >
-                                        <span>How to get Microsoft App Password</span>
+                                        <span>How to get Google App Password</span>
                                         <ExternalLink className="w-3 h-3" />
                                     </a>
                                 </div>
@@ -761,12 +799,12 @@ export const MessagesManager = () => {
                                     {directSending ? (
                                         <>
                                             <Loader2 className="w-4 h-4 animate-spin text-devyellow-400" />
-                                            <span>Sending directly via Outlook SMTP...</span>
+                                            <span>Sending directly via Gmail...</span>
                                         </>
                                     ) : (
                                         <>
                                             <Zap className="w-4 h-4 fill-devyellow-400 text-devyellow-400" />
-                                            <span>Send Directly (Without Opening Outlook)</span>
+                                            <span>Send Directly (No Mail App Needed)</span>
                                         </>
                                     )}
                                 </button>
@@ -797,16 +835,27 @@ export const MessagesManager = () => {
                                     </button>
                                 </div>
 
-                                {/* Alternative: Open in Outlook Web */}
-                                <button
-                                    onClick={() => handleDispatchEmail('outlook-web')}
-                                    disabled={!draftedReply || draftLoading || directSending || !isValidEmail(replyRecipient)}
-                                    className="text-[11px] font-bold text-devorange-600 hover:text-devorange-700 hover:underline flex items-center gap-1 ml-auto"
-                                    title="Open preview in Outlook Webmail"
-                                >
-                                    <span>Or open in Outlook Web</span>
-                                    <ExternalLink className="w-3 h-3" />
-                                </button>
+                                {/* Alternative 1-click fallback buttons */}
+                                <div className="flex items-center gap-3 ml-auto">
+                                    <button
+                                        onClick={() => handleDispatchEmail('gmail-web')}
+                                        disabled={!draftedReply || draftLoading || directSending || !isValidEmail(replyRecipient)}
+                                        className="text-[11px] font-bold text-charcoal-600 hover:text-charcoal-900 hover:underline flex items-center gap-1"
+                                        title="Open draft in Gmail Web"
+                                    >
+                                        <span>Open in Gmail</span>
+                                        <ExternalLink className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDispatchEmail('outlook-web')}
+                                        disabled={!draftedReply || draftLoading || directSending || !isValidEmail(replyRecipient)}
+                                        className="text-[11px] font-bold text-devorange-600 hover:text-devorange-700 hover:underline flex items-center gap-1"
+                                        title="Open draft in Outlook Web"
+                                    >
+                                        <span>Open in Outlook</span>
+                                        <ExternalLink className="w-3 h-3" />
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

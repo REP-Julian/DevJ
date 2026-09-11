@@ -4,8 +4,27 @@ import prisma from '../utils/prisma.js';
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
+// Check whether Gmail SMTP credentials are configured on server
+router.get('/smtp-status', authenticateToken, (req, res) => {
+    const hasEnvUser = Boolean(process.env.GMAIL_USER && process.env.GMAIL_USER.trim());
+    const hasEnvPassword = Boolean(process.env.GMAIL_APP_PASSWORD && process.env.GMAIL_APP_PASSWORD.trim());
+    const rawUser = (process.env.GMAIL_USER || '').trim();
 
-// Direct Outlook SMTP Send (Without opening Outlook in browser)
+    let maskedUser = '';
+    if (rawUser && rawUser.includes('@')) {
+        const [name, domain] = rawUser.split('@');
+        maskedUser = `${name.slice(0, 3)}***@${domain}`;
+    }
+
+    res.json({
+        configured: hasEnvUser && hasEnvPassword,
+        hasEnvCredentials: hasEnvUser && hasEnvPassword,
+        userMasked: maskedUser,
+        replyToDefault: (process.env.OUTLOOK_USER || '').trim()
+    });
+});
+
+// Direct In-App Email Dispatch (Gmail SMTP with Google App Password)
 router.post('/send-direct', authenticateToken, async (req, res) => {
     try {
         const { to, subject, body, appPassword } = req.body;
@@ -14,42 +33,39 @@ router.post('/send-direct', authenticateToken, async (req, res) => {
             return res.status(400).json({ error: 'Recipient email, subject, and message body are required.' });
         }
 
-        const senderEmail = (req.body.fromEmail || process.env.OUTLOOK_USER || '').trim();
-        if (!senderEmail) {
+        // Collaborator replies route back to the user's primary/Outlook address
+        const replyToEmail = (req.body.fromEmail || req.body.replyTo || process.env.OUTLOOK_USER || '').trim();
+        const senderName = (req.body.fromName || process.env.OUTLOOK_SENDER_NAME || 'Julian Agustino').trim();
+
+        // Gmail credentials (from request body or .env)
+        const gmailUser = (req.body.gmailUser || process.env.GMAIL_USER || '').trim();
+        const rawPassword = appPassword || process.env.GMAIL_APP_PASSWORD || process.env.OUTLOOK_APP_PASSWORD || '';
+        const cleanPassword = rawPassword.trim().replace(/\s+/g, '');
+
+        if (!gmailUser) {
             return res.status(400).json({
-                error: 'Sender Outlook email is required. Please specify your account email in settings.'
+                error: 'Gmail account address is required for direct sending. Please enter your Gmail address in settings.'
             });
         }
 
-        const senderName = (req.body.fromName || process.env.OUTLOOK_SENDER_NAME || '').trim();
-        const password = appPassword || process.env.OUTLOOK_APP_PASSWORD;
-
-        if (!password || !password.trim()) {
+        if (!cleanPassword) {
             return res.status(400).json({
-                error: 'Outlook App Password is required to send directly. Please configure your 16-character Microsoft App Password in settings.'
+                error: 'A 16-character Google App Password is required. Generate one at myaccount.google.com/apppasswords and enter it in settings.'
             });
         }
-
-        const cleanPassword = password.trim().replace(/\s+/g, '');
 
         const transporter = nodemailer.createTransport({
-            host: 'smtp-mail.outlook.com',
-            port: 587,
-            secure: false, // STARTTLS
+            service: 'gmail',
             auth: {
-                user: senderEmail,
+                user: gmailUser,
                 pass: cleanPassword
-            },
-            tls: {
-                ciphers: 'SSLv3',
-                rejectUnauthorized: false
             }
         });
 
         const mailOptions = {
-            from: senderName ? `"${senderName}" <${senderEmail}>` : senderEmail,
+            from: senderName ? `"${senderName}" <${gmailUser}>` : gmailUser,
             to: to.trim(),
-            replyTo: senderEmail,
+            replyTo: replyToEmail || gmailUser,
             subject: subject.trim(),
             text: body.trim(),
             headers: {
@@ -61,15 +77,18 @@ router.post('/send-direct', authenticateToken, async (req, res) => {
 
         return res.json({
             success: true,
-            message: `Email delivered directly to ${to} from your Outlook account (${senderEmail})!`,
+            provider: 'gmail',
+            message: `Email delivered directly to ${to} via Gmail! Replies will route to ${replyToEmail || gmailUser}.`,
             messageId: info.messageId,
             to: to.trim()
         });
     } catch (err) {
-        console.error('[Outlook SMTP Error]:', err);
-        let errorMsg = err.message || 'Failed to dispatch email via Outlook SMTP.';
-        if (err.code === 'EAUTH' || errorMsg.includes('Invalid login') || errorMsg.includes('535 5.7.139')) {
-            errorMsg = 'Outlook Authentication Failed: Invalid credentials. Please verify your 16-character Microsoft App Password generated at account.microsoft.com/security.';
+        console.error('[Gmail SMTP Error]:', err);
+        let errorMsg = err.message || 'Failed to dispatch email directly via Gmail.';
+        if (err.code === 'EAUTH' || errorMsg.includes('Invalid login') || errorMsg.includes('Username and Password not accepted') || errorMsg.includes('535-5.7.8')) {
+            errorMsg = 'Gmail Authentication Failed: Google rejected the login credentials. Please verify your Gmail address and ensure you are using a 16-character App Password generated at myaccount.google.com/apppasswords (with 2-Step Verification enabled).';
+        } else if (errorMsg.includes('basic authentication is disabled') || errorMsg.includes('535 5.7.139')) {
+            errorMsg = 'Microsoft Restriction: Microsoft has disabled Basic Authentication for personal Outlook accounts. Use your Gmail App Password for direct sending, or click "Send via Outlook Web" below.';
         }
         return res.status(500).json({ error: errorMsg });
     }
