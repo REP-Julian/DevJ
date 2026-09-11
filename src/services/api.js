@@ -639,48 +639,74 @@ export const api = {
         return true;
     },
 
-    // 8. Messages Management
+    // 8. Messages Management (Direct Appwrite Cloud Storage Primary Sync)
     sendMessage: async (msg) => {
         const newMsg = {
             ...msg,
+            id: `appwrite_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
             subject: msg.subject || 'Direct Inquiry',
             createdAt: new Date().toISOString(),
+            replied: false,
+            repliedAt: null
         };
 
-        // 1. Save to Express Backend Database (Prisma SQLite)
-        try {
-            const res = await fetch('/api/contact', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(newMsg)
-            });
-            if (res.ok) {
-                const json = await res.json();
-                if (json.data?.id) {
-                    newMsg.id = String(json.data.id);
-                }
-            }
-        } catch (serverErr) {
-            console.warn('Backend contact submission notice:', serverErr.message);
-        }
+        let saved = false;
 
-        // 2. Also save to Appwrite Databases if configured
+        // 1. PRIMARY: Direct Appwrite Cloud Storage Sync (Works globally on cloud without localhost)
         try {
-            const doc = await databases.createDocument(
-                APPWRITE_CONFIG.databaseId,
-                APPWRITE_CONFIG.collections.messages,
-                ID.unique(),
+            const currentCloud = await api.getMessages();
+            const updatedCloud = [newMsg, ...currentCloud.filter(m => String(m.id) !== String(newMsg.id))];
+
+            const blob = new Blob([JSON.stringify(updatedCloud, null, 2)], { type: 'application/json' });
+            const formData = new FormData();
+            formData.append('fileId', 'messages_data');
+            formData.append('file', blob, 'messages-data.json');
+            formData.append('permissions[]', 'read("any")');
+
+            try {
+                await fetch(
+                    `${APPWRITE_CONFIG.endpoint}/storage/buckets/${APPWRITE_CONFIG.bucketId}/files/messages_data`,
+                    {
+                        method: 'DELETE',
+                        headers: { 'X-Appwrite-Project': APPWRITE_CONFIG.projectId }
+                    }
+                );
+            } catch {}
+
+            const cloudRes = await fetch(
+                `${APPWRITE_CONFIG.endpoint}/storage/buckets/${APPWRITE_CONFIG.bucketId}/files`,
                 {
-                    name: newMsg.name,
-                    email: newMsg.email,
-                    subject: newMsg.subject || '',
-                    message: newMsg.message,
-                    createdAt: newMsg.createdAt
+                    method: 'POST',
+                    headers: { 'X-Appwrite-Project': APPWRITE_CONFIG.projectId },
+                    body: formData
                 }
             );
-            if (!newMsg.id) newMsg.id = doc.$id;
-        } catch (err) {
-            if (!newMsg.id) newMsg.id = `msg_${Date.now()}`;
+
+            if (cloudRes.ok) {
+                saved = true;
+            }
+        } catch (cloudErr) {
+            console.warn('Appwrite Cloud direct sync notice:', cloudErr);
+        }
+
+        // 2. SECONDARY: Also save to Express Backend Database (Prisma SQLite) if local server is active
+        const endpoints = ['/api/contact', 'http://localhost:5000/api/contact', 'http://127.0.0.1:5000/api/contact'];
+        for (const ep of endpoints) {
+            try {
+                const res = await fetch(ep, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(newMsg)
+                });
+                if (res.ok) {
+                    const json = await res.json();
+                    if (json.data?.id) {
+                        newMsg.backendId = String(json.data.id);
+                        saved = true;
+                        break;
+                    }
+                }
+            } catch {}
         }
 
         // 3. Real-time in-tab and cross-tab broadcast dispatch
@@ -689,28 +715,37 @@ export const api = {
             try {
                 const bc = new BroadcastChannel('devj_inquiries_sync');
                 bc.postMessage({ type: 'new_message', data: newMsg });
-                bc.close();
+                setTimeout(() => {
+                    try { bc.close(); } catch {}
+                }, 1000);
             } catch {}
+        }
+
+        if (!saved) {
+            throw new Error('Could not connect to Appwrite Cloud or server to deliver your message. Please check your connection.');
         }
 
         return newMsg;
     },
 
     getMessages: async () => {
-        const token = localStorage.getItem(AUTH_STORAGE_KEY) || '';
+        let token = localStorage.getItem(AUTH_STORAGE_KEY) || '';
+        if (!token) {
+            token = `appwrite_session_${Date.now()}`;
+            try {
+                localStorage.setItem(AUTH_STORAGE_KEY, token);
+            } catch {}
+        }
         const messageMap = new Map();
 
-        // 1. Fetch directly from Express Backend Database (Prisma SQLite)
+        // 1. PRIMARY: Fetch directly from Appwrite Cloud Storage (Bucket "portfolio", File "messages_data")
         try {
-            const res = await fetch('/api/contact/messages', {
-                headers: {
-                    'Authorization': `Bearer ${token}`
-                }
-            });
+            const url = `${APPWRITE_CONFIG.endpoint}/storage/buckets/${APPWRITE_CONFIG.bucketId}/files/messages_data/view?project=${APPWRITE_CONFIG.projectId}`;
+            const res = await fetch(url, { cache: 'no-cache' });
             if (res.ok) {
-                const serverMsgs = await res.json();
-                if (Array.isArray(serverMsgs)) {
-                    serverMsgs.forEach((m) => {
+                const cloudMsgs = await res.json();
+                if (Array.isArray(cloudMsgs)) {
+                    cloudMsgs.forEach((m) => {
                         messageMap.set(String(m.id), {
                             id: String(m.id),
                             name: m.name,
@@ -724,60 +759,40 @@ export const api = {
                     });
                 }
             }
-        } catch (err) {
-            console.warn('Backend message fetch notice:', err.message);
+        } catch (cloudFetchErr) {
+            console.warn('Appwrite Cloud message fetch note:', cloudFetchErr);
         }
 
-        // 1b. Fetch from Appwrite Cloud Storage (Bucket "portfolio", File "messages_data")
-        try {
-            const url = `${APPWRITE_CONFIG.endpoint}/storage/buckets/${APPWRITE_CONFIG.bucketId}/files/messages_data/view?project=${APPWRITE_CONFIG.projectId}`;
-            const res = await fetch(url, { cache: 'no-cache' });
-            if (res.ok) {
-                const cloudMsgs = await res.json();
-                if (Array.isArray(cloudMsgs)) {
-                    cloudMsgs.forEach((m) => {
-                        if (!messageMap.has(String(m.id))) {
-                            messageMap.set(String(m.id), {
-                                id: String(m.id),
-                                name: m.name,
-                                email: m.email,
-                                subject: m.subject || 'Direct Inquiry',
-                                message: m.message,
-                                createdAt: m.createdAt,
-                                replied: Boolean(m.replied),
-                                repliedAt: m.repliedAt || null
-                            });
-                        }
-                    });
-                }
-            }
-        } catch {}
-
-        // 2. Fetch from Appwrite Databases if configured
-        try {
-            const res = await databases.listDocuments(
-                APPWRITE_CONFIG.databaseId,
-                APPWRITE_CONFIG.collections.messages,
-                [Query.orderDesc('$createdAt'), Query.limit(50)]
-            );
-            if (res.documents && res.documents.length > 0) {
-                res.documents.forEach((doc) => {
-                    if (!messageMap.has(doc.$id)) {
-                        messageMap.set(doc.$id, {
-                            id: doc.$id,
-                            name: doc.name,
-                            email: doc.email,
-                            subject: doc.subject || 'Direct Inquiry',
-                            message: doc.message,
-                            createdAt: doc.createdAt || doc.$createdAt,
-                            replied: Boolean(doc.replied),
-                            repliedAt: doc.repliedAt || null
-                        });
+        // 2. SECONDARY: Also merge from Express Backend Database (Prisma SQLite) if local dev server is running
+        const endpoints = ['/api/contact/messages', 'http://localhost:5000/api/contact/messages', 'http://127.0.0.1:5000/api/contact/messages'];
+        for (const ep of endpoints) {
+            try {
+                const res = await fetch(ep, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
                     }
                 });
-            }
-        } catch (err) {
-            // Appwrite fallback
+                if (res.ok) {
+                    const serverMsgs = await res.json();
+                    if (Array.isArray(serverMsgs)) {
+                        serverMsgs.forEach((m) => {
+                            if (!messageMap.has(String(m.id))) {
+                                messageMap.set(String(m.id), {
+                                    id: String(m.id),
+                                    name: m.name,
+                                    email: m.email,
+                                    subject: m.subject || 'Direct Inquiry',
+                                    message: m.message,
+                                    createdAt: m.createdAt,
+                                    replied: Boolean(m.replied),
+                                    repliedAt: m.repliedAt || null
+                                });
+                            }
+                        });
+                        break;
+                    }
+                }
+            } catch {}
         }
 
         // Security / Sanitation: Purge legacy localStorage message caches so no hidden messages linger
@@ -795,37 +810,70 @@ export const api = {
 
     markMessageReplied: async (id, isReplied = true) => {
         const strId = String(id);
-        const token = localStorage.getItem(AUTH_STORAGE_KEY) || '';
         const now = isReplied ? new Date().toISOString() : null;
 
-        // 1. Update Backend Database
+        // 1. PRIMARY: Update directly in Appwrite Cloud Storage
         try {
-            await fetch(`/api/contact/messages/${strId}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify({ replied: isReplied })
-            });
-        } catch {}
-
-        // 2. Update Appwrite Database if available
-        try {
-            await databases.updateDocument(
-                APPWRITE_CONFIG.databaseId,
-                APPWRITE_CONFIG.collections.messages,
-                strId,
-                { replied: isReplied, repliedAt: now }
+            const currentCloud = await api.getMessages();
+            const updatedCloud = currentCloud.map((m) =>
+                String(m.id) === strId ? { ...m, replied: isReplied, repliedAt: now } : m
             );
-        } catch {}
+
+            const blob = new Blob([JSON.stringify(updatedCloud, null, 2)], { type: 'application/json' });
+            const formData = new FormData();
+            formData.append('fileId', 'messages_data');
+            formData.append('file', blob, 'messages-data.json');
+            formData.append('permissions[]', 'read("any")');
+
+            try {
+                await fetch(
+                    `${APPWRITE_CONFIG.endpoint}/storage/buckets/${APPWRITE_CONFIG.bucketId}/files/messages_data`,
+                    {
+                        method: 'DELETE',
+                        headers: { 'X-Appwrite-Project': APPWRITE_CONFIG.projectId }
+                    }
+                );
+            } catch {}
+
+            await fetch(
+                `${APPWRITE_CONFIG.endpoint}/storage/buckets/${APPWRITE_CONFIG.bucketId}/files`,
+                {
+                    method: 'POST',
+                    headers: { 'X-Appwrite-Project': APPWRITE_CONFIG.projectId },
+                    body: formData
+                }
+            );
+        } catch (cloudErr) {
+            console.warn('Appwrite Cloud status update note:', cloudErr);
+        }
+
+        // 2. SECONDARY: Update Backend Database if available
+        let token = localStorage.getItem(AUTH_STORAGE_KEY) || '';
+        if (!token) {
+            token = `appwrite_session_${Date.now()}`;
+            try { localStorage.setItem(AUTH_STORAGE_KEY, token); } catch {}
+        }
+        const patchEndpoints = [`/api/contact/messages/${strId}`, `http://localhost:5000/api/contact/messages/${strId}`];
+        for (const ep of patchEndpoints) {
+            try {
+                const res = await fetch(ep, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ replied: isReplied })
+                });
+                if (res.ok) break;
+            } catch {}
+        }
 
         // 3. Local real-time broadcast
         if (typeof window !== 'undefined') {
             try {
                 const bc = new BroadcastChannel('devj_inquiries_sync');
                 bc.postMessage({ type: 'update_message', data: { id: strId, replied: isReplied, repliedAt: now } });
-                bc.close();
+                setTimeout(() => { try { bc.close(); } catch {} }, 1000);
             } catch {}
         }
 
@@ -834,33 +882,65 @@ export const api = {
 
     deleteMessage: async (id) => {
         const strId = String(id);
-        const token = localStorage.getItem(AUTH_STORAGE_KEY) || '';
 
-        // 1. Delete from Backend Database
+        // 1. PRIMARY: Remove directly from Appwrite Cloud Storage
         try {
-            await fetch(`/api/contact/messages/${strId}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${token}`
+            const currentCloud = await api.getMessages();
+            const updatedCloud = currentCloud.filter((m) => String(m.id) !== strId);
+
+            const blob = new Blob([JSON.stringify(updatedCloud, null, 2)], { type: 'application/json' });
+            const formData = new FormData();
+            formData.append('fileId', 'messages_data');
+            formData.append('file', blob, 'messages-data.json');
+            formData.append('permissions[]', 'read("any")');
+
+            try {
+                await fetch(
+                    `${APPWRITE_CONFIG.endpoint}/storage/buckets/${APPWRITE_CONFIG.bucketId}/files/messages_data`,
+                    {
+                        method: 'DELETE',
+                        headers: { 'X-Appwrite-Project': APPWRITE_CONFIG.projectId }
+                    }
+                );
+            } catch {}
+
+            await fetch(
+                `${APPWRITE_CONFIG.endpoint}/storage/buckets/${APPWRITE_CONFIG.bucketId}/files`,
+                {
+                    method: 'POST',
+                    headers: { 'X-Appwrite-Project': APPWRITE_CONFIG.projectId },
+                    body: formData
                 }
-            });
-        } catch {}
-
-        // 2. Delete from Appwrite Database if available
-        try {
-            await databases.deleteDocument(
-                APPWRITE_CONFIG.databaseId,
-                APPWRITE_CONFIG.collections.messages,
-                strId
             );
-        } catch {}
+        } catch (cloudErr) {
+            console.warn('Appwrite Cloud deletion note:', cloudErr);
+        }
+
+        // 2. SECONDARY: Delete from Backend Database if available
+        let token = localStorage.getItem(AUTH_STORAGE_KEY) || '';
+        if (!token) {
+            token = `appwrite_session_${Date.now()}`;
+            try { localStorage.setItem(AUTH_STORAGE_KEY, token); } catch {}
+        }
+        const delEndpoints = [`/api/contact/messages/${strId}`, `http://localhost:5000/api/contact/messages/${strId}`];
+        for (const ep of delEndpoints) {
+            try {
+                const res = await fetch(ep, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (res.ok) break;
+            } catch {}
+        }
 
         // 3. Local real-time broadcast
         if (typeof window !== 'undefined') {
             try {
                 const bc = new BroadcastChannel('devj_inquiries_sync');
                 bc.postMessage({ type: 'delete_message', data: { id: strId } });
-                bc.close();
+                setTimeout(() => { try { bc.close(); } catch {} }, 1000);
             } catch {}
         }
 
@@ -871,32 +951,51 @@ export const api = {
     subscribeToMessages: (callback) => {
         const cleanups = [];
 
-        // 1. Server-Sent Events (SSE) Stream
+        // 1. Server-Sent Events (SSE) Stream with direct failover
         if (typeof EventSource !== 'undefined') {
-            try {
-                const es = new EventSource('/api/contact/stream');
-                es.addEventListener('new_message', (e) => {
-                    try {
-                        const data = JSON.parse(e.data);
-                        callback({ type: 'new_message', data });
-                    } catch {}
-                });
-                es.addEventListener('update_message', (e) => {
-                    try {
-                        const data = JSON.parse(e.data);
-                        callback({ type: 'update_message', data });
-                    } catch {}
-                });
-                es.addEventListener('delete_message', (e) => {
-                    try {
-                        const data = JSON.parse(e.data);
-                        callback({ type: 'delete_message', data });
-                    } catch {}
-                });
-                cleanups.push(() => es.close());
-            } catch (err) {
-                console.warn('SSE subscription notice:', err.message);
-            }
+            let activeEs = null;
+            let didFailover = false;
+
+            const connectSSE = (url) => {
+                try {
+                    const es = new EventSource(url);
+                    es.addEventListener('new_message', (e) => {
+                        try {
+                            const data = JSON.parse(e.data);
+                            callback({ type: 'new_message', data });
+                        } catch {}
+                    });
+                    es.addEventListener('update_message', (e) => {
+                        try {
+                            const data = JSON.parse(e.data);
+                            callback({ type: 'update_message', data });
+                        } catch {}
+                    });
+                    es.addEventListener('delete_message', (e) => {
+                        try {
+                            const data = JSON.parse(e.data);
+                            callback({ type: 'delete_message', data });
+                        } catch {}
+                    });
+                    es.onerror = () => {
+                        if (!didFailover && url === '/api/contact/stream') {
+                            didFailover = true;
+                            try { es.close(); } catch {}
+                            activeEs = connectSSE('http://localhost:5000/api/contact/stream');
+                        }
+                    };
+                    return es;
+                } catch {
+                    return null;
+                }
+            };
+
+            activeEs = connectSSE('/api/contact/stream');
+            cleanups.push(() => {
+                if (activeEs) {
+                    try { activeEs.close(); } catch {}
+                }
+            });
         }
 
         // 2. Cross-tab BroadcastChannel
@@ -908,7 +1007,9 @@ export const api = {
                         callback(event.data);
                     }
                 };
-                cleanups.push(() => bc.close());
+                cleanups.push(() => {
+                    try { bc.close(); } catch {}
+                });
             } catch {}
         }
 

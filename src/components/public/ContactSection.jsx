@@ -6,7 +6,6 @@ import SocialQrModal from '../common/SocialQrModal';
 
 export const ContactSection = ({ profile = {} }) => {
     const [formData, setFormData] = useState({ name: '', email: '', message: '' });
-    const [honeypot, setHoneypot] = useState('');
     const [status, setStatus] = useState({ loading: false, success: false, error: '' });
     const [qrModal, setQrModal] = useState({
         isOpen: false,
@@ -26,16 +25,24 @@ export const ContactSection = ({ profile = {} }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        if (honeypot.trim() !== '') {
-            // Silently drop bot traffic
-            setStatus({ loading: false, success: true, error: '' });
-            notify.success('Thank you! Your message has been received.', 'Message Dispatched');
+        
+        const cleanName = formData.name.trim();
+        const cleanEmail = formData.email.trim();
+        const cleanMessage = formData.message.trim();
+
+        if (!cleanName || !cleanEmail || !cleanMessage) {
+            setStatus({ loading: false, success: false, error: 'Please fill in your name, email, and message.' });
             return;
         }
+
         setStatus({ loading: true, success: false, error: '' });
 
         try {
-            await api.sendMessage(formData);
+            await api.sendMessage({
+                name: cleanName,
+                email: cleanEmail,
+                message: cleanMessage,
+            });
             setStatus({ loading: false, success: true, error: '' });
             setFormData({ name: '', email: '', message: '' });
             await notify.success('Thank you! Your message has been sent directly to Julian.', 'Message Dispatched');
@@ -153,18 +160,6 @@ export const ContactSection = ({ profile = {} }) => {
                         {/* Right Col: Contact Form */}
                         <div className="lg:col-span-7 bg-white text-charcoal-900 p-8 rounded-2xl shadow-sm">
                             <form onSubmit={handleSubmit} className="space-y-4">
-                                {/* Bot Honeypot field */}
-                                <div className="hidden" aria-hidden="true">
-                                    <input
-                                        type="text"
-                                        name="website_url_honey"
-                                        tabIndex="-1"
-                                        autoComplete="off"
-                                        value={honeypot}
-                                        onChange={(e) => setHoneypot(e.target.value)}
-                                    />
-                                </div>
-
                                 <div>
                                     <label className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 mb-1">
                                         Your Name
