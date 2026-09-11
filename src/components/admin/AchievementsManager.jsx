@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ImageUploader from '../common/ImageUploader';
 import { api } from '../../services/api';
 import { aiService } from '../../services/aiService';
+import { notify } from '../../services/notificationService';
 import { Plus, Trash2, Edit2, Save, X, Sparkles, Loader2, Eye, CheckCircle2, Award, FileSearch, Check } from 'lucide-react';
 
 export const AchievementsManager = ({ achievements = [], onUpdated }) => {
@@ -55,7 +56,7 @@ export const AchievementsManager = ({ achievements = [], onUpdated }) => {
     const handleScanVisual = async () => {
         const imageToScan = localImageFile || formData.imageUrl;
         if (!imageToScan) {
-            alert('Please upload or select an achievement visual first');
+            notify.error('Please upload or select an achievement visual first', 'Missing Image');
             return;
         }
         setAiVisionScanning(true);
@@ -70,8 +71,9 @@ export const AchievementsManager = ({ achievements = [], onUpdated }) => {
                 description: res.description || prev.description,
             }));
             setVisualReport(res);
+            notify.success('Achievement visual inspected! Certificate fields have been auto-populated.', 'Visual Analyzed');
         } catch (err) {
-            alert(err.message || 'Visual analysis failed');
+            notify.error(err.message || 'Visual analysis failed', 'Analysis Failed');
         } finally {
             setAiVisionScanning(false);
         }
@@ -82,23 +84,31 @@ export const AchievementsManager = ({ achievements = [], onUpdated }) => {
         try {
             if (isCreating) {
                 await api.createAchievement(formData);
+                await notify.success('Milestone created and added to Honors & Achievements!', 'Milestone Created');
             } else {
                 await api.updateAchievement(editingId, formData);
+                await notify.success('Achievement changes saved successfully!', 'Achievement Updated');
             }
             handleCancel();
             onUpdated();
         } catch (err) {
-            alert(err.message || 'Error saving achievement');
+            notify.error(err.message || 'Error saving achievement', 'Save Failed');
         }
     };
 
     const handleDelete = async (id) => {
-        if (confirm('Delete this achievement?')) {
+        const confirmed = await notify.confirm(
+            'Are you sure you want to delete this achievement? This action cannot be undone.',
+            'Delete Achievement',
+            { confirmText: 'Delete' }
+        );
+        if (confirmed) {
             try {
                 await api.deleteAchievement(id);
                 onUpdated();
+                notify.success('Achievement deleted successfully.', 'Deleted');
             } catch (err) {
-                alert(err.message);
+                notify.error(err.message || 'Failed to delete achievement', 'Delete Failed');
             }
         }
     };
@@ -142,7 +152,7 @@ export const AchievementsManager = ({ achievements = [], onUpdated }) => {
                                 type="button"
                                 onClick={async () => {
                                     if (!formData.title.trim()) {
-                                        alert('Please enter an achievement title first');
+                                        notify.error('Please enter an achievement title first', 'Missing Title');
                                         return;
                                     }
                                     setAiLoading(true);
@@ -155,8 +165,9 @@ export const AchievementsManager = ({ achievements = [], onUpdated }) => {
                                             description: res.description || prev.description,
                                             date: res.date || prev.date,
                                         }));
+                                        notify.success('Achievement copy polished with AI!', 'AI Polish Complete');
                                     } catch (e) {
-                                        alert(e.message || 'AI generation failed');
+                                        notify.error(e.message || 'AI generation failed', 'AI Polish Failed');
                                     } finally {
                                         setAiLoading(false);
                                     }

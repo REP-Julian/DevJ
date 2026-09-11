@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { api } from '../../services/api';
 import { aiService } from '../../services/aiService';
+import { notify } from '../../services/notificationService';
 import { Plus, Trash2, Edit2, Save, X, Sparkles, Loader2, Lightbulb, CheckCircle2 } from 'lucide-react';
 import BrandIcon from '../common/BrandIcon';
 
@@ -45,7 +46,7 @@ export const SkillsManager = ({ skills = [], onUpdated }) => {
 
     const handleEnhanceSkill = async () => {
         if (!formData.name.trim()) {
-            alert('Please enter a tool or skill name first');
+            notify.error('Please enter a tool or skill name first', 'Missing Skill Name');
             return;
         }
         setAiLoading(true);
@@ -59,8 +60,9 @@ export const SkillsManager = ({ skills = [], onUpdated }) => {
                 iconName: res.iconName || prev.iconName,
                 description: res.description || prev.description,
             }));
+            notify.success(`Skill "${formData.name}" enhanced with AI details!`, 'Skill Enhanced');
         } catch (e) {
-            alert(e.message || 'AI skill analysis failed');
+            notify.error(e.message || 'AI skill analysis failed', 'Analysis Failed');
         } finally {
             setAiLoading(false);
         }
@@ -71,8 +73,9 @@ export const SkillsManager = ({ skills = [], onUpdated }) => {
         try {
             const res = await aiService.analyzeSkillsGap(skills);
             setSuggestedSkills(res || []);
+            notify.success('Skills gap analysis completed! Recommended skills listed below.', 'Gap Analysis Complete');
         } catch (e) {
-            alert(e.message || 'Failed to analyze skills gap');
+            notify.error(e.message || 'Failed to analyze skills gap', 'Analysis Failed');
         } finally {
             setGapLoading(false);
         }
@@ -90,8 +93,9 @@ export const SkillsManager = ({ skills = [], onUpdated }) => {
             });
             onUpdated();
             setSuggestedSkills(prev => prev.filter(s => s.name !== suggested.name));
+            notify.success(`Added "${suggested.name}" to skills inventory!`, 'Skill Added');
         } catch (e) {
-            alert(e.message || 'Failed to add skill');
+            notify.error(e.message || 'Failed to add skill', 'Add Failed');
         }
     };
 
@@ -100,23 +104,31 @@ export const SkillsManager = ({ skills = [], onUpdated }) => {
         try {
             if (isCreating) {
                 await api.createSkill(formData);
+                await notify.success('Skill added to inventory successfully!', 'Skill Created');
             } else {
                 await api.updateSkill(editingId, formData);
+                await notify.success('Skill changes saved successfully!', 'Skill Updated');
             }
             handleCancel();
             onUpdated();
         } catch (err) {
-            alert(err.message || 'Error saving skill');
+            notify.error(err.message || 'Error saving skill', 'Save Failed');
         }
     };
 
     const handleDelete = async (id) => {
-        if (confirm('Delete this skill?')) {
+        const confirmed = await notify.confirm(
+            'Are you sure you want to delete this skill?',
+            'Delete Skill',
+            { confirmText: 'Delete' }
+        );
+        if (confirmed) {
             try {
                 await api.deleteSkill(id);
                 onUpdated();
+                notify.success('Skill deleted successfully.', 'Deleted');
             } catch (err) {
-                alert(err.message);
+                notify.error(err.message || 'Failed to delete skill', 'Delete Failed');
             }
         }
     };

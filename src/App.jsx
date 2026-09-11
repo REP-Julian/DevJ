@@ -5,6 +5,8 @@ import { useAuth } from './context/AuthContext';
 import { initSecurityShield } from './utils/security';
 import { Loader2 } from 'lucide-react';
 
+import NotificationModal from './components/common/NotificationModal';
+
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 
@@ -33,21 +35,24 @@ export const App = () => {
     }, []);
 
     return (
-        <Suspense fallback={<PageLoader />}>
-            <Routes>
-                <Route path="/" element={<HomePage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route
-                    path="/admin/*"
-                    element={
-                        <ProtectedRoute>
-                            <DashboardPage />
-                        </ProtectedRoute>
-                    }
-                />
-                <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-        </Suspense>
+        <>
+            <NotificationModal />
+            <Suspense fallback={<PageLoader />}>
+                <Routes>
+                    <Route path="/" element={<HomePage />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route
+                        path="/admin/*"
+                        element={
+                            <ProtectedRoute>
+                                <DashboardPage />
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                </Routes>
+            </Suspense>
+        </>
     );
 };
 

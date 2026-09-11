@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Shield, Key, Mail, Check, AlertCircle, Loader2, Eye, EyeOff, Smartphone, Globe, Lock, Database, Cloud, RefreshCw, CheckCircle2, AlertTriangle, ExternalLink } from 'lucide-react';
 import { api } from '../../services/api';
+import { notify } from '../../services/notificationService';
 
 export const SecuritySettings = () => {
     const [currentEmail, setCurrentEmail] = useState('');
@@ -58,13 +59,18 @@ export const SecuritySettings = () => {
                 setSyncSuccess(true);
                 setSyncMessage('Portfolio successfully synchronized to Appwrite Cloud!');
                 await checkCloud();
+                notify.success('Portfolio successfully synchronized to Appwrite Cloud!', 'Cloud Sync Complete');
             } else {
                 setSyncSuccess(false);
-                setSyncMessage('Could not sync: ' + (res?.error || 'Appwrite Database collection "portfolio" is not created yet.'));
+                const errMsg = 'Could not sync: ' + (res?.error || 'Appwrite Database collection "portfolio" is not created yet.');
+                setSyncMessage(errMsg);
+                notify.error(errMsg, 'Cloud Sync Incomplete');
             }
         } catch (e) {
             setSyncSuccess(false);
-            setSyncMessage('Sync failed: ' + e.message);
+            const errMsg = 'Sync failed: ' + e.message;
+            setSyncMessage(errMsg);
+            notify.error(errMsg, 'Sync Failed');
         } finally {
             setSyncingCloud(false);
             setTimeout(() => setSyncMessage(''), 8000);
@@ -77,16 +83,19 @@ export const SecuritySettings = () => {
 
         if (!currentPassword) {
             setStatus({ type: 'error', message: 'Current password is required to make changes.' });
+            notify.error('Current password is required to make changes.', 'Validation Error');
             return;
         }
 
         if (newPassword) {
             if (newPassword.length < 6) {
                 setStatus({ type: 'error', message: 'New password must be at least 6 characters.' });
+                notify.error('New password must be at least 6 characters.', 'Validation Error');
                 return;
             }
             if (newPassword !== confirmPassword) {
                 setStatus({ type: 'error', message: 'New passwords do not match.' });
+                notify.error('New passwords do not match.', 'Validation Error');
                 return;
             }
         }
@@ -106,8 +115,11 @@ export const SecuritySettings = () => {
             setNewPassword('');
             setConfirmPassword('');
             setCurrentEmail(newEmail.trim() || currentEmail);
+            notify.success('Admin security credentials updated successfully in Appwrite Cloud!', 'Credentials Saved');
         } catch (err) {
-            setStatus({ type: 'error', message: err.message || 'Failed to update credentials.' });
+            const errMsg = err.message || 'Failed to update credentials.';
+            setStatus({ type: 'error', message: errMsg });
+            notify.error(errMsg, 'Update Failed');
         } finally {
             setLoading(false);
         }

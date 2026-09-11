@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ImageUploader from '../common/ImageUploader';
 import { api } from '../../services/api';
 import { aiService } from '../../services/aiService';
+import { notify } from '../../services/notificationService';
 import { Plus, Trash2, Edit2, Save, X, Sparkles, Loader2, Eye, CheckCircle2, Check } from 'lucide-react';
 
 export const ProjectsManager = ({ projects = [], onUpdated }) => {
@@ -57,7 +58,7 @@ export const ProjectsManager = ({ projects = [], onUpdated }) => {
     const handleScanProjectVisual = async () => {
         const imageToScan = localImageFile || formData.imageUrl;
         if (!imageToScan) {
-            alert('Please upload a project screenshot or architecture diagram first');
+            notify.error('Please upload a project screenshot or architecture diagram first', 'Missing Image');
             return;
         }
         setAiVisionScanning(true);
@@ -71,8 +72,9 @@ export const ProjectsManager = ({ projects = [], onUpdated }) => {
                 technologies: res.technologies || prev.technologies,
             }));
             setVisualReport(res);
+            notify.success('Project visual scanned! Tech stack and specifications detected.', 'Visual Inspected');
         } catch (err) {
-            alert(err.message || 'Project visual analysis failed');
+            notify.error(err.message || 'Project visual analysis failed', 'Analysis Failed');
         } finally {
             setAiVisionScanning(false);
         }
@@ -83,23 +85,31 @@ export const ProjectsManager = ({ projects = [], onUpdated }) => {
         try {
             if (isCreating) {
                 await api.createProject(formData);
+                await notify.success('Project created and added to Featured Projects!', 'Project Created');
             } else {
                 await api.updateProject(editingId, formData);
+                await notify.success('Project changes saved successfully!', 'Project Updated');
             }
             handleCancel();
             onUpdated();
         } catch (err) {
-            alert(err.message || 'Error saving project');
+            notify.error(err.message || 'Error saving project', 'Save Failed');
         }
     };
 
     const handleDelete = async (id) => {
-        if (confirm('Delete this project?')) {
+        const confirmed = await notify.confirm(
+            'Are you sure you want to delete this project? This action cannot be undone.',
+            'Delete Project',
+            { confirmText: 'Delete' }
+        );
+        if (confirmed) {
             try {
                 await api.deleteProject(id);
                 onUpdated();
+                notify.success('Project deleted successfully.', 'Deleted');
             } catch (err) {
-                alert(err.message);
+                notify.error(err.message || 'Failed to delete project', 'Delete Failed');
             }
         }
     };
@@ -131,7 +141,7 @@ export const ProjectsManager = ({ projects = [], onUpdated }) => {
                             type="button"
                             onClick={async () => {
                                 if (!formData.title.trim()) {
-                                    alert('Please enter a project title or keywords first');
+                                    notify.error('Please enter a project title or keywords first', 'Missing Title');
                                     return;
                                 }
                                 setAiLoading(true);
@@ -144,8 +154,9 @@ export const ProjectsManager = ({ projects = [], onUpdated }) => {
                                         description: res.description || prev.description,
                                         technologies: res.technologies || prev.technologies,
                                     }));
+                                    notify.success('Project details and tech stack enhanced with AI!', 'AI Polish Complete');
                                 } catch (e) {
-                                    alert(e.message || 'AI generation failed');
+                                    notify.error(e.message || 'AI generation failed', 'Enhance Failed');
                                 } finally {
                                     setAiLoading(false);
                                 }

@@ -3,6 +3,7 @@ import ImageUploader from '../common/ImageUploader';
 import ResumeUploader from '../common/ResumeUploader';
 import { api } from '../../services/api';
 import { aiService } from '../../services/aiService';
+import { notify } from '../../services/notificationService';
 import { Save, CheckCircle2, AlertCircle, Loader2, Sparkles, QrCode, Trash2, Eye, ExternalLink, Github, Facebook, Instagram, FileText } from 'lucide-react';
 
 export const ProfileManager = ({ profile, onUpdated }) => {
@@ -93,11 +94,14 @@ export const ProfileManager = ({ profile, onUpdated }) => {
                 .then(() => {
                     setQrSaveStatus({ loading: false, success: `Reverted ${platformId.toUpperCase()} to auto QR!`, error: '' });
                     if (onUpdated) onUpdated();
+                    notify.success(`Reverted ${platformId.toUpperCase()} to auto QR code successfully!`, 'QR Reset Complete');
                     setTimeout(() => setQrSaveStatus(p => ({ ...p, success: '' })), 4000);
                 })
                 .catch(err => {
                     console.error('Error reverting QR code:', err);
-                    setQrSaveStatus({ loading: false, success: '', error: err.message || 'Failed to revert QR code' });
+                    const msg = err.message || 'Failed to revert QR code';
+                    setQrSaveStatus({ loading: false, success: '', error: msg });
+                    notify.error(msg, 'QR Revert Failed');
                 });
             return updated;
         });
@@ -110,9 +114,11 @@ export const ProfileManager = ({ profile, onUpdated }) => {
             api.updateProfile(updated)
                 .then(() => {
                     if (onUpdated) onUpdated();
+                    notify.success('Resume document uploaded and linked to profile!', 'Resume Saved');
                 })
                 .catch(err => {
                     console.error('Error saving resume:', err);
+                    notify.error(err.message || 'Failed to save resume document', 'Resume Save Failed');
                 });
             return updated;
         });
@@ -125,10 +131,13 @@ export const ProfileManager = ({ profile, onUpdated }) => {
         try {
             await api.updateProfile(formData);
             setStatus({ loading: false, success: true, error: '' });
-            onUpdated();
+            if (onUpdated) onUpdated();
+            await notify.success('Profile hero details, bio, and social settings have been saved successfully!', 'Changes Saved');
             setTimeout(() => setStatus(prev => ({ ...prev, success: false })), 4000);
         } catch (err) {
-            setStatus({ loading: false, success: false, error: err.message || 'Failed to update profile' });
+            const errMsg = err.message || 'Failed to update profile';
+            setStatus({ loading: false, success: false, error: errMsg });
+            await notify.error(errMsg, 'Save Changes Failed');
         }
     };
 
@@ -197,8 +206,9 @@ export const ProfileManager = ({ profile, onUpdated }) => {
                                     tagline: res.tagline || prev.tagline,
                                     description: res.description || prev.description,
                                 }));
+                                notify.success('Bio and tagline polished with AI! Review the fields and click Save Changes to persist.', 'AI Polish Complete');
                             } catch (e) {
-                                alert(e.message || 'AI generation failed');
+                                notify.error(e.message || 'AI generation failed', 'AI Polish Failed');
                             } finally {
                                 setAiPolishing(false);
                             }

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import ImageUploader from '../common/ImageUploader';
 import { api } from '../../services/api';
 import { aiService } from '../../services/aiService';
+import { notify } from '../../services/notificationService';
 import { Plus, Trash2, Edit2, Save, X, Sparkles, Loader2, Eye } from 'lucide-react';
 
 export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
@@ -46,7 +47,7 @@ export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
 
     const handleEnhanceHobby = async () => {
         if (!formData.name.trim()) {
-            alert('Please enter a hobby or creative interest name first');
+            notify.error('Please enter a hobby or creative interest name first', 'Missing Name');
             return;
         }
         setAiLoading(true);
@@ -58,8 +59,9 @@ export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
                 description: res.description || prev.description,
                 iconName: res.iconName || prev.iconName,
             }));
+            notify.success(`Hobby "${formData.name}" enhanced with AI details!`, 'Hobby Enhanced');
         } catch (e) {
-            alert(e.message || 'AI hobby enhancement failed');
+            notify.error(e.message || 'AI hobby enhancement failed', 'Enhancement Failed');
         } finally {
             setAiLoading(false);
         }
@@ -68,7 +70,7 @@ export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
     const handleScanHobbyVisual = async () => {
         const imageToScan = localImageFile || formData.imageUrl;
         if (!imageToScan) {
-            alert('Please upload or select an image for this hobby first');
+            notify.error('Please upload or select an image for this hobby first', 'Missing Image');
             return;
         }
         setAiVisionScanning(true);
@@ -80,8 +82,9 @@ export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
                 description: res.description || prev.description,
                 iconName: res.iconName || prev.iconName,
             }));
+            notify.success('Hobby image visually scanned! Description generated.', 'Visual Analyzed');
         } catch (e) {
-            alert(e.message || 'AI vision analysis failed');
+            notify.error(e.message || 'AI vision analysis failed', 'Analysis Failed');
         } finally {
             setAiVisionScanning(false);
         }
@@ -92,23 +95,31 @@ export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
         try {
             if (isCreating) {
                 await api.createHobby(formData);
+                await notify.success('Hobby created and added to interests!', 'Hobby Created');
             } else {
                 await api.updateHobby(editingId, formData);
+                await notify.success('Hobby changes saved successfully!', 'Hobby Updated');
             }
             handleCancel();
             onUpdated();
         } catch (err) {
-            alert(err.message || 'Error saving hobby');
+            notify.error(err.message || 'Error saving hobby', 'Save Failed');
         }
     };
 
     const handleDelete = async (id) => {
-        if (confirm('Delete this hobby?')) {
+        const confirmed = await notify.confirm(
+            'Are you sure you want to delete this hobby?',
+            'Delete Hobby',
+            { confirmText: 'Delete' }
+        );
+        if (confirmed) {
             try {
                 await api.deleteHobby(id);
                 onUpdated();
+                notify.success('Hobby deleted successfully.', 'Deleted');
             } catch (err) {
-                alert(err.message);
+                notify.error(err.message || 'Failed to delete hobby', 'Delete Failed');
             }
         }
     };

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { aiService } from '../../services/aiService';
+import { notify } from '../../services/notificationService';
 import { Mail, Trash2, Calendar, User, RefreshCw, Sparkles, Send, Copy, Check, Loader2, X, ExternalLink } from 'lucide-react';
 
 export const MessagesManager = () => {
@@ -31,12 +32,18 @@ export const MessagesManager = () => {
     }, []);
 
     const handleDelete = async (id) => {
-        if (confirm('Delete this message?')) {
+        const confirmed = await notify.confirm(
+            'Are you sure you want to delete this inquiry message?',
+            'Delete Message',
+            { confirmText: 'Delete' }
+        );
+        if (confirmed) {
             try {
                 await api.deleteMessage(id);
                 fetchMessages();
+                notify.success('Inquiry message removed successfully.', 'Message Deleted');
             } catch (err) {
-                alert(err.message);
+                notify.error(err.message || 'Failed to delete message', 'Delete Failed');
             }
         }
     };

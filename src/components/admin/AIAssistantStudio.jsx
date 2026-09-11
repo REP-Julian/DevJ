@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { aiService } from '../../services/aiService';
 import { api } from '../../services/api';
+import { notify } from '../../services/notificationService';
 import FormattedMessage from './FormattedMessage';
 import ImageUploader from '../common/ImageUploader';
 import {
@@ -287,8 +288,9 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
         try {
             const res = await aiService.generateProfileBio(portfolio?.profile, bioTone);
             setGeneratedBio(res);
+            notify.success('AI bio polished! Review the results below.', 'Bio Generated');
         } catch (err) {
-            alert(err.message || 'Failed to generate bio');
+            notify.error(err.message || 'Failed to generate bio', 'Bio Generation Failed');
         } finally {
             setBioLoading(false);
         }
@@ -305,9 +307,9 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                 description: generatedBio.description,
             });
             onUpdated();
-            alert('Profile tagline and bio updated successfully!');
+            await notify.success('Profile tagline and bio updated successfully!', 'Bio Applied');
         } catch (err) {
-            alert(err.message || 'Failed to apply bio');
+            notify.error(err.message || 'Failed to apply bio', 'Apply Failed');
         } finally {
             setBioApplying(false);
         }
@@ -316,7 +318,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
     // Generate Project
     const handleGenerateProject = async () => {
         if (!projectIdea.trim()) {
-            alert('Please enter a project title or concept keywords');
+            notify.error('Please enter a project title or concept keywords', 'Missing Title');
             return;
         }
         setProjectLoading(true);
@@ -326,8 +328,9 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                 category: projectCategory,
             });
             setGeneratedProject(res);
+            notify.success('Project concept generated with tech stack!', 'Project Generated');
         } catch (err) {
-            alert(err.message || 'Failed to generate project');
+            notify.error(err.message || 'Failed to generate project', 'Generation Failed');
         } finally {
             setProjectLoading(false);
         }
@@ -348,11 +351,11 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                 order: (portfolio?.projects?.length || 0) + 1,
             });
             onUpdated();
-            alert('Project created and added to Featured Projects!');
+            await notify.success('Project created and added to Featured Projects!', 'Project Created');
             setGeneratedProject(null);
             setProjectIdea('');
         } catch (err) {
-            alert(err.message || 'Failed to save project');
+            notify.error(err.message || 'Failed to save project', 'Save Failed');
         } finally {
             setProjectApplying(false);
         }
@@ -361,7 +364,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
     // Generate Achievement
     const handleGenerateAchievement = async () => {
         if (!achievementTitle.trim() && !achievementNotes.trim() && !achievementVisual) {
-            alert('Please enter an achievement title, notes, or upload a visual certificate');
+            notify.error('Please enter an achievement title, notes, or upload a visual certificate', 'Missing Input');
             return;
         }
 
@@ -377,8 +380,9 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                 date: '2025',
             });
             setGeneratedAchievement(res);
+            notify.success('Achievement copy polished and formatted!', 'Achievement Ready');
         } catch (err) {
-            alert(err.message || 'Failed to magnify achievement');
+            notify.error(err.message || 'Failed to magnify achievement', 'AI Achievement Error');
         } finally {
             setAchievementLoading(false);
         }
@@ -388,7 +392,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
     const handleScanAchievementVisual = async () => {
         const imageToScan = achievementVisualFile || achievementVisual;
         if (!imageToScan) {
-            alert('Please upload or select an achievement visual first');
+            notify.error('Please upload or select an achievement visual first', 'Missing Visual');
             return;
         }
         setAchievementLoading(true);
@@ -399,8 +403,9 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
             });
             setGeneratedAchievement(res);
             if (res.title && !achievementTitle) setAchievementTitle(res.title);
+            notify.success('Achievement visual inspected! Certificate details extracted.', 'Visual Inspected');
         } catch (err) {
-            alert(err.message || 'Failed to analyze achievement visual');
+            notify.error(err.message || 'Failed to analyze achievement visual', 'Visual Analysis Failed');
         } finally {
             setAchievementLoading(false);
         }
@@ -420,14 +425,14 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                 order: (portfolio?.achievements?.length || 0) + 1,
             });
             onUpdated();
-            alert('Milestone created and added to Honors & Achievements!');
+            await notify.success('Milestone created and added to Honors & Achievements!', 'Milestone Created');
             setGeneratedAchievement(null);
             setAchievementTitle('');
             setAchievementNotes('');
             setAchievementVisual('');
             setAchievementVisualFile(null);
         } catch (err) {
-            alert(err.message || 'Failed to save achievement');
+            notify.error(err.message || 'Failed to save achievement', 'Save Failed');
         } finally {
             setAchievementApplying(false);
         }
@@ -439,8 +444,9 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
         try {
             const res = await aiService.analyzeSkillsGap(portfolio?.skills || []);
             setSkillsGapList(res || []);
+            notify.success('Skills gap analysis complete! Recommended skills loaded.', 'Gap Analysis Complete');
         } catch (err) {
-            alert(err.message || 'Skills analysis failed');
+            notify.error(err.message || 'Skills analysis failed', 'Analysis Failed');
         } finally {
             setSkillsLoading(false);
         }
@@ -458,16 +464,16 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
             });
             onUpdated();
             setSkillsGapList(prev => prev.filter(s => s.name !== skillItem.name));
-            alert(`Added "${skillItem.name}" to skills inventory!`);
+            await notify.success(`Added "${skillItem.name}" to skills inventory!`, 'Skill Added');
         } catch (err) {
-            alert(err.message || 'Failed to add skill');
+            notify.error(err.message || 'Failed to add skill', 'Add Failed');
         }
     };
 
     // Hobbies Studio Handlers
     const handleGenerateHobbyInStudio = async () => {
         if (!hobbyName.trim() && !hobbyDescription.trim() && !hobbyVisual && !hobbyVisualFile) {
-            alert('Please enter a hobby name or upload a photo');
+            notify.error('Please enter a hobby name or upload a photo', 'Missing Input');
             return;
         }
         if (hobbyVisual || hobbyVisualFile) {
@@ -477,8 +483,9 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
         try {
             const res = await aiService.enhanceHobby({ name: hobbyName, description: hobbyDescription });
             setGeneratedHobby(res);
+            notify.success('Hobby concept generated with details!', 'Hobby Generated');
         } catch (e) {
-            alert(e.message || 'Hobby generation failed');
+            notify.error(e.message || 'Hobby generation failed', 'Generation Failed');
         } finally {
             setHobbyLoading(false);
         }
@@ -487,7 +494,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
     const handleScanHobbyVisualInStudio = async () => {
         const imageToScan = hobbyVisualFile || hobbyVisual;
         if (!imageToScan) {
-            alert('Please upload a hobby image first');
+            notify.error('Please upload a hobby image first', 'Missing Image');
             return;
         }
         setHobbyLoading(true);
@@ -495,8 +502,9 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
             const res = await aiService.analyzeHobbyVisual(imageToScan, { name: hobbyName, description: hobbyDescription });
             setGeneratedHobby(res);
             if (res.name && !hobbyName) setHobbyName(res.name);
+            notify.success('Hobby visual scanned and analyzed with AI!', 'Visual Analyzed');
         } catch (e) {
-            alert(e.message || 'Visual analysis failed');
+            notify.error(e.message || 'Visual analysis failed', 'Analysis Failed');
         } finally {
             setHobbyLoading(false);
         }
@@ -514,13 +522,13 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                 order: (portfolio?.hobbies?.length || 0) + 1,
             });
             onUpdated();
-            alert('Added to Hobbies & Interests!');
+            await notify.success('Added to Hobbies & Interests!', 'Hobby Created');
             setGeneratedHobby(null);
             setHobbyName('');
             setHobbyDescription('');
             setHobbyVisual('');
         } catch (e) {
-            alert(e.message || 'Failed to save hobby');
+            notify.error(e.message || 'Failed to save hobby', 'Save Failed');
         } finally {
             setHobbyApplying(false);
         }
@@ -529,7 +537,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
     // Inquiries Studio Handlers
     const handleDraftInquiryReplyInStudio = async () => {
         if (!selectedInquiry) {
-            alert('Please select an inquiry to reply to');
+            notify.error('Please select an inquiry to reply to', 'No Inquiry Selected');
             return;
         }
         setDraftLoading(true);
@@ -541,8 +549,9 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                 draftTone
             );
             setInquiryDraft(res);
+            notify.success('AI draft reply generated!', 'Draft Ready');
         } catch (e) {
-            alert(e.message || 'Failed to draft reply');
+            notify.error(e.message || 'Failed to draft reply', 'Draft Failed');
         } finally {
             setDraftLoading(false);
         }
@@ -554,8 +563,9 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
         try {
             const res = await aiService.auditPortfolio(portfolio);
             setAuditResult(res);
+            notify.success('Portfolio audit completed successfully!', 'Audit Complete');
         } catch (err) {
-            alert(err.message || 'Audit failed');
+            notify.error(err.message || 'Audit failed', 'Audit Failed');
         } finally {
             setAuditLoading(false);
         }
@@ -1617,7 +1627,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                                 <button
                                     onClick={() => {
                                         navigator.clipboard.writeText(inquiryDraft);
-                                        alert('Copied reply to clipboard!');
+                                        notify.success('Copied reply to clipboard!', 'Copied');
                                     }}
                                     className="flex-1 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-charcoal-900 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
                                 >
