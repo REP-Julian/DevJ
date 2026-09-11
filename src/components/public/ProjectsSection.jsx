@@ -8,9 +8,6 @@ export const ProjectsSection = ({ projects = [] }) => {
             title: 'PawTrack Management System 2.0',
             category: 'Full-Stack Systems & SQL Database',
             description: 'Animal rescue operational platform solving paper record loss. Engineered a normalized relational schema for rescue intake, veterinary medical logs, and adoption candidate matching with role-based staff authentication.',
-            problem: 'Paper record fragmentation and delayed medical histories during rescue operations.',
-            architecture: 'Normalized SQLite schema with foreign key cascades, Express REST controllers, JWT middleware, and reactive React interface.',
-            metrics: 'Eliminated manual intake errors; 100% digital audit trail with sub-50ms local database queries.',
             technologies: 'Node.js, Express, SQLite, React, TailwindCSS, JWT Auth',
             imageUrl: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=800&q=80',
             githubUrl: 'https://github.com/REP-Julian',
@@ -21,9 +18,6 @@ export const ProjectsSection = ({ projects = [] }) => {
             title: 'DevJ AI Studio & Multi-Provider CMS',
             category: 'Distributed AI Architecture',
             description: 'Production Appwrite back-office engine orchestrating multi-provider LLMs (Gemini, Groq, Mistral, OpenRouter) with Server-Sent Events (SSE) streaming, automated fallback routing, token budgeting, and zero-rebuild live portfolio updates.',
-            problem: 'Vendor lock-in, API rate limits, and constant frontend rebuilds required for content edits.',
-            architecture: 'Node.js SSE streaming proxy with automatic fallback between 4 AI providers; Appwrite Cloud database and secure storage integration.',
-            metrics: 'Zero downtime during provider rate limits, live token tracking, and 100% zero-rebuild content synchronizations.',
             technologies: 'React, Node.js, Express, Appwrite Cloud, SSE Streaming, Google Gen AI SDK',
             imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
             githubUrl: 'https://github.com/REP-Julian/DevJ',
@@ -34,9 +28,6 @@ export const ProjectsSection = ({ projects = [] }) => {
             title: 'VibeMatrix Developer Workspace',
             category: 'Interactive Web Tooling',
             description: 'Modular developer dashboard with persistent workspace sessions, custom RESTful endpoints, and reactive state inspection designed for rapid prototyping.',
-            problem: 'Fragmented context switching between terminal benchmarking, API inspection, and note scratchpads.',
-            architecture: 'Client-side state machine with persistent LocalStorage caching, modular widget bus, and lightweight Express mock server.',
-            metrics: 'Sub-16ms render loop with zero layout thrashing across complex dashboard tiles.',
             technologies: 'React, TailwindCSS, Web Audio API, Vite, Express',
             imageUrl: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80',
             githubUrl: 'https://github.com/REP-Julian',
@@ -205,36 +196,6 @@ export const ProjectsSection = ({ projects = [] }) => {
                                 <p className="text-charcoal-600 text-sm sm:text-base leading-relaxed">
                                     {activeItem?.description}
                                 </p>
-
-                                {/* Structured Engineering Breakdown */}
-                                {(activeItem?.problem || activeItem?.architecture || activeItem?.metrics) && (
-                                    <div className="space-y-2 pt-1 text-xs">
-                                        {activeItem.problem && (
-                                            <div className="p-3 rounded-xl bg-white border border-gray-200/90 shadow-sm">
-                                                <span className="font-extrabold text-charcoal-900 block text-[10px] uppercase tracking-wider text-devorange-600 mb-0.5">
-                                                    Core Problem Solved
-                                                </span>
-                                                <span className="text-charcoal-700 leading-normal">{activeItem.problem}</span>
-                                            </div>
-                                        )}
-                                        {activeItem.architecture && (
-                                            <div className="p-3 rounded-xl bg-white border border-gray-200/90 shadow-sm">
-                                                <span className="font-extrabold text-charcoal-900 block text-[10px] uppercase tracking-wider text-devorange-600 mb-0.5">
-                                                    System Architecture
-                                                </span>
-                                                <span className="text-charcoal-700 leading-normal">{activeItem.architecture}</span>
-                                            </div>
-                                        )}
-                                        {activeItem.metrics && (
-                                            <div className="p-3 rounded-xl bg-white border border-gray-200/90 shadow-sm">
-                                                <span className="font-extrabold text-charcoal-900 block text-[10px] uppercase tracking-wider text-devorange-600 mb-0.5">
-                                                    Key Metrics & Impact
-                                                </span>
-                                                <span className="text-charcoal-700 leading-normal">{activeItem.metrics}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                )}
                             </div>
 
                             {/* Tech Stack Pills */}
@@ -510,20 +471,6 @@ export const ProjectsSection = ({ projects = [] }) => {
                                 <p className="leading-relaxed text-charcoal-200">
                                     {lightboxItem.description}
                                 </p>
-                                {(lightboxItem.architecture || lightboxItem.metrics) && (
-                                    <div className="flex flex-wrap gap-2 text-xs text-charcoal-400 pt-1">
-                                        {lightboxItem.architecture && (
-                                            <span className="bg-charcoal-800 px-2.5 py-1 rounded-md text-devyellow-400 font-mono text-[11px] border border-charcoal-700">
-                                                Arch: {lightboxItem.architecture}
-                                            </span>
-                                        )}
-                                        {lightboxItem.metrics && (
-                                            <span className="bg-charcoal-800 px-2.5 py-1 rounded-md text-devorange-400 font-mono text-[11px] border border-charcoal-700">
-                                                Impact: {lightboxItem.metrics}
-                                            </span>
-                                        )}
-                                    </div>
-                                )}
                             </div>
                             {lightboxItem.githubUrl && lightboxItem.githubUrl !== '#' && (
                                 <a
