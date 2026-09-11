@@ -3,12 +3,16 @@ import { api } from '../../services/api';
 import { aiService } from '../../services/aiService';
 import { notify } from '../../services/notificationService';
 import {
-    OUTLOOK_ACCOUNT_EMAIL,
     EMAIL_CLIENTS,
     EMAIL_CLIENT_PREF_KEY,
     dispatchEmail,
     cleanEmailBody,
-    isValidEmail
+    isValidEmail,
+    sendDirectOutlookEmail,
+    getStoredOutlookAppPassword,
+    setStoredOutlookAppPassword,
+    hasStoredOutlookAppPassword,
+    getActiveSenderEmail
 } from '../../utils/emailClient';
 import {
     Mail,
@@ -29,7 +33,15 @@ import {
     CheckCircle2,
     ShieldCheck,
     AlertCircle,
-    SlidersHorizontal
+    SlidersHorizontal,
+    KeyRound,
+    Lock,
+    Eye,
+    EyeOff,
+    HelpCircle,
+    Zap,
+    ChevronDown,
+    ChevronUp
 } from 'lucide-react';
 
 export const MessagesManager = () => {
@@ -50,11 +62,27 @@ export const MessagesManager = () => {
         () => localStorage.getItem(EMAIL_CLIENT_PREF_KEY) || 'outlook-web'
     );
 
+    // Sender Email & Name State (Dynamic from profile, with in-place edit)
+    const [senderEmail, setSenderEmail] = useState(() => getActiveSenderEmail());
+    const [senderName, setSenderName] = useState('');
+
+    // Direct Sending (Without opening Outlook) State
+    const [directSending, setDirectSending] = useState(false);
+    const [showSmtpSettings, setShowSmtpSettings] = useState(false);
+    const [appPasswordInput, setAppPasswordInput] = useState(() => getStoredOutlookAppPassword());
+    const [showPasswordText, setShowPasswordText] = useState(false);
+    const [savePasswordToDevice, setSavePasswordToDevice] = useState(true);
+
     const fetchMessages = async (showNotification = false) => {
         try {
             setLoading(true);
             const data = await api.getMessages();
             setMessages(data || []);
+
+            const profile = api.getStoredPortfolio()?.profile || {};
+            if (profile.email && !senderEmail) setSenderEmail(profile.email);
+            if (profile.name && !senderName) setSenderName(profile.name);
+
             if (showNotification) {
                 notify.success('Direct inquiries refreshed!', 'Inbox Synced');
             }
@@ -70,6 +98,9 @@ export const MessagesManager = () => {
 
     useEffect(() => {
         fetchMessages(false);
+        const profile = api.getStoredPortfolio()?.profile || {};
+        if (profile.email) setSenderEmail(profile.email);
+        if (profile.name) setSenderName(profile.name);
     }, []);
 
     const handleDelete = async (id) => {
@@ -122,8 +153,19 @@ export const MessagesManager = () => {
         setDraftedReply('');
         setCopied(false);
 
+        const profile = api.getStoredPortfolio()?.profile || {};
+        const activeEmail = senderEmail || profile.email || getActiveSenderEmail();
+        const activeName = senderName || profile.name || '';
+        if (activeEmail) setSenderEmail(activeEmail);
+        if (activeName) setSenderName(activeName);
+
+        // Auto open password settings if none stored yet
+        if (!hasStoredOutlookAppPassword()) {
+            setShowSmtpSettings(true);
+        }
+
         try {
-            const draft = await aiService.draftInquiryReply(msg.name, msg.email, msg.message, replyTone);
+            const draft = await aiService.draftInquiryReply(msg.name, msg.email, msg.message, replyTone, activeName, activeEmail);
             setDraftedReply(cleanEmailBody(draft));
         } catch (err) {
             notify.error(err.message || 'Failed to generate AI draft reply', 'AI Drafting Failed');
@@ -140,7 +182,7 @@ export const MessagesManager = () => {
         setDraftLoading(true);
         setCopied(false);
         try {
-            const draft = await aiService.draftInquiryReply(activeMsg.name, replyRecipient, activeMsg.message, toneId);
+            const draft = await aiService.draftInquiryReply(activeMsg.name, replyRecipient, activeMsg.message, toneId, senderName, senderEmail);
             setDraftedReply(cleanEmailBody(draft));
         } catch (err) {
             notify.error(err.message || 'Failed to draft reply in selected tone', 'Tone Generation Failed');
@@ -154,7 +196,7 @@ export const MessagesManager = () => {
         setDraftLoading(true);
         setCopied(false);
         try {
-            const draft = await aiService.draftInquiryReply(activeMsg.name, replyRecipient, activeMsg.message, replyTone);
+            const draft = await aiService.draftInquiryReply(activeMsg.name, replyRecipient, activeMsg.message, replyTone, senderName, senderEmail);
             setDraftedReply(cleanEmailBody(draft));
         } catch (err) {
             notify.error(err.message || 'Failed to regenerate reply', 'Regeneration Failed');
@@ -170,7 +212,70 @@ export const MessagesManager = () => {
         setTimeout(() => setCopied(false), 2500);
     };
 
-    // Dispatch email to chosen client with clipboard safeguard
+    // 1. Direct In-App Send (WITHOUT opening Outlook)
+    const handleSendDirectly = async () => {
+        if (!activeMsg) return;
+
+        if (!isValidEmail(replyRecipient)) {
+            notify.error('Please enter a valid collaborator email address before sending.', 'Invalid Recipient');
+            return;
+        }
+
+        const password = appPasswordInput.trim() || getStoredOutlookAppPassword();
+        if (!password) {
+            setShowSmtpSettings(true);
+            notify.error(
+                'To send directly without opening Outlook, please enter your 16-character Microsoft App Password below.',
+                'App Password Required'
+            );
+            return;
+        }
+
+        try {
+            setDirectSending(true);
+
+            // Persist app password if opted
+            if (savePasswordToDevice) {
+                setStoredOutlookAppPassword(password);
+            }
+
+            await sendDirectOutlookEmail({
+                to: replyRecipient,
+                subject: replySubject,
+                body: draftedReply,
+                appPassword: password,
+                fromEmail: senderEmail,
+                fromName: senderName
+            });
+
+            // Mark message as replied in state and database
+            await api.markMessageReplied(activeMsg.id, true);
+            setMessages((prev) =>
+                prev.map((m) =>
+                    m.id === activeMsg.id
+                        ? { ...m, replied: true, repliedAt: new Date().toISOString() }
+                        : m
+                )
+            );
+
+            notify.success(
+                `Letter successfully sent directly to ${replyRecipient} from your account (${senderEmail})!\n\nNo browser tab or client was needed. Status recorded as Replied.`,
+                'Email Delivered Directly'
+            );
+
+            setActiveMsg(null);
+        } catch (err) {
+            console.error(err);
+            notify.error(
+                err.message || 'Failed to send email directly via Outlook SMTP.',
+                'Direct Send Error'
+            );
+        } finally {
+            setDirectSending(false);
+        }
+    };
+
+    // 2. Client dispatch (Opening Outlook Web or Desktop as alternative)
     const handleDispatchEmail = async (clientId = selectedClient) => {
         if (!activeMsg) return;
 
@@ -187,7 +292,6 @@ export const MessagesManager = () => {
                 body: draftedReply
             });
 
-            // Automatically record as replied
             await api.markMessageReplied(activeMsg.id, true);
             setMessages((prev) =>
                 prev.map((m) =>
@@ -197,7 +301,6 @@ export const MessagesManager = () => {
                 )
             );
 
-            const isDesktop = clientId === 'outlook-desktop';
             notify.success(
                 `${result.client.shortName} launched for ${replyRecipient}!\n\nYour entire letter was also copied to your clipboard as a safeguard. If your email client trimmed any text, simply press Ctrl+V to paste!`,
                 'Email Client Dispatched'
@@ -261,7 +364,7 @@ export const MessagesManager = () => {
                         )}
                     </div>
                     <p className="text-xs text-charcoal-500 mt-0.5">
-                        Collaborator messages from portfolio contact form with direct Outlook integration & AI drafting.
+                        Collaborator inquiries from your portfolio with direct in-app sending from your Outlook account.
                     </p>
                 </div>
 
@@ -433,14 +536,14 @@ export const MessagesManager = () => {
                 </div>
             )}
 
-            {/* AI Draft Reply & Outlook Email Client Modal */}
+            {/* AI Draft Reply & Direct Outlook Dispatcher Modal */}
             {activeMsg && (
                 <div 
                     className="fixed inset-0 z-50 bg-charcoal-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200 overflow-y-auto"
                     role="dialog"
                     aria-modal="true"
                 >
-                    <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-xl w-full shadow-2xl border border-gray-100 space-y-5 animate-popup-zoom my-6 max-h-[90vh] overflow-y-auto">
+                    <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-xl w-full shadow-2xl border border-gray-100 space-y-4 animate-popup-zoom my-6 max-h-[92vh] overflow-y-auto">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between border-b border-gray-100 pb-3">
                             <div className="flex items-center gap-2.5">
@@ -450,7 +553,7 @@ export const MessagesManager = () => {
                                 <div>
                                     <h3 className="font-extrabold text-charcoal-900 text-base leading-tight">AI Email Reply Drafter</h3>
                                     <p className="text-[11px] text-charcoal-500">
-                                        Personalized reply from your Outlook account to collaborator
+                                        Send directly from your Outlook account without opening external apps
                                     </p>
                                 </div>
                             </div>
@@ -467,14 +570,29 @@ export const MessagesManager = () => {
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pb-2 border-b border-gray-200/60">
                                 <span className="text-charcoal-500 font-semibold flex items-center gap-1.5">
                                     <ShieldCheck className="w-3.5 h-3.5 text-devorange-600" />
-                                    From (Your Account):
+                                    From (Your Outlook Account):
                                 </span>
-                                <span className="font-mono font-bold text-charcoal-900 bg-white px-2.5 py-0.5 rounded-lg border border-gray-200">
-                                    {OUTLOOK_ACCOUNT_EMAIL}
-                                </span>
+                                <div className="flex items-center gap-1.5">
+                                    <input
+                                        type="email"
+                                        value={senderEmail}
+                                        onChange={(e) => setSenderEmail(e.target.value)}
+                                        placeholder="your-email@domain.com"
+                                        className="font-mono font-bold text-charcoal-900 bg-white px-2.5 py-0.5 rounded-lg border border-gray-200 text-xs focus:outline-none focus:border-devorange-500 max-w-[220px]"
+                                        title="Your Outlook account email address"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowSmtpSettings(!showSmtpSettings)}
+                                        className="p-1 text-charcoal-500 hover:text-charcoal-900 bg-white rounded-md border border-gray-200 hover:bg-gray-50 transition-colors"
+                                        title="Configure Outlook SMTP App Password"
+                                    >
+                                        <KeyRound className="w-3.5 h-3.5 text-devorange-600" />
+                                    </button>
+                                </div>
                             </div>
 
-                            {/* Collaborator Destination Email (Editable for verification) */}
+                            {/* Collaborator Destination Email (Editable) */}
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                                 <label className="text-charcoal-600 font-semibold shrink-0">
                                     To Collaborator:
@@ -511,6 +629,67 @@ export const MessagesManager = () => {
                             </div>
                         </div>
 
+                        {/* Collapsible Outlook App Password Configuration Drawer */}
+                        {showSmtpSettings && (
+                            <div className="bg-devyellow-50/60 border border-devyellow-300/80 rounded-2xl p-4 space-y-3 animate-in fade-in duration-200">
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5 text-xs font-bold text-charcoal-900">
+                                        <KeyRound className="w-4 h-4 text-devorange-600" />
+                                        <span>Direct Send Authentication (Outlook SMTP)</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowSmtpSettings(false)}
+                                        className="text-charcoal-400 hover:text-charcoal-600"
+                                    >
+                                        <X className="w-3.5 h-3.5" />
+                                    </button>
+                                </div>
+
+                                <p className="text-[11px] text-charcoal-600 leading-relaxed">
+                                    To send emails directly from <strong>{senderEmail || 'your email account'}</strong> without opening the Outlook app, enter a 16-character Microsoft <strong>App Password</strong>.
+                                </p>
+
+                                <div className="relative">
+                                    <input
+                                        type={showPasswordText ? 'text' : 'password'}
+                                        value={appPasswordInput}
+                                        onChange={(e) => setAppPasswordInput(e.target.value)}
+                                        placeholder="Enter 16-character Microsoft App Password..."
+                                        className="w-full pl-3 pr-10 py-2 rounded-xl border border-devyellow-300 text-xs font-mono bg-white focus:outline-none focus:border-devorange-500 text-charcoal-900"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPasswordText(!showPasswordText)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-charcoal-400 hover:text-charcoal-700"
+                                    >
+                                        {showPasswordText ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                    </button>
+                                </div>
+
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] pt-1 border-t border-devyellow-200/60">
+                                    <label className="flex items-center gap-1.5 text-charcoal-600 cursor-pointer">
+                                        <input
+                                            type="checkbox"
+                                            checked={savePasswordToDevice}
+                                            onChange={(e) => setSavePasswordToDevice(e.target.checked)}
+                                            className="rounded text-devorange-600 focus:ring-devorange-500"
+                                        />
+                                        <span>Remember password on this device</span>
+                                    </label>
+                                    <a
+                                        href="https://account.microsoft.com/security"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-devorange-600 hover:underline font-bold flex items-center gap-1"
+                                    >
+                                        <span>How to get Microsoft App Password</span>
+                                        <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Tone Selector with instant regeneration */}
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                             <label className="text-xs font-bold text-charcoal-700 shrink-0">Select Reply Tone:</label>
@@ -523,7 +702,7 @@ export const MessagesManager = () => {
                                     <button
                                         key={t.id}
                                         onClick={() => handleToneSelect(t.id)}
-                                        disabled={draftLoading}
+                                        disabled={draftLoading || directSending}
                                         className={`px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all active:scale-95 ${
                                             replyTone === t.id
                                                 ? 'bg-charcoal-900 text-white shadow-xs'
@@ -535,7 +714,7 @@ export const MessagesManager = () => {
                                 ))}
                                 <button
                                     onClick={handleRegenerateReply}
-                                    disabled={draftLoading}
+                                    disabled={draftLoading || directSending}
                                     className="p-1.5 text-devorange-600 hover:bg-devyellow-100 rounded-xl transition-colors shrink-0"
                                     title="Regenerate with current tone"
                                 >
@@ -548,11 +727,11 @@ export const MessagesManager = () => {
                         <div className="space-y-1.5">
                             <div className="flex items-center justify-between text-[11px] text-charcoal-500 font-medium">
                                 <span>Letter Body:</span>
-                                <span>{draftedReply.length} characters • Plain-text optimized for Outlook</span>
+                                <span>{draftedReply.length} characters • Ready to send</span>
                             </div>
                             <div className="relative">
                                 {draftLoading ? (
-                                    <div className="h-48 bg-gray-50 border border-gray-200 rounded-2xl flex flex-col items-center justify-center space-y-2">
+                                    <div className="h-44 bg-gray-50 border border-gray-200 rounded-2xl flex flex-col items-center justify-center space-y-2">
                                         <Loader2 className="w-6 h-6 animate-spin text-devorange-600" />
                                         <span className="text-xs font-bold text-charcoal-600">
                                             Drafting personalized reply ({replyTone})...
@@ -560,7 +739,7 @@ export const MessagesManager = () => {
                                     </div>
                                 ) : (
                                     <textarea
-                                        rows={7}
+                                        rows={6}
                                         value={draftedReply}
                                         onChange={(e) => setDraftedReply(e.target.value)}
                                         placeholder="Drafted reply will appear here..."
@@ -570,78 +749,65 @@ export const MessagesManager = () => {
                             </div>
                         </div>
 
-                        {/* Email Client Chooser */}
-                        <div className="bg-gray-50 p-3 rounded-2xl border border-gray-200 space-y-2">
-                            <div className="flex items-center justify-between text-xs">
-                                <span className="font-bold text-charcoal-800 flex items-center gap-1.5">
-                                    <Mail className="w-3.5 h-3.5 text-devorange-600" />
-                                    Choose Email Client:
-                                </span>
-                                <span className="text-[11px] text-charcoal-500">
-                                    Will launch with pre-filled message
-                                </span>
+                        {/* Action Buttons Section */}
+                        <div className="space-y-2.5 pt-1">
+                            {/* Primary Action Row: Direct Send (No Outlook App Needed) */}
+                            <div className="flex flex-col sm:flex-row items-center gap-2.5">
+                                <button
+                                    onClick={handleSendDirectly}
+                                    disabled={!draftedReply || draftLoading || directSending || !isValidEmail(replyRecipient)}
+                                    className="w-full sm:flex-1 py-3 px-6 rounded-2xl bg-charcoal-900 hover:bg-black text-devyellow-400 font-black text-xs flex items-center justify-center gap-2 shadow-sm transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:hover:scale-100"
+                                >
+                                    {directSending ? (
+                                        <>
+                                            <Loader2 className="w-4 h-4 animate-spin text-devyellow-400" />
+                                            <span>Sending directly via Outlook SMTP...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Zap className="w-4 h-4 fill-devyellow-400 text-devyellow-400" />
+                                            <span>Send Directly (Without Opening Outlook)</span>
+                                        </>
+                                    )}
+                                </button>
                             </div>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                {EMAIL_CLIENTS.map((client) => (
+
+                            {/* Secondary Row: Utilities & Alternative Client Launch */}
+                            <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-1 border-t border-gray-100">
+                                <div className="flex items-center gap-2">
                                     <button
-                                        key={client.id}
-                                        type="button"
-                                        onClick={() => {
-                                            setSelectedClient(client.id);
-                                            try {
-                                                localStorage.setItem(EMAIL_CLIENT_PREF_KEY, client.id);
-                                            } catch (e) {}
-                                        }}
-                                        className={`p-2 rounded-xl border text-left transition-all ${
-                                            selectedClient === client.id
-                                                ? 'bg-charcoal-900 text-white border-charcoal-900 shadow-xs'
-                                                : 'bg-white text-charcoal-700 border-gray-200 hover:bg-gray-100'
+                                        onClick={handleCopy}
+                                        disabled={!draftedReply || draftLoading}
+                                        className="px-3 py-1.5 rounded-xl border border-gray-200 hover:bg-gray-50 text-[11px] font-bold text-charcoal-700 flex items-center gap-1.5 transition-all active:scale-95 bg-white"
+                                    >
+                                        {copied ? <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[3]" /> : <Copy className="w-3.5 h-3.5" />}
+                                        <span>{copied ? 'Copied!' : 'Copy Reply'}</span>
+                                    </button>
+
+                                    <button
+                                        onClick={() => handleToggleReplied(activeMsg.id, activeMsg.replied)}
+                                        className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold flex items-center gap-1.5 transition-all ${
+                                            activeMsg.replied
+                                                ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
+                                                : 'bg-white text-charcoal-600 border-gray-200 hover:bg-gray-50'
                                         }`}
                                     >
-                                        <div className="font-bold text-[11px] truncate">{client.shortName}</div>
-                                        <div className={`text-[10px] ${selectedClient === client.id ? 'text-devyellow-400' : 'text-charcoal-400'}`}>
-                                            {client.badge}
-                                        </div>
+                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                        <span>{activeMsg.replied ? 'Replied' : 'Mark Done'}</span>
                                     </button>
-                                ))}
-                            </div>
-                        </div>
+                                </div>
 
-                        {/* Bottom Action Buttons */}
-                        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-                            <div className="flex items-center gap-2 w-full sm:w-auto">
+                                {/* Alternative: Open in Outlook Web */}
                                 <button
-                                    onClick={handleCopy}
-                                    disabled={!draftedReply || draftLoading}
-                                    className="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl border border-gray-200 hover:border-gray-300 text-xs font-bold text-charcoal-800 flex items-center justify-center gap-1.5 transition-all active:scale-95 disabled:opacity-50 bg-white"
+                                    onClick={() => handleDispatchEmail('outlook-web')}
+                                    disabled={!draftedReply || draftLoading || directSending || !isValidEmail(replyRecipient)}
+                                    className="text-[11px] font-bold text-devorange-600 hover:text-devorange-700 hover:underline flex items-center gap-1 ml-auto"
+                                    title="Open preview in Outlook Webmail"
                                 >
-                                    {copied ? <Check className="w-4 h-4 text-emerald-600 stroke-[3]" /> : <Copy className="w-4 h-4" />}
-                                    <span>{copied ? 'Copied to Clipboard!' : 'Copy Reply'}</span>
-                                </button>
-
-                                <button
-                                    onClick={() => handleToggleReplied(activeMsg.id, activeMsg.replied)}
-                                    className={`px-3 py-2.5 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                                        activeMsg.replied
-                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
-                                            : 'bg-white text-charcoal-600 border-gray-200 hover:bg-gray-50'
-                                    }`}
-                                    title="Toggle inquiry status"
-                                >
-                                    <CheckCircle2 className="w-3.5 h-3.5" />
-                                    <span>{activeMsg.replied ? 'Replied' : 'Mark Done'}</span>
+                                    <span>Or open in Outlook Web</span>
+                                    <ExternalLink className="w-3 h-3" />
                                 </button>
                             </div>
-
-                            {/* Primary Launch Button */}
-                            <button
-                                onClick={() => handleDispatchEmail(selectedClient)}
-                                disabled={!draftedReply || draftLoading || !isValidEmail(replyRecipient)}
-                                className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-devyellow-400 via-devyellow-500 to-devorange-500 hover:from-devyellow-500 hover:to-devorange-600 text-charcoal-900 font-extrabold text-xs flex items-center justify-center gap-2 shadow-sm hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
-                            >
-                                <span>Send via {activeClientObj.shortName}</span>
-                                <ExternalLink className="w-3.5 h-3.5" />
-                            </button>
                         </div>
                     </div>
                 </div>

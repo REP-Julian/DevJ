@@ -853,24 +853,25 @@ Return ONLY a valid JSON array of objects:
     }
 
     if (endpoint === 'draft-reply') {
+        const devName = (payload.developerName || '').trim();
+        const devEmail = (payload.developerEmail || '').trim();
+        const recipientName = (payload.senderName || '').trim();
+        const recipientEmail = (payload.senderEmail || '').trim();
         const prompt = `Draft a personalized email reply to this collaborator inquiry:
-Recipient: ${payload.senderName || 'Collaborator'} <${payload.senderEmail || 'collaborator@example.com'}>
+Recipient: ${recipientName || 'Client'}${recipientEmail ? ` <${recipientEmail}>` : ''}
 Inquiry Message: "${payload.messageText || ''}"
 Tone: ${payload.tone || 'warm and professional'}
-Developer / Sender: Julian Agustino (DevJ), AI Engineer & Full-Stack Developer
-Developer Outlook Email: agustino.julian@outlook.ph
+${devName ? `Developer / Sender Name: ${devName}` : ''}
+${devEmail ? `Developer Email: ${devEmail}` : ''}
 
 Instructions:
-1. Greet ${payload.senderName || 'Collaborator'} by name warmly.
+1. Greet ${recipientName || 'there'} warmly.
 2. Directly answer or address their inquiry with thoughtful next steps or willingness to collaborate.
-3. Sign off professionally as:
-Julian Agustino (DevJ)
-AI Engineer & Full-Stack Developer
-agustino.julian@outlook.ph
-4. Do NOT use markdown symbols like asterisks (**) or hashes (#). Use clean plain text that pastes beautifully into Outlook.`;
+3. Sign off professionally${devName ? ` as:\n${devName}` : ''}${devEmail ? `\n${devEmail}` : ''}
+4. Do NOT use markdown symbols like asterisks (**) or hashes (#). Use clean plain text that pastes beautifully into an email client.`;
         const res = await executeProviderCascade({
             prompt,
-            system: 'You are an executive communication assistant drafting emails for Julian Agustino (DevJ).',
+            system: `You are an executive communication assistant drafting emails${devName ? ` for ${devName}` : ''}.`,
             taskType: 'copy'
         });
         return { text: res.text };
@@ -1216,12 +1217,14 @@ Automatically failovers if any provider hits rate limits or network issues.`;
     },
 
     // Draft Inquiry Reply
-    async draftInquiryReply(senderName, senderEmail, messageText, tone = 'warm and professional') {
+    async draftInquiryReply(senderName, senderEmail, messageText, tone = 'warm and professional', developerName = '', developerEmail = '') {
         const response = await callAIBackend('draft-reply', {
             senderName,
             senderEmail,
             messageText,
-            tone
+            tone,
+            developerName,
+            developerEmail
         });
         return response.text || '';
     },

@@ -2,18 +2,31 @@
  * Email Client Utility
  * Integrates Outlook Web, Outlook Desktop, and Webmail clients with
  * clipboard safeguards and collaborator delivery guarantees.
+ * Completely dynamic: Zero hardcoded email fallbacks.
  */
 
-export const OUTLOOK_ACCOUNT_EMAIL = 'agustino.julian@outlook.ph';
-
 export const EMAIL_CLIENT_PREF_KEY = 'devj_preferred_email_client';
+export const OUTLOOK_APP_PASSWORD_KEY = 'devj_outlook_app_password_v1';
+
+/**
+ * Resolves the active user/sender email dynamically from local storage or context
+ */
+export const getActiveSenderEmail = () => {
+    try {
+        const stored = JSON.parse(localStorage.getItem('devj_portfolio_data_v1') || '{}');
+        if (stored?.profile?.email) return stored.profile.email.trim();
+    } catch (e) {}
+    return '';
+};
+
+export const OUTLOOK_ACCOUNT_EMAIL = getActiveSenderEmail();
 
 export const EMAIL_CLIENTS = [
     {
         id: 'outlook-web',
         name: 'Outlook Web (Personal / Live)',
         shortName: 'Outlook Web',
-        description: 'Opens outlook.live.com in browser ready to send from your Outlook account (agustino.julian@outlook.ph)',
+        description: 'Opens outlook.live.com in browser ready to send from your Outlook account',
         badge: 'Recommended',
         buildUrl: ({ to, subject, body }) =>
             `https://outlook.live.com/mail/0/deeplink/compose?to=${encodeURIComponent(to)}&subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`
@@ -108,7 +121,6 @@ export const dispatchEmail = async ({
     } else {
         const openedWindow = window.open(targetUrl, '_blank', 'noopener,noreferrer');
         if (!openedWindow) {
-            // Popup blocker might intercept; fallback to same window or mailto
             window.location.href = targetUrl;
         }
     }
@@ -120,5 +132,88 @@ export const dispatchEmail = async ({
         subject,
         clipboardCopied,
         bodyLength: cleanBody.length
+    };
+};
+
+export const getStoredOutlookAppPassword = () => {
+    try {
+        return localStorage.getItem(OUTLOOK_APP_PASSWORD_KEY) || '';
+    } catch {
+        return '';
+    }
+};
+
+export const setStoredOutlookAppPassword = (pwd = '') => {
+    try {
+        if (pwd && pwd.trim()) {
+            localStorage.setItem(OUTLOOK_APP_PASSWORD_KEY, pwd.trim());
+        } else {
+            localStorage.removeItem(OUTLOOK_APP_PASSWORD_KEY);
+        }
+    } catch (e) {
+        console.warn('Failed to save Outlook app password:', e);
+    }
+};
+
+export const hasStoredOutlookAppPassword = () => {
+    return Boolean(getStoredOutlookAppPassword());
+};
+
+/**
+ * Sends email directly over Outlook SMTP without opening any browser tab or client
+ */
+export const sendDirectOutlookEmail = async ({
+    to = '',
+    subject = '',
+    body = '',
+    appPassword = '',
+    fromEmail = '',
+    fromName = ''
+}) => {
+    const trimmedTo = String(to).trim();
+    if (!isValidEmail(trimmedTo)) {
+        throw new Error(`Invalid recipient email address: "${trimmedTo}". Please verify collaborator email.`);
+    }
+
+    const cleanBody = cleanEmailBody(body);
+    const password = appPassword || getStoredOutlookAppPassword();
+
+    if (!password) {
+        throw new Error('Outlook App Password is required to send directly. Please configure it in settings.');
+    }
+
+    const senderEmail = (fromEmail || getActiveSenderEmail()).trim();
+    if (!senderEmail) {
+        throw new Error('Sender email is required. Please verify your account email address.');
+    }
+
+    const token = localStorage.getItem('devj_admin_auth_token_v1') || '';
+    const res = await fetch('/api/contact/send-direct', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+            to: trimmedTo,
+            subject,
+            body: cleanBody,
+            appPassword: password,
+            fromEmail: senderEmail,
+            fromName: (fromName || '').trim()
+        })
+    });
+
+    const data = await res.json();
+    if (!res.ok) {
+        throw new Error(data.error || 'Failed to dispatch email directly via Outlook SMTP.');
+    }
+
+    return {
+        success: true,
+        messageId: data.messageId,
+        to: trimmedTo,
+        fromEmail: senderEmail,
+        subject
     };
 };

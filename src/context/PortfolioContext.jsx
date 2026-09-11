@@ -4,29 +4,33 @@ import { api } from '../services/api';
 const PortfolioContext = createContext();
 
 export const PortfolioProvider = ({ children }) => {
-    const [portfolio, setPortfolio] = useState({
-        profile: {
-            name: 'Julian Agustino',
-            tagline: 'Full-Stack Developer & AI Systems Integrator',
-            description: 'Building resilient full-stack web applications with React, Node.js, and Appwrite—engineering clean API architectures, responsive interfaces, and production-grade LLM integrations.',
-            avatarUrl: '',
-            email: 'agustino.julian@outlook.ph',
-            githubUrl: 'https://github.com/REP-Julian',
-            githubQrUrl: '',
-            facebookUrl: 'https://facebook.com',
-            facebookQrUrl: '',
-            instagramUrl: 'https://instagram.com',
-            instagramQrUrl: '',
-            telegramUrl: 'https://t.me/username',
-            telegramQrUrl: '',
-            whatsappUrl: 'https://wa.me/1234567890',
-            whatsappQrUrl: '',
-            resumeUrl: ''
-        },
-        skills: [],
-        achievements: [],
-        projects: [],
-        hobbies: []
+    const [portfolio, setPortfolio] = useState(() => {
+        const stored = api.getStoredPortfolio();
+        if (stored?.profile) return stored;
+        return {
+            profile: {
+                name: '',
+                tagline: '',
+                description: '',
+                avatarUrl: '',
+                email: '',
+                githubUrl: '',
+                githubQrUrl: '',
+                facebookUrl: '',
+                facebookQrUrl: '',
+                instagramUrl: '',
+                instagramQrUrl: '',
+                telegramUrl: '',
+                telegramQrUrl: '',
+                whatsappUrl: '',
+                whatsappQrUrl: '',
+                resumeUrl: ''
+            },
+            skills: [],
+            achievements: [],
+            projects: [],
+            hobbies: []
+        };
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);

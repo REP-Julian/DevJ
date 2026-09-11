@@ -153,7 +153,7 @@ export const HeroSection = ({ profile }) => {
                             Contact Me
                         </a>
                         <a
-                            href={profile?.resumeUrl || `mailto:${profile?.email || 'agustino.julian@outlook.ph'}?subject=Resume%20Request%20-%20Julian%20Agustino`}
+                            href={profile?.resumeUrl || (profile?.email ? `mailto:${profile.email}?subject=Resume%20Request%20-%20${encodeURIComponent(profile?.name || 'Developer')}` : '#contact')}
                             target={profile?.resumeUrl ? "_blank" : undefined}
                             rel="noreferrer"
                             className="px-5 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider bg-white border border-gray-200 text-charcoal-700 hover:border-charcoal-400 hover:text-charcoal-900 transition-all shadow-xs flex items-center gap-2 hover:-translate-y-0.5"

@@ -15,7 +15,7 @@ export const Footer = ({ profile = {} }) => {
         { name: 'Contact', href: '/#contact' },
     ];
 
-    const email = profile.email || 'agustino.julian@outlook.ph';
+    const email = profile.email || '';
     const githubUrl = profile.githubUrl && profile.githubUrl !== '#' ? profile.githubUrl : 'https://github.com/REP-Julian';
     const linkedinUrl = profile.linkedinUrl && profile.linkedinUrl !== '#' ? profile.linkedinUrl : 'https://linkedin.com';
 
@@ -91,14 +91,16 @@ export const Footer = ({ profile = {} }) => {
                             >
                                 <Linkedin className="w-4 h-4" />
                             </a>
-                            <a
-                                href={`mailto:${email}`}
-                                className="w-9 h-9 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center text-charcoal-700 hover:text-devorange-600 hover:border-devorange-400 hover:bg-white transition-all shadow-xs"
-                                title={`Email: ${email}`}
-                                aria-label="Send email to Julian Agustino"
-                            >
-                                <Mail className="w-4 h-4" />
-                            </a>
+                            {email && (
+                                <a
+                                    href={`mailto:${email}`}
+                                    className="w-9 h-9 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center text-charcoal-700 hover:text-devorange-600 hover:border-devorange-400 hover:bg-white transition-all shadow-xs"
+                                    title={`Email: ${email}`}
+                                    aria-label="Send email"
+                                >
+                                    <Mail className="w-4 h-4" />
+                                </a>
+                            )}
                             <button
                                 onClick={scrollToTop}
                                 className="w-9 h-9 rounded-xl bg-devyellow-100/80 border border-devyellow-300 text-charcoal-900 flex items-center justify-center hover:bg-devyellow-400 hover:scale-105 active:scale-95 transition-all shadow-xs ml-1"
@@ -108,9 +110,11 @@ export const Footer = ({ profile = {} }) => {
                                 <ArrowUp className="w-4 h-4 text-devorange-600 font-bold" />
                             </button>
                         </div>
-                        <span className="text-[11px] text-charcoal-400 font-medium">
-                            {email}
-                        </span>
+                        {email && (
+                            <span className="text-[11px] text-charcoal-400 font-medium">
+                                {email}
+                            </span>
+                        )}
                     </div>
                 </div>
 

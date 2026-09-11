@@ -559,23 +559,24 @@ Return valid JSON array (no markdown):
 // Draft Inquiry Reply
 router.post('/draft-reply', authenticateToken, async (req, res) => {
     try {
-        const { senderName, senderEmail, messageText, tone = 'warm and professional' } = req.body;
+        const { senderName, senderEmail, messageText, tone = 'warm and professional', developerName, developerEmail } = req.body;
 
         if (!GEMINI_API_KEY) {
             return res.status(400).json({ error: 'Gemini API key not configured.' });
         }
 
+        const devName = (developerName || '').trim() || 'Portfolio Author';
+        const devEmail = (developerEmail || '').trim();
+
         const prompt = `Draft a ${tone} email reply to a portfolio collaborator inquiry.
 
 Sender / Collaborator: ${senderName} (${senderEmail})
 Inquiry: "${messageText}"
-Developer / Sender: Julian Agustino (DevJ), AI Engineer & Full-Stack Developer
-Developer Outlook Email: agustino.julian@outlook.ph
+Developer / Sender: ${devName}${devEmail ? ` (${devEmail})` : ''}
 
 Include: friendly greeting to ${senderName}, direct response to their inquiry, clear next steps, and sign-off as:
-Julian Agustino (DevJ)
-AI Engineer & Full-Stack Developer
-agustino.julian@outlook.ph
+${devName}
+${devEmail ? devEmail : ''}
 
 Do NOT use markdown bold asterisks or symbols in the body. Keep it clean plain text.`;
 

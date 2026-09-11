@@ -4,7 +4,7 @@ import { api } from '../../services/api';
 import { notify } from '../../services/notificationService';
 import FormattedMessage from './FormattedMessage';
 import ImageUploader from '../common/ImageUploader';
-import { dispatchEmail, cleanEmailBody, OUTLOOK_ACCOUNT_EMAIL } from '../../utils/emailClient';
+import { dispatchEmail, cleanEmailBody, getActiveSenderEmail, sendDirectOutlookEmail, getStoredOutlookAppPassword } from '../../utils/emailClient';
 import {
     Sparkles,
     Send,
@@ -547,7 +547,9 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                 selectedInquiry.name,
                 selectedInquiry.email,
                 selectedInquiry.message,
-                draftTone
+                draftTone,
+                portfolio?.profile?.name || '',
+                portfolio?.profile?.email || getActiveSenderEmail() || ''
             );
             setInquiryDraft(res);
             notify.success('AI draft reply generated!', 'Draft Ready');
@@ -1625,15 +1627,42 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
 
                         {inquiryDraft && selectedInquiry && (
                             <div className="flex flex-col gap-2 pt-3 border-t border-gray-100">
-                                <div className="flex gap-2">
+                                <div className="flex flex-col sm:flex-row gap-2">
                                     <button
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(cleanEmailBody(inquiryDraft));
-                                            notify.success('Copied clean reply to clipboard!', 'Copied');
+                                        onClick={async () => {
+                                            const pwd = getStoredOutlookAppPassword();
+                                            if (!pwd) {
+                                                notify.error(
+                                                    'To send directly, please configure your 16-character Microsoft App Password in the Direct Inquiries manager.',
+                                                    'App Password Required'
+                                                );
+                                                return;
+                                            }
+                                            const activeSender = portfolio?.profile?.email || getActiveSenderEmail() || '';
+                                            const activeSenderName = portfolio?.profile?.name || '';
+                                            try {
+                                                await sendDirectOutlookEmail({
+                                                    to: selectedInquiry.email,
+                                                    subject: `Re: Portfolio Inquiry from ${selectedInquiry.name}`,
+                                                    body: inquiryDraft,
+                                                    appPassword: pwd,
+                                                    fromEmail: activeSender,
+                                                    fromName: activeSenderName
+                                                });
+                                                if (selectedInquiry.id || selectedInquiry.$id) {
+                                                    await api.markMessageReplied(selectedInquiry.id || selectedInquiry.$id, true);
+                                                }
+                                                notify.success(
+                                                    `Email delivered directly to ${selectedInquiry.email}${activeSender ? ` from ${activeSender}` : ''}!`,
+                                                    'Direct Email Delivered'
+                                                );
+                                            } catch (e) {
+                                                notify.error(e.message || 'Direct send failed', 'Direct Send Error');
+                                            }
                                         }}
-                                        className="flex-1 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-charcoal-900 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+                                        className="flex-1 py-2.5 rounded-xl bg-charcoal-900 hover:bg-black text-devyellow-400 font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all"
                                     >
-                                        <Copy className="w-3.5 h-3.5" /> Copy Reply
+                                        <Zap className="w-3.5 h-3.5 fill-devyellow-400 text-devyellow-400" /> Send Directly (No Outlook App Needed)
                                     </button>
                                     <button
                                         onClick={async () => {
@@ -1655,13 +1684,23 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                                                 notify.error(e.message || 'Failed to dispatch email', 'Email Error');
                                             }
                                         }}
-                                        className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-devyellow-400 to-devorange-500 hover:from-devyellow-500 hover:to-devorange-600 text-charcoal-900 font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                                        className="py-2.5 px-3 rounded-xl border border-gray-200 hover:bg-gray-100 text-charcoal-800 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+                                        title="Open preview in Outlook Webmail"
                                     >
-                                        <ExternalLink className="w-3.5 h-3.5" /> Send via Outlook Web
+                                        <ExternalLink className="w-3.5 h-3.5 text-devorange-600" /> Outlook Web
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(cleanEmailBody(inquiryDraft));
+                                            notify.success('Copied clean reply to clipboard!', 'Copied');
+                                        }}
+                                        className="py-2.5 px-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-charcoal-700 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+                                    >
+                                        <Copy className="w-3.5 h-3.5" /> Copy
                                     </button>
                                 </div>
                                 <div className="flex items-center justify-between text-[11px] text-charcoal-500 px-1 pt-1">
-                                    <span>From: <strong>{OUTLOOK_ACCOUNT_EMAIL}</strong></span>
+                                    <span>From: <strong>{portfolio?.profile?.email || getActiveSenderEmail() || 'Not configured'}</strong></span>
                                     <button
                                         onClick={async () => {
                                             try {

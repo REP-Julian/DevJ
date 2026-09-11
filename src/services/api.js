@@ -318,7 +318,7 @@ export const api = {
             if (mergedProfile.email === 'contact@devj.com' || !mergedProfile.email) {
                 mergedProfile.email = (local.profile?.email && local.profile.email !== 'contact@devj.com')
                     ? local.profile.email
-                    : (remoteProfile.email && remoteProfile.email !== 'contact@devj.com' ? remoteProfile.email : 'agustino.julian@outlook.ph');
+                    : (remoteProfile.email && remoteProfile.email !== 'contact@devj.com' ? remoteProfile.email : (local.profile?.email || ''));
             }
 
             // Guarantee QR codes saved in local or Appwrite are preserved
@@ -747,6 +747,29 @@ export const api = {
         delete localStatusMap[id];
         localStorage.setItem('devj_messages_status_map', JSON.stringify(localStatusMap));
         return true;
+    },
+
+    sendDirectEmail: async ({ to, subject, body, appPassword }) => {
+        const token = localStorage.getItem(AUTH_STORAGE_KEY) || '';
+        const res = await fetch('/api/contact/send-direct', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                to,
+                subject,
+                body,
+                appPassword
+            })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+            throw new Error(data.error || data.message || 'Failed to dispatch email via Outlook SMTP.');
+        }
+        return data;
     },
 
     // 9. Appwrite Storage Image Uploader with client-side WebP compression

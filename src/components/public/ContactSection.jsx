@@ -67,17 +67,19 @@ export const ContactSection = ({ profile = {} }) => {
                                 Have an AI project, web platform, or creative vision in mind? Send a message and let's bring it to reality.
                             </p>
 
-                            <div className="pt-4 space-y-3">
-                                <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
-                                    Email
+                            {profile.email && (
+                                <div className="pt-4 space-y-3">
+                                    <div className="text-xs text-gray-400 uppercase tracking-wider font-semibold">
+                                        Email
+                                    </div>
+                                    <a
+                                        href={`mailto:${profile.email}`}
+                                        className="text-base font-bold text-white hover:text-devyellow-400 transition-colors block"
+                                    >
+                                        {profile.email}
+                                    </a>
                                 </div>
-                                <a
-                                    href={`mailto:${profile.email || 'agustino.julian@outlook.ph'}`}
-                                    className="text-base font-bold text-white hover:text-devyellow-400 transition-colors block"
-                                >
-                                    {profile.email || 'agustino.julian@outlook.ph'}
-                                </a>
-                            </div>
+                            )}
 
                             <div className="pt-2 space-y-2">
                                 <div className="text-[11px] text-gray-400 font-bold uppercase tracking-wider flex items-center gap-1.5">
