@@ -74,9 +74,42 @@ export const MessagesManager = () => {
     const [showSmtpSettings, setShowSmtpSettings] = useState(false);
     const [serverSmtpConfigured, setServerSmtpConfigured] = useState(false);
     const [gmailUserInput, setGmailUserInput] = useState(() => getStoredGmailUser());
-    const [appPasswordInput, setAppPasswordInput] = useState(() => getStoredGmailAppPassword());
+    const [appPasswordInput, setAppPasswordInput] = useState('');
     const [showPasswordText, setShowPasswordText] = useState(false);
-    const [savePasswordToDevice, setSavePasswordToDevice] = useState(true);
+
+    const playChimeAlert = () => {
+        try {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtx) return;
+            const ctx = new AudioCtx();
+            if (ctx.state === 'suspended') {
+                ctx.resume();
+            }
+            const now = ctx.currentTime;
+
+            const osc1 = ctx.createOscillator();
+            const gain1 = ctx.createGain();
+            osc1.type = 'sine';
+            osc1.frequency.setValueAtTime(587.33, now); // D5
+            gain1.gain.setValueAtTime(0.12, now);
+            gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+            osc1.connect(gain1);
+            gain1.connect(ctx.destination);
+            osc1.start(now);
+            osc1.stop(now + 0.3);
+
+            const osc2 = ctx.createOscillator();
+            const gain2 = ctx.createGain();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(880.0, now + 0.12); // A5
+            gain2.gain.setValueAtTime(0.15, now + 0.12);
+            gain2.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+            osc2.connect(gain2);
+            gain2.connect(ctx.destination);
+            osc2.start(now + 0.12);
+            osc2.stop(now + 0.5);
+        } catch {}
+    };
 
     const fetchMessages = async (showNotification = false) => {
         try {
@@ -107,9 +140,12 @@ export const MessagesManager = () => {
         if (profile.email) setSenderEmail(profile.email);
         if (profile.name) setSenderName(profile.name);
 
-        // Clear any old Outlook App Password from local storage to prevent conflicts
+        // Security: Actively purge any legacy stored passwords and caches from localStorage
         try {
+            localStorage.removeItem('devj_gmail_app_password_v1');
             localStorage.removeItem('devj_outlook_app_password_v1');
+            localStorage.removeItem('devj_contact_messages_v1');
+            localStorage.removeItem('devj_messages_status_map');
         } catch {}
 
         api.getSmtpStatus().then((status) => {
@@ -120,6 +156,58 @@ export const MessagesManager = () => {
                 }
             }
         }).catch(() => {});
+
+        // 1. Real-time Multi-Channel Listener (SSE Stream, BroadcastChannel, Appwrite Realtime, Window Event)
+        const unsubscribe = api.subscribeToMessages((event) => {
+            if (!event) return;
+            if (event.type === 'new_message' && event.data) {
+                const newMsg = event.data;
+                setMessages((prev) => {
+                    const exists = prev.some((m) => String(m.id) === String(newMsg.id));
+                    if (exists) return prev;
+                    return [newMsg, ...prev];
+                });
+                playChimeAlert();
+                notify.info(
+                    `New direct inquiry from ${newMsg.name || 'Visitor'} (${newMsg.email || ''}) received live!`,
+                    'Live Direct Contact'
+                );
+            } else if (event.type === 'update_message' && event.data) {
+                const updated = event.data;
+                setMessages((prev) =>
+                    prev.map((m) => (String(m.id) === String(updated.id) ? { ...m, ...updated } : m))
+                );
+            } else if (event.type === 'delete_message' && event.data) {
+                const delId = String(event.data.id);
+                setMessages((prev) => prev.filter((m) => String(m.id) !== delId));
+            }
+        });
+
+        // 2. Continuous Background Sync (every 10s + on tab focus)
+        const pollInterval = setInterval(() => {
+            api.getMessages().then((data) => {
+                if (Array.isArray(data)) {
+                    setMessages(data);
+                }
+            }).catch(() => {});
+        }, 10000);
+
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') {
+                api.getMessages().then((data) => {
+                    if (Array.isArray(data)) {
+                        setMessages(data);
+                    }
+                }).catch(() => {});
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibility);
+
+        return () => {
+            if (typeof unsubscribe === 'function') unsubscribe();
+            clearInterval(pollInterval);
+            document.removeEventListener('visibilitychange', handleVisibility);
+        };
     }, []);
 
     const handleDelete = async (id) => {
@@ -240,30 +328,24 @@ export const MessagesManager = () => {
             return;
         }
 
-        const password = appPasswordInput.trim() || getStoredGmailAppPassword();
-        const gUser = gmailUserInput.trim() || getStoredGmailUser();
+        const password = appPasswordInput.trim();
+        const gUser = (gmailUserInput.trim() || getStoredGmailUser()).trim();
 
         if (!password && !serverSmtpConfigured) {
             setShowSmtpSettings(true);
-            notify.error('Please enter your 16-character Google App Password in the Direct Send settings.', 'App Password Required');
+            notify.error('Please configure your Gmail account in the Direct Send settings.', 'Credentials Required');
             return;
         }
 
         try {
             setDirectSending(true);
 
-            // Persist credentials if opted
-            if (savePasswordToDevice) {
-                if (password) setStoredGmailAppPassword(password);
-                if (gUser) setStoredGmailUser(gUser);
-            }
-
             await sendDirectEmail({
                 to: replyRecipient,
                 subject: replySubject,
                 body: draftedReply,
                 gmailUser: gUser,
-                appPassword: password,
+                appPassword: password, // If empty, server uses verified server-side .env GMAIL_APP_PASSWORD
                 fromEmail: senderEmail,
                 fromName: senderName
             });
@@ -372,7 +454,7 @@ export const MessagesManager = () => {
             {/* Header with Title, Count Badges, Filter & Search */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-gray-200 pb-4">
                 <div>
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center flex-wrap gap-2.5">
                         <h2 className="text-2xl font-black text-charcoal-900">Direct Inquiries</h2>
                         <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-devyellow-100 text-devorange-600 border border-devyellow-300 shadow-xs">
                             {messages.length}
@@ -382,6 +464,13 @@ export const MessagesManager = () => {
                                 {pendingCount} Pending
                             </span>
                         )}
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs" title="Real-time live synchronization active across tabs and devices">
+                            <span className="relative flex h-2 w-2">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                            Live Sync Active
+                        </span>
                     </div>
                     <p className="text-xs text-charcoal-500 mt-0.5">
                         Collaborator inquiries from your portfolio with direct in-app sending from your Outlook account.
@@ -714,22 +803,17 @@ export const MessagesManager = () => {
                                 </div>
 
                                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] pt-1 border-t border-devyellow-200/60">
-                                    <label className="flex items-center gap-1.5 text-charcoal-600 cursor-pointer">
-                                        <input
-                                            type="checkbox"
-                                            checked={savePasswordToDevice}
-                                            onChange={(e) => setSavePasswordToDevice(e.target.checked)}
-                                            className="rounded text-devorange-600 focus:ring-devorange-500"
-                                        />
-                                        <span>Remember credentials on this device</span>
-                                    </label>
+                                    <div className="flex items-center gap-1.5 text-emerald-800 font-medium">
+                                        <Lock className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                        <span>Protected: Passwords are managed securely on backend server (.env) and never stored in browser localStorage.</span>
+                                    </div>
                                     <a
                                         href="https://myaccount.google.com/apppasswords"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-devorange-600 hover:underline font-bold flex items-center gap-1"
+                                        className="text-devorange-600 hover:underline font-bold flex items-center gap-1 shrink-0"
                                     >
-                                        <span>How to get Google App Password</span>
+                                        <span>Google App Passwords Guide</span>
                                         <ExternalLink className="w-3 h-3" />
                                     </a>
                                 </div>

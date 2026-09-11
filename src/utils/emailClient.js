@@ -157,28 +157,31 @@ export const setStoredGmailUser = (email = '') => {
     }
 };
 
-export const getStoredGmailAppPassword = () => {
+// Security Policy: App Passwords are NEVER persisted to localStorage or browser caches.
+// They reside exclusively in server-side .env or session memory.
+export const purgeStoredAppPasswords = () => {
     try {
-        return localStorage.getItem(GMAIL_APP_PASSWORD_KEY) || '';
-    } catch {
-        return '';
-    }
+        localStorage.removeItem(GMAIL_APP_PASSWORD_KEY);
+        localStorage.removeItem('devj_outlook_app_password_v1');
+        localStorage.removeItem('devj_gmail_app_password_v1');
+    } catch {}
 };
 
-export const setStoredGmailAppPassword = (pwd = '') => {
-    try {
-        if (pwd && pwd.trim()) {
-            localStorage.setItem(GMAIL_APP_PASSWORD_KEY, pwd.trim());
-        } else {
-            localStorage.removeItem(GMAIL_APP_PASSWORD_KEY);
-        }
-    } catch (e) {
-        console.warn('Failed to save Gmail app password:', e);
-    }
+// Automatically execute purge on module import
+purgeStoredAppPasswords();
+
+export const getStoredGmailAppPassword = () => {
+    purgeStoredAppPasswords();
+    return '';
+};
+
+export const setStoredGmailAppPassword = () => {
+    // Intentionally no-op to protect credentials from localStorage exposure
+    purgeStoredAppPasswords();
 };
 
 export const hasStoredGmailCredentials = () => {
-    return Boolean(getStoredGmailAppPassword());
+    return false;
 };
 
 // Aliases for backward compatibility

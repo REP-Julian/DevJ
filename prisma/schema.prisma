@@ -74,10 +74,13 @@ model Hobby {
 }
 
 model Message {
-  id        Int      @id @default(autoincrement())
+  id        Int       @id @default(autoincrement())
   name      String
   email     String
+  subject   String?
   message   String
-  read      Boolean  @default(false)
-  createdAt DateTime @default(now())
+  read      Boolean   @default(false)
+  replied   Boolean   @default(false)
+  repliedAt DateTime?
+  createdAt DateTime  @default(now())
 }

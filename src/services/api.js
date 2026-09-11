@@ -643,32 +643,117 @@ export const api = {
     sendMessage: async (msg) => {
         const newMsg = {
             ...msg,
+            subject: msg.subject || 'Direct Inquiry',
             createdAt: new Date().toISOString(),
         };
 
-        // 1. Save to Appwrite Databases
+        // 1. Save to Express Backend Database (Prisma SQLite)
+        try {
+            const res = await fetch('/api/contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(newMsg)
+            });
+            if (res.ok) {
+                const json = await res.json();
+                if (json.data?.id) {
+                    newMsg.id = String(json.data.id);
+                }
+            }
+        } catch (serverErr) {
+            console.warn('Backend contact submission notice:', serverErr.message);
+        }
+
+        // 2. Also save to Appwrite Databases if configured
         try {
             const doc = await databases.createDocument(
                 APPWRITE_CONFIG.databaseId,
                 APPWRITE_CONFIG.collections.messages,
                 ID.unique(),
-                newMsg
+                {
+                    name: newMsg.name,
+                    email: newMsg.email,
+                    subject: newMsg.subject || '',
+                    message: newMsg.message,
+                    createdAt: newMsg.createdAt
+                }
             );
-            newMsg.id = doc.$id;
+            if (!newMsg.id) newMsg.id = doc.$id;
         } catch (err) {
-            newMsg.id = String(Date.now());
+            if (!newMsg.id) newMsg.id = `msg_${Date.now()}`;
         }
 
-        // 2. Also keep in local storage
-        const current = JSON.parse(localStorage.getItem(MESSAGES_STORAGE_KEY) || '[]');
-        current.unshift(newMsg);
-        localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(current));
+        // 3. Real-time in-tab and cross-tab broadcast dispatch
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new CustomEvent('devj_inquiry_received', { detail: newMsg }));
+            try {
+                const bc = new BroadcastChannel('devj_inquiries_sync');
+                bc.postMessage({ type: 'new_message', data: newMsg });
+                bc.close();
+            } catch {}
+        }
 
         return newMsg;
     },
 
     getMessages: async () => {
-        const localStatusMap = JSON.parse(localStorage.getItem('devj_messages_status_map') || '{}');
+        const token = localStorage.getItem(AUTH_STORAGE_KEY) || '';
+        const messageMap = new Map();
+
+        // 1. Fetch directly from Express Backend Database (Prisma SQLite)
+        try {
+            const res = await fetch('/api/contact/messages', {
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            if (res.ok) {
+                const serverMsgs = await res.json();
+                if (Array.isArray(serverMsgs)) {
+                    serverMsgs.forEach((m) => {
+                        messageMap.set(String(m.id), {
+                            id: String(m.id),
+                            name: m.name,
+                            email: m.email,
+                            subject: m.subject || 'Direct Inquiry',
+                            message: m.message,
+                            createdAt: m.createdAt,
+                            replied: Boolean(m.replied),
+                            repliedAt: m.repliedAt || null
+                        });
+                    });
+                }
+            }
+        } catch (err) {
+            console.warn('Backend message fetch notice:', err.message);
+        }
+
+        // 1b. Fetch from Appwrite Cloud Storage (Bucket "portfolio", File "messages_data")
+        try {
+            const url = `${APPWRITE_CONFIG.endpoint}/storage/buckets/${APPWRITE_CONFIG.bucketId}/files/messages_data/view?project=${APPWRITE_CONFIG.projectId}`;
+            const res = await fetch(url, { cache: 'no-cache' });
+            if (res.ok) {
+                const cloudMsgs = await res.json();
+                if (Array.isArray(cloudMsgs)) {
+                    cloudMsgs.forEach((m) => {
+                        if (!messageMap.has(String(m.id))) {
+                            messageMap.set(String(m.id), {
+                                id: String(m.id),
+                                name: m.name,
+                                email: m.email,
+                                subject: m.subject || 'Direct Inquiry',
+                                message: m.message,
+                                createdAt: m.createdAt,
+                                replied: Boolean(m.replied),
+                                repliedAt: m.repliedAt || null
+                            });
+                        }
+                    });
+                }
+            }
+        } catch {}
+
+        // 2. Fetch from Appwrite Databases if configured
         try {
             const res = await databases.listDocuments(
                 APPWRITE_CONFIG.databaseId,
@@ -676,77 +761,217 @@ export const api = {
                 [Query.orderDesc('$createdAt'), Query.limit(50)]
             );
             if (res.documents && res.documents.length > 0) {
-                const messages = res.documents.map((doc) => {
-                    const status = localStatusMap[doc.$id] || {};
-                    return {
-                        id: doc.$id,
-                        name: doc.name,
-                        email: doc.email,
-                        subject: doc.subject,
-                        message: doc.message,
-                        createdAt: doc.createdAt || doc.$createdAt,
-                        replied: doc.replied || status.replied || false,
-                        repliedAt: doc.repliedAt || status.repliedAt || null
-                    };
+                res.documents.forEach((doc) => {
+                    if (!messageMap.has(doc.$id)) {
+                        messageMap.set(doc.$id, {
+                            id: doc.$id,
+                            name: doc.name,
+                            email: doc.email,
+                            subject: doc.subject || 'Direct Inquiry',
+                            message: doc.message,
+                            createdAt: doc.createdAt || doc.$createdAt,
+                            replied: Boolean(doc.replied),
+                            repliedAt: doc.repliedAt || null
+                        });
+                    }
                 });
-                localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(messages));
-                return messages;
             }
         } catch (err) {
-            // Use local fallback
+            // Appwrite fallback
         }
-        const stored = JSON.parse(localStorage.getItem(MESSAGES_STORAGE_KEY) || '[]');
-        return stored.map((m) => {
-            const status = localStatusMap[m.id] || {};
-            return {
-                ...m,
-                replied: m.replied || status.replied || false,
-                repliedAt: m.repliedAt || status.repliedAt || null
-            };
-        });
+
+        // Security / Sanitation: Purge legacy localStorage message caches so no hidden messages linger
+        try {
+            localStorage.removeItem(MESSAGES_STORAGE_KEY);
+            localStorage.removeItem('devj_messages_status_map');
+        } catch {}
+
+        const merged = Array.from(messageMap.values()).sort(
+            (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+        );
+
+        return merged;
     },
 
     markMessageReplied: async (id, isReplied = true) => {
-        const localStatusMap = JSON.parse(localStorage.getItem('devj_messages_status_map') || '{}');
+        const strId = String(id);
+        const token = localStorage.getItem(AUTH_STORAGE_KEY) || '';
         const now = isReplied ? new Date().toISOString() : null;
-        localStatusMap[id] = { replied: isReplied, repliedAt: now };
-        localStorage.setItem('devj_messages_status_map', JSON.stringify(localStatusMap));
 
-        const stored = JSON.parse(localStorage.getItem(MESSAGES_STORAGE_KEY) || '[]');
-        const updated = stored.map((m) => (m.id === id ? { ...m, replied: isReplied, repliedAt: now } : m));
-        localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(updated));
+        // 1. Update Backend Database
+        try {
+            await fetch(`/api/contact/messages/${strId}`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ replied: isReplied })
+            });
+        } catch {}
 
+        // 2. Update Appwrite Database if available
         try {
             await databases.updateDocument(
                 APPWRITE_CONFIG.databaseId,
                 APPWRITE_CONFIG.collections.messages,
-                id,
+                strId,
                 { replied: isReplied, repliedAt: now }
             );
-        } catch (err) {
-            // Attribute may not exist in Appwrite schema yet, local state safe
+        } catch {}
+
+        // 3. Local real-time broadcast
+        if (typeof window !== 'undefined') {
+            try {
+                const bc = new BroadcastChannel('devj_inquiries_sync');
+                bc.postMessage({ type: 'update_message', data: { id: strId, replied: isReplied, repliedAt: now } });
+                bc.close();
+            } catch {}
         }
+
         return true;
     },
 
     deleteMessage: async (id) => {
+        const strId = String(id);
+        const token = localStorage.getItem(AUTH_STORAGE_KEY) || '';
+
+        // 1. Delete from Backend Database
+        try {
+            await fetch(`/api/contact/messages/${strId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+        } catch {}
+
+        // 2. Delete from Appwrite Database if available
         try {
             await databases.deleteDocument(
                 APPWRITE_CONFIG.databaseId,
                 APPWRITE_CONFIG.collections.messages,
-                id
+                strId
             );
-        } catch (err) {
-            // Silent fallback
-        }
-        const stored = JSON.parse(localStorage.getItem(MESSAGES_STORAGE_KEY) || '[]');
-        const filtered = stored.filter((m) => m.id !== id);
-        localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(filtered));
+        } catch {}
 
-        const localStatusMap = JSON.parse(localStorage.getItem('devj_messages_status_map') || '{}');
-        delete localStatusMap[id];
-        localStorage.setItem('devj_messages_status_map', JSON.stringify(localStatusMap));
+        // 3. Local real-time broadcast
+        if (typeof window !== 'undefined') {
+            try {
+                const bc = new BroadcastChannel('devj_inquiries_sync');
+                bc.postMessage({ type: 'delete_message', data: { id: strId } });
+                bc.close();
+            } catch {}
+        }
+
         return true;
+    },
+
+    // 8b. Real-Time Messages Subscription (SSE + BroadcastChannel + Appwrite Realtime + Custom Events)
+    subscribeToMessages: (callback) => {
+        const cleanups = [];
+
+        // 1. Server-Sent Events (SSE) Stream
+        if (typeof EventSource !== 'undefined') {
+            try {
+                const es = new EventSource('/api/contact/stream');
+                es.addEventListener('new_message', (e) => {
+                    try {
+                        const data = JSON.parse(e.data);
+                        callback({ type: 'new_message', data });
+                    } catch {}
+                });
+                es.addEventListener('update_message', (e) => {
+                    try {
+                        const data = JSON.parse(e.data);
+                        callback({ type: 'update_message', data });
+                    } catch {}
+                });
+                es.addEventListener('delete_message', (e) => {
+                    try {
+                        const data = JSON.parse(e.data);
+                        callback({ type: 'delete_message', data });
+                    } catch {}
+                });
+                cleanups.push(() => es.close());
+            } catch (err) {
+                console.warn('SSE subscription notice:', err.message);
+            }
+        }
+
+        // 2. Cross-tab BroadcastChannel
+        if (typeof BroadcastChannel !== 'undefined') {
+            try {
+                const bc = new BroadcastChannel('devj_inquiries_sync');
+                bc.onmessage = (event) => {
+                    if (event.data) {
+                        callback(event.data);
+                    }
+                };
+                cleanups.push(() => bc.close());
+            } catch {}
+        }
+
+        // 3. In-tab custom window event
+        if (typeof window !== 'undefined') {
+            const handleCustom = (e) => {
+                if (e.detail) {
+                    callback({ type: 'new_message', data: e.detail });
+                }
+            };
+            window.addEventListener('devj_inquiry_received', handleCustom);
+            cleanups.push(() => window.removeEventListener('devj_inquiry_received', handleCustom));
+        }
+
+        // 4. Appwrite Realtime (if database collection is active)
+        try {
+            if (typeof client !== 'undefined' && typeof client.subscribe === 'function') {
+                const channel = `databases.${APPWRITE_CONFIG.databaseId}.collections.${APPWRITE_CONFIG.collections.messages}.documents`;
+                const unsubscribeAppwrite = client.subscribe(channel, (response) => {
+                    if (response.events?.some((ev) => ev.includes('.create'))) {
+                        callback({
+                            type: 'new_message',
+                            data: {
+                                id: response.payload.$id,
+                                name: response.payload.name,
+                                email: response.payload.email,
+                                subject: response.payload.subject || 'Direct Inquiry',
+                                message: response.payload.message,
+                                createdAt: response.payload.createdAt || response.payload.$createdAt,
+                                replied: response.payload.replied || false,
+                                repliedAt: response.payload.repliedAt || null
+                            }
+                        });
+                    } else if (response.events?.some((ev) => ev.includes('.update'))) {
+                        callback({
+                            type: 'update_message',
+                            data: {
+                                id: response.payload.$id,
+                                replied: response.payload.replied || false,
+                                repliedAt: response.payload.repliedAt || null
+                            }
+                        });
+                    } else if (response.events?.some((ev) => ev.includes('.delete'))) {
+                        callback({
+                            type: 'delete_message',
+                            data: { id: response.payload.$id }
+                        });
+                    }
+                });
+                cleanups.push(() => {
+                    if (typeof unsubscribeAppwrite === 'function') unsubscribeAppwrite();
+                });
+            }
+        } catch {}
+
+        // Return unified unsubscribe function
+        return () => {
+            cleanups.forEach((fn) => {
+                try {
+                    fn();
+                } catch {}
+            });
+        };
     },
 
     sendDirectEmail: async ({ to, subject, body, appPassword }) => {
