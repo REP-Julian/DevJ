@@ -18,7 +18,7 @@ async function sha256(message) {
     return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-const getStoredPortfolio = () => {
+export const getStoredPortfolio = () => {
     try {
         const stored = localStorage.getItem(PORTFOLIO_STORAGE_KEY);
         if (stored) {
@@ -911,6 +911,10 @@ export const api = {
     forceSyncToCloud: async () => {
         const current = getStoredPortfolio();
         return await syncPortfolioToAppwrite(current);
+    },
+
+    getStoredPortfolio: () => {
+        return getStoredPortfolio();
     },
 };
 
