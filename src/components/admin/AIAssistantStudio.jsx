@@ -4,6 +4,7 @@ import { api } from '../../services/api';
 import { notify } from '../../services/notificationService';
 import FormattedMessage from './FormattedMessage';
 import ImageUploader from '../common/ImageUploader';
+import { dispatchEmail, cleanEmailBody, OUTLOOK_ACCOUNT_EMAIL } from '../../utils/emailClient';
 import {
     Sparkles,
     Send,
@@ -1623,24 +1624,66 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                         </div>
 
                         {inquiryDraft && selectedInquiry && (
-                            <div className="flex gap-2 pt-3 border-t border-gray-100">
-                                <button
-                                    onClick={() => {
-                                        navigator.clipboard.writeText(inquiryDraft);
-                                        notify.success('Copied reply to clipboard!', 'Copied');
-                                    }}
-                                    className="flex-1 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-charcoal-900 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
-                                >
-                                    <Copy className="w-3.5 h-3.5" /> Copy Reply
-                                </button>
-                                <a
-                                    href={`mailto:${selectedInquiry.email}?subject=${encodeURIComponent(
-                                        `Re: Portfolio Inquiry from ${selectedInquiry.name}`
-                                    )}&body=${encodeURIComponent(inquiryDraft)}`}
-                                    className="flex-1 py-2.5 rounded-xl bg-charcoal-900 hover:bg-black text-devyellow-400 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
-                                >
-                                    <Mail className="w-3.5 h-3.5" /> Open in Email Client
-                                </a>
+                            <div className="flex flex-col gap-2 pt-3 border-t border-gray-100">
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => {
+                                            navigator.clipboard.writeText(cleanEmailBody(inquiryDraft));
+                                            notify.success('Copied clean reply to clipboard!', 'Copied');
+                                        }}
+                                        className="flex-1 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-charcoal-900 font-bold text-xs flex items-center justify-center gap-1.5 transition-all"
+                                    >
+                                        <Copy className="w-3.5 h-3.5" /> Copy Reply
+                                    </button>
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                await dispatchEmail({
+                                                    clientId: 'outlook-web',
+                                                    to: selectedInquiry.email,
+                                                    subject: `Re: Portfolio Inquiry from ${selectedInquiry.name}`,
+                                                    body: inquiryDraft
+                                                });
+                                                if (selectedInquiry.id || selectedInquiry.$id) {
+                                                    await api.markMessageReplied(selectedInquiry.id || selectedInquiry.$id, true);
+                                                }
+                                                notify.success(
+                                                    `Opening Outlook Web for ${selectedInquiry.email}. Complete letter was copied to clipboard as a safeguard!`,
+                                                    'Outlook Dispatched'
+                                                );
+                                            } catch (e) {
+                                                notify.error(e.message || 'Failed to dispatch email', 'Email Error');
+                                            }
+                                        }}
+                                        className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-devyellow-400 to-devorange-500 hover:from-devyellow-500 hover:to-devorange-600 text-charcoal-900 font-extrabold text-xs flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                                    >
+                                        <ExternalLink className="w-3.5 h-3.5" /> Send via Outlook Web
+                                    </button>
+                                </div>
+                                <div className="flex items-center justify-between text-[11px] text-charcoal-500 px-1 pt-1">
+                                    <span>From: <strong>{OUTLOOK_ACCOUNT_EMAIL}</strong></span>
+                                    <button
+                                        onClick={async () => {
+                                            try {
+                                                await dispatchEmail({
+                                                    clientId: 'outlook-desktop',
+                                                    to: selectedInquiry.email,
+                                                    subject: `Re: Portfolio Inquiry from ${selectedInquiry.name}`,
+                                                    body: inquiryDraft
+                                                });
+                                                if (selectedInquiry.id || selectedInquiry.$id) {
+                                                    await api.markMessageReplied(selectedInquiry.id || selectedInquiry.$id, true);
+                                                }
+                                                notify.success('Opening local Outlook Desktop client...', 'Desktop Client');
+                                            } catch (e) {
+                                                notify.error(e.message || 'Failed to launch desktop client', 'Desktop Error');
+                                            }
+                                        }}
+                                        className="text-devorange-600 hover:underline font-bold"
+                                    >
+                                        Use Desktop Outlook (mailto:)
+                                    </button>
+                                </div>
                             </div>
                         )}
                     </div>

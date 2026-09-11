@@ -853,16 +853,24 @@ Return ONLY a valid JSON array of objects:
     }
 
     if (endpoint === 'draft-reply') {
-        const prompt = `Draft a professional email reply to this inquiry:
-From: ${payload.senderName || 'Prospective Partner'} <${payload.senderEmail || 'client@example.com'}>
-Inquiry: "${payload.messageText || ''}"
+        const prompt = `Draft a personalized email reply to this collaborator inquiry:
+Recipient: ${payload.senderName || 'Collaborator'} <${payload.senderEmail || 'collaborator@example.com'}>
+Inquiry Message: "${payload.messageText || ''}"
 Tone: ${payload.tone || 'warm and professional'}
-Developer: Julian Agustino (DevJ), AI Engineer & Full-Stack Developer
+Developer / Sender: Julian Agustino (DevJ), AI Engineer & Full-Stack Developer
+Developer Outlook Email: agustino.julian@outlook.ph
 
-Write a polished, concise email response.`;
+Instructions:
+1. Greet ${payload.senderName || 'Collaborator'} by name warmly.
+2. Directly answer or address their inquiry with thoughtful next steps or willingness to collaborate.
+3. Sign off professionally as:
+Julian Agustino (DevJ)
+AI Engineer & Full-Stack Developer
+agustino.julian@outlook.ph
+4. Do NOT use markdown symbols like asterisks (**) or hashes (#). Use clean plain text that pastes beautifully into Outlook.`;
         const res = await executeProviderCascade({
             prompt,
-            system: 'You are an executive communication assistant.',
+            system: 'You are an executive communication assistant drafting emails for Julian Agustino (DevJ).',
             taskType: 'copy'
         });
         return { text: res.text };

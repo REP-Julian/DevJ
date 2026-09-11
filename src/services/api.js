@@ -668,6 +668,7 @@ export const api = {
     },
 
     getMessages: async () => {
+        const localStatusMap = JSON.parse(localStorage.getItem('devj_messages_status_map') || '{}');
         try {
             const res = await databases.listDocuments(
                 APPWRITE_CONFIG.databaseId,
@@ -675,21 +676,57 @@ export const api = {
                 [Query.orderDesc('$createdAt'), Query.limit(50)]
             );
             if (res.documents && res.documents.length > 0) {
-                const messages = res.documents.map((doc) => ({
-                    id: doc.$id,
-                    name: doc.name,
-                    email: doc.email,
-                    subject: doc.subject,
-                    message: doc.message,
-                    createdAt: doc.createdAt || doc.$createdAt
-                }));
+                const messages = res.documents.map((doc) => {
+                    const status = localStatusMap[doc.$id] || {};
+                    return {
+                        id: doc.$id,
+                        name: doc.name,
+                        email: doc.email,
+                        subject: doc.subject,
+                        message: doc.message,
+                        createdAt: doc.createdAt || doc.$createdAt,
+                        replied: doc.replied || status.replied || false,
+                        repliedAt: doc.repliedAt || status.repliedAt || null
+                    };
+                });
                 localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(messages));
                 return messages;
             }
         } catch (err) {
             // Use local fallback
         }
-        return JSON.parse(localStorage.getItem(MESSAGES_STORAGE_KEY) || '[]');
+        const stored = JSON.parse(localStorage.getItem(MESSAGES_STORAGE_KEY) || '[]');
+        return stored.map((m) => {
+            const status = localStatusMap[m.id] || {};
+            return {
+                ...m,
+                replied: m.replied || status.replied || false,
+                repliedAt: m.repliedAt || status.repliedAt || null
+            };
+        });
+    },
+
+    markMessageReplied: async (id, isReplied = true) => {
+        const localStatusMap = JSON.parse(localStorage.getItem('devj_messages_status_map') || '{}');
+        const now = isReplied ? new Date().toISOString() : null;
+        localStatusMap[id] = { replied: isReplied, repliedAt: now };
+        localStorage.setItem('devj_messages_status_map', JSON.stringify(localStatusMap));
+
+        const stored = JSON.parse(localStorage.getItem(MESSAGES_STORAGE_KEY) || '[]');
+        const updated = stored.map((m) => (m.id === id ? { ...m, replied: isReplied, repliedAt: now } : m));
+        localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(updated));
+
+        try {
+            await databases.updateDocument(
+                APPWRITE_CONFIG.databaseId,
+                APPWRITE_CONFIG.collections.messages,
+                id,
+                { replied: isReplied, repliedAt: now }
+            );
+        } catch (err) {
+            // Attribute may not exist in Appwrite schema yet, local state safe
+        }
+        return true;
     },
 
     deleteMessage: async (id) => {
@@ -705,6 +742,10 @@ export const api = {
         const stored = JSON.parse(localStorage.getItem(MESSAGES_STORAGE_KEY) || '[]');
         const filtered = stored.filter((m) => m.id !== id);
         localStorage.setItem(MESSAGES_STORAGE_KEY, JSON.stringify(filtered));
+
+        const localStatusMap = JSON.parse(localStorage.getItem('devj_messages_status_map') || '{}');
+        delete localStatusMap[id];
+        localStorage.setItem('devj_messages_status_map', JSON.stringify(localStatusMap));
         return true;
     },
 

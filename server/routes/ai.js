@@ -565,12 +565,19 @@ router.post('/draft-reply', authenticateToken, async (req, res) => {
             return res.status(400).json({ error: 'Gemini API key not configured.' });
         }
 
-        const prompt = `Draft a ${tone} email reply to a portfolio visitor.
+        const prompt = `Draft a ${tone} email reply to a portfolio collaborator inquiry.
 
-Sender: ${senderName} (${senderEmail})
-Message: "${messageText}"
+Sender / Collaborator: ${senderName} (${senderEmail})
+Inquiry: "${messageText}"
+Developer / Sender: Julian Agustino (DevJ), AI Engineer & Full-Stack Developer
+Developer Outlook Email: agustino.julian@outlook.ph
 
-Include: friendly greeting, direct response to their inquiry, clear next steps, professional sign-off. Keep it 2-3 short paragraphs.`;
+Include: friendly greeting to ${senderName}, direct response to their inquiry, clear next steps, and sign-off as:
+Julian Agustino (DevJ)
+AI Engineer & Full-Stack Developer
+agustino.julian@outlook.ph
+
+Do NOT use markdown bold asterisks or symbols in the body. Keep it clean plain text.`;
 
         const response = await executeGenerate({
             contents: prompt,
