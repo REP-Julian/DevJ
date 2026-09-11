@@ -19,6 +19,7 @@ export const SecuritySettings = () => {
     const [cloudStatus, setCloudStatus] = useState({ loading: true, connected: false, message: '', status: '' });
     const [syncingCloud, setSyncingCloud] = useState(false);
     const [syncMessage, setSyncMessage] = useState('');
+    const [syncSuccess, setSyncSuccess] = useState(false);
 
     useEffect(() => {
         const loadInfo = async () => {
@@ -38,8 +39,8 @@ export const SecuritySettings = () => {
         try {
             const res = await api.checkAppwriteStatus();
             setCloudStatus({ loading: false, connected: res.connected, message: res.message, status: res.status });
-        } catch (e) {
-            setCloudStatus({ loading: false, connected: false, message: e.message, status: 'error' });
+        } catch (err) {
+            setCloudStatus({ loading: false, connected: false, message: err.message, status: 'error' });
         }
     };
 
@@ -50,16 +51,20 @@ export const SecuritySettings = () => {
     const handleForceSync = async () => {
         setSyncingCloud(true);
         setSyncMessage('');
+        setSyncSuccess(false);
         try {
             const res = await api.forceSyncToCloud();
             if (res && res.success) {
-                setSyncMessage('✓ Portfolio successfully synchronized to Appwrite Cloud!');
+                setSyncSuccess(true);
+                setSyncMessage('Portfolio successfully synchronized to Appwrite Cloud!');
                 await checkCloud();
             } else {
-                setSyncMessage('⚠️ Could not sync: ' + (res?.error || 'Appwrite Database collection "portfolio" is not created yet.'));
+                setSyncSuccess(false);
+                setSyncMessage('Could not sync: ' + (res?.error || 'Appwrite Database collection "portfolio" is not created yet.'));
             }
         } catch (e) {
-            setSyncMessage('⚠️ Sync failed: ' + e.message);
+            setSyncSuccess(false);
+            setSyncMessage('Sync failed: ' + e.message);
         } finally {
             setSyncingCloud(false);
             setTimeout(() => setSyncMessage(''), 8000);
@@ -298,8 +303,8 @@ export const SecuritySettings = () => {
                 </div>
 
                 {syncMessage && (
-                    <div className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${syncMessage.startsWith('✓') ? 'bg-emerald-50 border border-emerald-200 text-emerald-800' : 'bg-amber-50 border border-amber-200 text-amber-800'}`}>
-                        {syncMessage.startsWith('✓') ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />}
+                    <div className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${syncSuccess ? 'bg-emerald-50 border border-emerald-200 text-emerald-800' : 'bg-amber-50 border border-amber-200 text-amber-800'}`}>
+                        {syncSuccess ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />}
                         <span>{syncMessage}</span>
                     </div>
                 )}

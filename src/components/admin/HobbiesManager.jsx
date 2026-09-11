@@ -145,7 +145,7 @@ export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
                                     className="px-3 py-1 rounded-xl bg-charcoal-900 hover:bg-black text-devyellow-400 border border-charcoal-700 text-xs font-extrabold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95 shadow-xs"
                                 >
                                     {aiVisionScanning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5" />}
-                                    <span>{aiVisionScanning ? 'Scanning Photo...' : '👁️ AI Read Photo'}</span>
+                                    <span>{aiVisionScanning ? 'Scanning Photo...' : 'AI Read Photo'}</span>
                                 </button>
                             )}
                             <button
@@ -155,7 +155,7 @@ export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
                                 className="px-3 py-1 rounded-xl bg-devyellow-100 hover:bg-devyellow-200 text-devorange-600 border border-devyellow-300 text-xs font-extrabold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
                             >
                                 {aiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-devyellow-600 fill-devyellow-400" />}
-                                <span>{aiLoading ? 'Enhancing Vibe...' : '✨ AI Polish Vibe'}</span>
+                                <span>{aiLoading ? 'Enhancing Vibe...' : 'AI Polish Vibe'}</span>
                             </button>
                         </div>
                     </div>

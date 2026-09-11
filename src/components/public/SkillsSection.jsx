@@ -15,9 +15,6 @@ export const SkillsSection = ({ skills = [] }) => {
                     <h2 className="text-3xl sm:text-5xl font-black text-charcoal-900 tracking-tight">
                         Engineering & AI Technical Stack
                     </h2>
-                    <p className="text-charcoal-500 text-base max-w-2xl mx-auto">
-                        Building full-stack web applications with React, Node.js, and Appwrite, integrated with LLM endpoints and custom REST APIs.
-                    </p>
                 </div>
 
                 {categories.length === 0 ? (

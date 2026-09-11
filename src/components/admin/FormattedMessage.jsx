@@ -188,7 +188,7 @@ export const FormattedMessage = ({ content = '' }) => {
         }
 
         // 9. Callout / Tip
-        if (line.startsWith('>') || line.includes('💡 Tip:') || line.includes('*(Note:')) {
+        if (line.startsWith('>') || line.includes('Tip:') || line.includes('*(Note:')) {
             flushParagraph();
             blocks.push({
                 type: 'callout',

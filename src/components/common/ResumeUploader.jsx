@@ -40,7 +40,7 @@ export const ResumeUploader = ({ resumeUrl, onResumeChanged }) => {
             const uploadedUrl = await api.uploadFile(file);
             onResumeChanged(uploadedUrl);
             setManualUrl(uploadedUrl);
-            setSuccessMsg(`✓ Successfully uploaded "${file.name}" to Appwrite Storage!`);
+            setSuccessMsg(`Successfully uploaded "${file.name}" to Appwrite Storage!`);
             setTimeout(() => setSuccessMsg(''), 5000);
         } catch (err) {
             console.error('Resume upload error:', err);
@@ -66,7 +66,7 @@ export const ResumeUploader = ({ resumeUrl, onResumeChanged }) => {
             setSuccessMsg('Resume link removed.');
         } else {
             onResumeChanged(manualUrl.trim());
-            setSuccessMsg('✓ Resume link saved!');
+            setSuccessMsg('Resume link saved!');
         }
         setTimeout(() => setSuccessMsg(''), 4000);
     };

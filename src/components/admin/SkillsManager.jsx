@@ -136,7 +136,7 @@ export const SkillsManager = ({ skills = [], onUpdated }) => {
                         className="px-3.5 py-2 rounded-xl text-xs font-bold bg-devyellow-50 text-devorange-700 border border-devyellow-300 hover:bg-devyellow-100 flex items-center gap-1.5 transition-all shadow-xs"
                     >
                         {gapLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Lightbulb className="w-3.5 h-3.5 text-devyellow-600 fill-devyellow-400" />}
-                        <span>{gapLoading ? 'Analyzing 2026 Tech...' : '✨ AI Tech Gap Analyzer'}</span>
+                        <span>{gapLoading ? 'Analyzing 2026 Tech...' : 'AI Tech Gap Analyzer'}</span>
                     </button>
                     {!isCreating && !editingId && (
                         <button
@@ -199,7 +199,7 @@ export const SkillsManager = ({ skills = [], onUpdated }) => {
                             className="px-3 py-1 rounded-xl bg-devyellow-100 hover:bg-devyellow-200 text-devorange-600 border border-devyellow-300 text-xs font-extrabold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
                         >
                             {aiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-devyellow-600 fill-devyellow-400" />}
-                            <span>{aiLoading ? 'Enhancing with Gemini...' : '✨ AI Auto-Categorize & Enhance'}</span>
+                            <span>{aiLoading ? 'Enhancing with Gemini...' : 'AI Auto-Categorize & Enhance'}</span>
                         </button>
                     </div>
 

@@ -29,7 +29,12 @@ import {
     Heart,
     Mail,
     MessageSquare,
-    Plus
+    Plus,
+    Globe,
+    Zap,
+    Brain,
+    Shield,
+    HelpCircle
 } from 'lucide-react';
 
 export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
@@ -47,7 +52,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
     const [messages, setMessages] = useState([
         {
             role: 'model',
-            content: `👋 Welcome to DevJ AI Studio!\n\nI am your DevJ AI Copilot with multi-provider intelligence (Gemini, Groq, Mistral, and OpenRouter). I have live access to your entire portfolio (Profile, Skills, Projects, Achievements, Hobbies, and Inquiries).\n\n💡 Tip: Type ? to inspect active providers or ?mistral, ?groq, ?gemini, ?openrouter to switch anytime.\n\nHow can I assist you today?`,
+            content: `Welcome to DevJ AI Studio!\n\nI am your DevJ AI Copilot with multi-provider intelligence (Gemini, Groq, Mistral, and OpenRouter). I have live access to your entire portfolio (Profile, Skills, Projects, Achievements, Hobbies, and Inquiries).\n\nTip: Type ? to inspect active providers or ?mistral, ?groq, ?gemini, ?openrouter to switch anytime.\n\nHow can I assist you today?`,
         },
     ]);
     const [chatInput, setChatInput] = useState('');
@@ -171,18 +176,18 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
 
         if (currentSkillsCount > prev.skillsCount) {
             const newSkill = portfolio.skills[portfolio.skills.length - 1];
-            addedMessage = `⚡ **Live Sync Acknowledged:** I detected that you just added **${newSkill?.name || 'a new skill'}** (${newSkill?.category || 'Specialized AI'}) to your Skills & Tech Stack! I've automatically updated my internal index and will factor it into your project ideas, copilot responses, and portfolio audits.`;
+            addedMessage = `**Live Sync Acknowledged:** I detected that you just added **${newSkill?.name || 'a new skill'}** (${newSkill?.category || 'Specialized AI'}) to your Skills & Tech Stack! I've automatically updated my internal index and will factor it into your project ideas, copilot responses, and portfolio audits.`;
         } else if (currentProjectsCount > prev.projectsCount) {
             const newProj = portfolio.projects[portfolio.projects.length - 1];
-            addedMessage = `🚀 **Live Sync Acknowledged:** I detected a new project addition: **${newProj?.title || 'New Project'}** [${newProj?.category || 'Project'}] with tech stack \`${newProj?.technologies || 'Modern Tech'}\`. My project knowledge graph and client pitch recommendations have been updated!`;
+            addedMessage = `**Live Sync Acknowledged:** I detected a new project addition: **${newProj?.title || 'New Project'}** [${newProj?.category || 'Project'}] with tech stack \`${newProj?.technologies || 'Modern Tech'}\`. My project knowledge graph and client pitch recommendations have been updated!`;
         } else if (currentAchievementsCount > prev.achievementsCount) {
             const newAch = portfolio.achievements[portfolio.achievements.length - 1];
-            addedMessage = `🏆 **Live Sync Acknowledged:** New achievement **${newAch?.title || 'Milestone'}** (${newAch?.category || 'Award'}, ${newAch?.date || '2025'}) is now synced! I've indexed this accomplishment into your portfolio highlights.`;
+            addedMessage = `**Live Sync Acknowledged:** New achievement **${newAch?.title || 'Milestone'}** (${newAch?.category || 'Award'}, ${newAch?.date || '2025'}) is now synced! I've indexed this accomplishment into your portfolio highlights.`;
         } else if (currentHobbiesCount > prev.hobbiesCount) {
             const newHobby = portfolio.hobbies[portfolio.hobbies.length - 1];
-            addedMessage = `🎨 **Live Sync Acknowledged:** New creative interest **${newHobby?.name || 'Hobby'}** detected! Your creative persona narrative has been enriched.`;
+            addedMessage = `**Live Sync Acknowledged:** New creative interest **${newHobby?.name || 'Hobby'}** detected! Your creative persona narrative has been enriched.`;
         } else if (portfolio?.profile?.tagline !== prev.tagline && prev.tagline !== '') {
-            addedMessage = `👤 **Live Sync Acknowledged:** I see you updated your profile tagline to: "${portfolio.profile.tagline}". I've aligned my copy generation tone with your new branding!`;
+            addedMessage = `**Live Sync Acknowledged:** I see you updated your profile tagline to: "${portfolio.profile.tagline}". I've aligned my copy generation tone with your new branding!`;
         }
 
         if (addedMessage) {
@@ -300,7 +305,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                 description: generatedBio.description,
             });
             onUpdated();
-            alert('🎉 Profile tagline and bio updated successfully!');
+            alert('Profile tagline and bio updated successfully!');
         } catch (err) {
             alert(err.message || 'Failed to apply bio');
         } finally {
@@ -343,7 +348,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                 order: (portfolio?.projects?.length || 0) + 1,
             });
             onUpdated();
-            alert('🎉 Project created and added to Featured Projects!');
+            alert('Project created and added to Featured Projects!');
             setGeneratedProject(null);
             setProjectIdea('');
         } catch (err) {
@@ -415,7 +420,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                 order: (portfolio?.achievements?.length || 0) + 1,
             });
             onUpdated();
-            alert('🎉 Milestone created and added to Honors & Achievements!');
+            alert('Milestone created and added to Honors & Achievements!');
             setGeneratedAchievement(null);
             setAchievementTitle('');
             setAchievementNotes('');
@@ -453,7 +458,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
             });
             onUpdated();
             setSkillsGapList(prev => prev.filter(s => s.name !== skillItem.name));
-            alert(`✅ Added "${skillItem.name}" to skills inventory!`);
+            alert(`Added "${skillItem.name}" to skills inventory!`);
         } catch (err) {
             alert(err.message || 'Failed to add skill');
         }
@@ -509,7 +514,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                 order: (portfolio?.hobbies?.length || 0) + 1,
             });
             onUpdated();
-            alert('🎉 Added to Hobbies & Interests!');
+            alert('Added to Hobbies & Interests!');
             setGeneratedHobby(null);
             setHobbyName('');
             setHobbyDescription('');
@@ -795,69 +800,75 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                                 {/* Category 1: AI Provider Switchers */}
                                 <div className="space-y-1 bg-white p-2.5 rounded-xl border border-gray-200/80 shadow-2xs">
                                     <span className="text-[10px] font-black text-devorange-600 uppercase tracking-wider block px-1 pb-1 border-b border-gray-100">
-                                        ⚡ Switch AI Provider
+                                        Switch AI Provider
                                     </span>
                                     {[
-                                        { cmd: '?gemini', name: 'Google Gemini', desc: '3.6 Flash + Computer Vision', icon: '🌐' },
-                                        { cmd: '?groq', name: 'Groq', desc: '120B ultra-fast (<350ms)', icon: '⚡' },
-                                        { cmd: '?mistral', name: 'Mistral AI', desc: 'Deep technical reasoning', icon: '🧠' },
-                                        { cmd: '?openrouter', name: 'OpenRouter', desc: 'Resilient open-source', icon: '🛡️' },
-                                        { cmd: '?auto', name: 'Auto Cascade', desc: 'Smart failover route', icon: '🔄' },
-                                    ].map((item) => (
-                                        <button
-                                            key={item.cmd}
-                                            type="button"
-                                            onClick={() => {
-                                                setChatInput(item.cmd);
-                                            }}
-                                            className={`w-full text-left px-2 py-1.5 rounded-lg flex items-center justify-between transition-colors ${
-                                                chatInput.trim().toLowerCase() === item.cmd
-                                                    ? 'bg-devorange-500 text-white font-bold'
-                                                    : 'hover:bg-devyellow-50 text-charcoal-800'
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <span>{item.icon}</span>
-                                                <span className="font-bold">{item.cmd}</span>
-                                            </div>
-                                            <span className={`text-[10px] ${chatInput.trim().toLowerCase() === item.cmd ? 'text-white/90' : 'text-charcoal-400'}`}>
-                                                {item.desc}
-                                            </span>
-                                        </button>
-                                    ))}
+                                        { cmd: '?gemini', name: 'Google Gemini', desc: '3.6 Flash + Computer Vision', Icon: Globe },
+                                        { cmd: '?groq', name: 'Groq', desc: '120B ultra-fast (<350ms)', Icon: Zap },
+                                        { cmd: '?mistral', name: 'Mistral AI', desc: 'Deep technical reasoning', Icon: Brain },
+                                        { cmd: '?openrouter', name: 'OpenRouter', desc: 'Resilient open-source', Icon: Shield },
+                                        { cmd: '?auto', name: 'Auto Cascade', desc: 'Smart failover route', Icon: RefreshCw },
+                                    ].map((item) => {
+                                        const ItemIcon = item.Icon;
+                                        return (
+                                            <button
+                                                key={item.cmd}
+                                                type="button"
+                                                onClick={() => {
+                                                    setChatInput(item.cmd);
+                                                }}
+                                                className={`w-full text-left px-2 py-1.5 rounded-lg flex items-center justify-between transition-colors ${
+                                                    chatInput.trim().toLowerCase() === item.cmd
+                                                        ? 'bg-devorange-500 text-white font-bold'
+                                                        : 'hover:bg-devyellow-50 text-charcoal-800'
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <ItemIcon className="w-3.5 h-3.5 shrink-0 text-devorange-500" />
+                                                    <span className="font-bold">{item.cmd}</span>
+                                                </div>
+                                                <span className={`text-[10px] ${chatInput.trim().toLowerCase() === item.cmd ? 'text-white/90' : 'text-charcoal-400'}`}>
+                                                    {item.desc}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
 
                                 {/* Category 2: Live Website Sync & Inspection */}
                                 <div className="space-y-1 bg-white p-2.5 rounded-xl border border-gray-200/80 shadow-2xs">
                                     <span className="text-[10px] font-black text-devorange-600 uppercase tracking-wider block px-1 pb-1 border-b border-gray-100">
-                                        🔍 Live Website Sync & Audit
+                                        Live Website Sync & Audit
                                     </span>
                                     {[
-                                        { cmd: '?', name: 'Show Active Provider', desc: 'Current engine & status', icon: '❓' },
-                                        { cmd: '?changes', name: 'Verify Website Changes', desc: 'Deep check live updates', icon: '🔄' },
-                                        { cmd: '?audit', name: '360° Quality Audit', desc: 'Review presentation & SEO', icon: '📊' },
-                                    ].map((item) => (
-                                        <button
-                                            key={item.cmd}
-                                            type="button"
-                                            onClick={() => {
-                                                setChatInput(item.cmd);
-                                            }}
-                                            className={`w-full text-left px-2 py-1.5 rounded-lg flex items-center justify-between transition-colors ${
-                                                chatInput.trim().toLowerCase() === item.cmd
-                                                    ? 'bg-devorange-500 text-white font-bold'
-                                                    : 'hover:bg-devyellow-50 text-charcoal-800'
-                                            }`}
-                                        >
-                                            <div className="flex items-center gap-2">
-                                                <span>{item.icon}</span>
-                                                <span className="font-bold">{item.cmd}</span>
-                                            </div>
-                                            <span className={`text-[10px] ${chatInput.trim().toLowerCase() === item.cmd ? 'text-white/90' : 'text-charcoal-400'}`}>
-                                                {item.desc}
-                                            </span>
-                                        </button>
-                                    ))}
+                                        { cmd: '?', name: 'Show Active Provider', desc: 'Current engine & status', Icon: HelpCircle },
+                                        { cmd: '?changes', name: 'Verify Website Changes', desc: 'Deep check live updates', Icon: RefreshCw },
+                                        { cmd: '?audit', name: '360° Quality Audit', desc: 'Review presentation & SEO', Icon: BarChart3 },
+                                    ].map((item) => {
+                                        const ItemIcon = item.Icon;
+                                        return (
+                                            <button
+                                                key={item.cmd}
+                                                type="button"
+                                                onClick={() => {
+                                                    setChatInput(item.cmd);
+                                                }}
+                                                className={`w-full text-left px-2 py-1.5 rounded-lg flex items-center justify-between transition-colors ${
+                                                    chatInput.trim().toLowerCase() === item.cmd
+                                                        ? 'bg-devorange-500 text-white font-bold'
+                                                        : 'hover:bg-devyellow-50 text-charcoal-800'
+                                                }`}
+                                            >
+                                                <div className="flex items-center gap-2">
+                                                    <ItemIcon className="w-3.5 h-3.5 shrink-0 text-devorange-500" />
+                                                    <span className="font-bold">{item.cmd}</span>
+                                                </div>
+                                                <span className={`text-[10px] ${chatInput.trim().toLowerCase() === item.cmd ? 'text-white/90' : 'text-charcoal-400'}`}>
+                                                    {item.desc}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>
@@ -1156,7 +1167,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                                 className="w-full py-3 rounded-xl bg-charcoal-900 text-devyellow-400 font-extrabold text-xs shadow-sm hover:bg-black active:scale-95 transition-all flex items-center justify-center gap-2"
                             >
                                 {achievementLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
-                                <span>{achievementLoading ? 'AI Reading Visual...' : '👁️ Read & Analyze Visual with AI Vision'}</span>
+                                <span>{achievementLoading ? 'AI Reading Visual...' : 'Read & Analyze Visual with AI Vision'}</span>
                             </button>
                         ) : (
                             <button
@@ -1276,7 +1287,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                             className="px-4 py-2.5 rounded-xl bg-charcoal-900 hover:bg-black text-devyellow-400 font-bold text-xs flex items-center gap-2 transition-all shrink-0 shadow-warm-sm"
                         >
                             {skillsLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-devyellow-400" />}
-                            <span>{skillsLoading ? 'Analyzing 2026 Stack...' : '✨ Run Tech Gap Scan'}</span>
+                            <span>{skillsLoading ? 'Analyzing 2026 Stack...' : 'Run Tech Gap Scan'}</span>
                         </button>
                     </div>
 
@@ -1402,7 +1413,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                                 className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-devyellow-400 to-devorange-400 text-charcoal-900 font-extrabold text-xs flex items-center justify-center gap-1.5 hover:from-devyellow-500 hover:to-devorange-500 transition-all shadow-warm-sm"
                             >
                                 {hobbyLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                <span>{hobbyLoading ? 'Crafting Vibe...' : '✨ Polish & Generate Vibe'}</span>
+                                <span>{hobbyLoading ? 'Crafting Vibe...' : 'Polish & Generate Vibe'}</span>
                             </button>
                         </div>
                     </div>
@@ -1578,7 +1589,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                                         className="w-full py-2.5 rounded-xl bg-devyellow-400 hover:bg-devyellow-500 text-charcoal-900 font-extrabold text-xs flex items-center justify-center gap-2 shadow-sm transition-all"
                                     >
                                         {draftLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                                        <span>{draftLoading ? 'Drafting reply...' : '✨ Draft High-Converting Reply'}</span>
+                                        <span>{draftLoading ? 'Drafting reply...' : 'Draft High-Converting Reply'}</span>
                                     </button>
 
                                     {inquiryDraft && (

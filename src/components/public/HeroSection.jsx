@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Sparkles, Terminal, Code2, Flame, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { ArrowRight, Sparkles, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 
 export const HeroSection = ({ profile }) => {
     // Array of distinct images to cycle through
@@ -162,18 +162,6 @@ export const HeroSection = ({ profile }) => {
                             <FileText className="w-4 h-4 text-devorange-600" />
                             <span>Resume / CV</span>
                         </a>
-                    </div>
-
-                    <div className="pt-8 border-t border-gray-100 flex flex-wrap items-center gap-3 sm:gap-6 text-xs font-semibold text-charcoal-500">
-                        <div className="flex items-center gap-1.5">
-                            <Terminal className="w-4 h-4 text-devorange-500 shrink-0" /> LLM Endpoint Integration
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <Code2 className="w-4 h-4 text-devyellow-500 shrink-0" /> Full-Stack Architecture
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                            <Flame className="w-4 h-4 text-devorange-600 shrink-0" /> Relational & Cloud Databases
-                        </div>
                     </div>
                 </div>
 

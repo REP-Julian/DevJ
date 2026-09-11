@@ -45,14 +45,6 @@ export const Footer = ({ profile = {} }) => {
                             Building reliable full-stack applications with React, Node.js, and Appwrite, integrated with modern LLM endpoints and custom REST APIs.
                         </p>
 
-                        {/* Live Availability Badge */}
-                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200/80 text-emerald-800 text-xs font-semibold shadow-xs">
-                            <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                            </span>
-                            <span>Available for new projects &amp; engineering roles</span>
-                        </div>
                     </div>
 
                     {/* Quick Navigation Links (Col 6-8) */}

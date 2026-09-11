@@ -182,9 +182,6 @@ export const ProjectsSection = ({ projects = [] }) => {
                     <h2 className="text-3xl sm:text-5xl font-black text-charcoal-900 tracking-tight">
                         Featured Projects
                     </h2>
-                    <p className="text-charcoal-500 text-base max-w-2xl mx-auto">
-                        Production full-stack platforms, relational database systems, and distributed multi-provider AI backends.
-                    </p>
                 </div>
 
                 <div className="bg-charcoal-50/50 rounded-3xl p-6 sm:p-10 lg:p-14 border border-gray-200/80 shadow-warm-md">

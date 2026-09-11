@@ -70,7 +70,7 @@ export const ProfileManager = ({ profile, onUpdated }) => {
             // Auto-persist immediately to Firestore and localStorage
             api.updateProfile(updated)
                 .then(() => {
-                    setQrSaveStatus({ loading: false, success: `✓ Saved ${platformId.toUpperCase()} QR code!`, error: '' });
+                    setQrSaveStatus({ loading: false, success: `Saved ${platformId.toUpperCase()} QR code!`, error: '' });
                     if (onUpdated) onUpdated();
                     setTimeout(() => setQrSaveStatus(p => ({ ...p, success: '' })), 4000);
                 })
@@ -91,7 +91,7 @@ export const ProfileManager = ({ profile, onUpdated }) => {
             const updated = { ...prev, [qrKey]: '' };
             api.updateProfile(updated)
                 .then(() => {
-                    setQrSaveStatus({ loading: false, success: `✓ Reverted ${platformId.toUpperCase()} to auto QR!`, error: '' });
+                    setQrSaveStatus({ loading: false, success: `Reverted ${platformId.toUpperCase()} to auto QR!`, error: '' });
                     if (onUpdated) onUpdated();
                     setTimeout(() => setQrSaveStatus(p => ({ ...p, success: '' })), 4000);
                 })
@@ -207,7 +207,7 @@ export const ProfileManager = ({ profile, onUpdated }) => {
                         className="px-3 py-1 rounded-xl bg-devyellow-100 hover:bg-devyellow-200 text-devorange-600 border border-devyellow-300 text-xs font-extrabold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
                     >
                         {aiPolishing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-devyellow-600 fill-devyellow-400" />}
-                        <span>{aiPolishing ? 'Polishing with Gemini...' : '✨ AI Polish Bio & Tagline'}</span>
+                        <span>{aiPolishing ? 'Polishing with Gemini...' : 'AI Polish Bio & Tagline'}</span>
                     </button>
                 </div>
 

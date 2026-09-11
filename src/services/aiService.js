@@ -1,4 +1,4 @@
-// ✅ CLIENT-SIDE AI SERVICE
+// CLIENT-SIDE AI SERVICE
 // All requests are proxied through /api/ai/* backend endpoints
 // API keys are stored securely on the server (.env)
 // This approach prevents XSS vulnerabilities and protects sensitive credentials
@@ -926,7 +926,7 @@ async function callAIBackend(endpoint, payload) {
 }
 
 export const aiService = {
-    // ⚠️ For backward compatibility with components that check for API key
+    // For backward compatibility with components that check for API key
     getApiKey() {
         return localStorage.getItem(GEMINI_API_KEY_STORAGE) || 'backend-configured';
     },
@@ -974,31 +974,31 @@ export const aiService = {
         if (cleaned === '?' || cleaned === '?status' || cleaned === '?help' || cleaned === '?provider' || cleaned === '?providers') {
             const active = getActiveAIProvider();
             const providerLabels = {
-                auto: 'Auto Smart Failover (Gemini ➡️ Groq ➡️ Mistral ➡️ OpenRouter)',
+                auto: 'Auto Smart Failover (Gemini -> Groq -> Mistral -> OpenRouter)',
                 gemini: 'Google Gemini (3.6 Flash / Native Vision enabled)',
                 groq: 'Groq (120B / Ultra-fast inference)',
                 mistral: 'Mistral AI (Small / Deep reasoning)',
                 openrouter: 'OpenRouter (Nemotron 3.5 / Resilient open-source)'
             };
 
-            return `🤖 DevJ Multi-Provider AI Engine Commands
+            return `DevJ Multi-Provider AI Engine Commands
 
 Current Active Provider:
-🟢 ${providerLabels[active] || active.toUpperCase()}
+[Active]: ${providerLabels[active] || active.toUpperCase()}
 
-⚡ Category 1: Switch AI Provider
+Category 1: Switch AI Provider
 1. ?gemini: Switch priority to Google Gemini (3.6 Flash / Native Computer Vision)
 2. ?groq: Switch priority to Groq (120B / Ultra-fast inference <350ms)
 3. ?mistral: Switch priority to Mistral AI (Small / Deep code and reasoning)
 4. ?openrouter: Switch priority to OpenRouter (Nemotron 3.5 / Open-source)
-5. ?auto: Reset to Auto Failover Cascade (Gemini ➡️ Groq ➡️ Mistral ➡️ OpenRouter)
+5. ?auto: Reset to Auto Failover Cascade (Gemini -> Groq -> Mistral -> OpenRouter)
 
-🔍 Category 2: Live Website Sync & Diagnostics
+Category 2: Live Website Sync & Diagnostics
 1. ?: Display this command category guide and current active engine
 2. ?changes: Deep scan live website database to check recent changes and modifications
 3. ?audit: Instant 360° portfolio quality, presentation and skill gap check
 
-💡 Every active AI provider reads the 100% synchronized live website database across Profile, Skills, Projects, Achievements, Hobbies, and Inquiries.`;
+Note: Every active AI provider reads the 100% synchronized live website database across Profile, Skills, Projects, Achievements, Hobbies, and Inquiries.`;
         }
 
         if (cleaned === '?changes') {
@@ -1014,9 +1014,9 @@ Current Active Provider:
             const hobbies = data?.hobbies || [];
             const lastUpdated = p.updatedAt ? new Date(p.updatedAt).toLocaleString() : 'Recently updated';
 
-            return `🔄 Live Website Data & Change Verification
+            return `Live Website Data & Change Verification
 
-Synchronization Status: 🟢 100% Up to Date with Live Database
+Synchronization Status: 100% Up to Date with Live Database
 Profile Owner: ${p.name || 'Julian Agustino'} (${p.title || 'AI Engineer'})
 Last Sync Timestamp: ${lastUpdated}
 
@@ -1027,11 +1027,11 @@ Current Live Content Inventory:
 • Hobbies & Lifestyle: ${hobbies.length} entries
 • Inquiries: ${(data?.messages || []).length} client messages recorded
 
-💡 Every active AI model (Gemini, Groq, Mistral, OpenRouter) is directly synchronized with this data snapshot on every prompt.`;
+Note: Every active AI model (Gemini, Groq, Mistral, OpenRouter) is directly synchronized with this data snapshot on every prompt.`;
         }
 
         if (cleaned === '?audit') {
-            return `📊 Live Portfolio 360° Quality Audit
+            return `Live Portfolio 360° Quality Audit
 
 To run a full deep portfolio evaluation with score, strengths, and recommendations:
 1. Switch to the 360° Audit tab above, or
@@ -1040,7 +1040,7 @@ To run a full deep portfolio evaluation with score, strengths, and recommendatio
 
         if (cleaned === '?gemini') {
             setActiveAIProvider('gemini');
-            return `⚡ Switched Active AI Provider to Google Gemini
+            return `Switched Active AI Provider to Google Gemini
 Model: gemini-3.6-flash (with gemini-3.5-flash-lite failover)
 Features: Native Computer Vision enabled for certificate and image analysis.
 All portfolio AI generations will now prioritize Google Gemini.`;
@@ -1048,7 +1048,7 @@ All portfolio AI generations will now prioritize Google Gemini.`;
 
         if (cleaned === '?groq') {
             setActiveAIProvider('groq');
-            return `⚡ Switched Active AI Provider to Groq
+            return `Switched Active AI Provider to Groq
 Model: openai/gpt-oss-120b (with qwen/qwen3.8-27b failover)
 Features: Ultra-low latency inference engine running at maximum velocity.
 All portfolio AI generations will now prioritize Groq.`;
@@ -1056,7 +1056,7 @@ All portfolio AI generations will now prioritize Groq.`;
 
         if (cleaned === '?mistral') {
             setActiveAIProvider('mistral');
-            return `⚡ Switched Active AI Provider to Mistral AI
+            return `Switched Active AI Provider to Mistral AI
 Model: mistral-small-latest (with ministral-8b-latest failover)
 Features: Advanced European frontier model specialized in deep reasoning.
 All portfolio AI generations will now prioritize Mistral AI.`;
@@ -1064,7 +1064,7 @@ All portfolio AI generations will now prioritize Mistral AI.`;
 
         if (cleaned === '?openrouter') {
             setActiveAIProvider('openrouter');
-            return `⚡ Switched Active AI Provider to OpenRouter
+            return `Switched Active AI Provider to OpenRouter
 Model: nvidia/nemotron-3.5-lightning:free (with minimax/minimax-m3:free failover)
 Features: Decentralized resilient open-source model routing.
 All portfolio AI generations will now prioritize OpenRouter.`;
@@ -1072,8 +1072,8 @@ All portfolio AI generations will now prioritize OpenRouter.`;
 
         if (cleaned === '?auto') {
             setActiveAIProvider('auto');
-            return `⚡ Switched Active AI Provider to Auto Failover Cascade
-Priority Sequence: Gemini ➡️ Groq ➡️ Mistral ➡️ OpenRouter
+            return `Switched Active AI Provider to Auto Failover Cascade
+Priority Sequence: Gemini -> Groq -> Mistral -> OpenRouter
 Automatically failovers if any provider hits rate limits or network issues.`;
         }
 

@@ -166,9 +166,6 @@ export const AchievementsSection = ({ achievements = [] }) => {
                     <h2 className="text-3xl sm:text-5xl font-black text-charcoal-900 tracking-tight">
                         Honors & Achievements
                     </h2>
-                    <p className="text-charcoal-500 text-base max-w-2xl mx-auto">
-                        Hackathon recognitions, competitive design awards, and foundational full-stack milestones backed by production code.
-                    </p>
                 </div>
 
                 <div className="bg-white rounded-3xl p-6 sm:p-10 lg:p-14 border border-gray-200/80 shadow-warm-md">
