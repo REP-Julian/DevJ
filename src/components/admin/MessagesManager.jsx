@@ -107,9 +107,17 @@ export const MessagesManager = () => {
         if (profile.email) setSenderEmail(profile.email);
         if (profile.name) setSenderName(profile.name);
 
+        // Clear any old Outlook App Password from local storage to prevent conflicts
+        try {
+            localStorage.removeItem('devj_outlook_app_password_v1');
+        } catch {}
+
         api.getSmtpStatus().then((status) => {
             if (status?.configured) {
                 setServerSmtpConfigured(true);
+                if (status.userEmail) {
+                    setGmailUserInput((prev) => prev || status.userEmail);
+                }
             }
         }).catch(() => {});
     }, []);

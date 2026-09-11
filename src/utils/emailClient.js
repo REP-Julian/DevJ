@@ -159,7 +159,7 @@ export const setStoredGmailUser = (email = '') => {
 
 export const getStoredGmailAppPassword = () => {
     try {
-        return localStorage.getItem(GMAIL_APP_PASSWORD_KEY) || localStorage.getItem(OUTLOOK_APP_PASSWORD_KEY) || '';
+        return localStorage.getItem(GMAIL_APP_PASSWORD_KEY) || '';
     } catch {
         return '';
     }

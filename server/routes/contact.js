@@ -19,6 +19,7 @@ router.get('/smtp-status', authenticateToken, (req, res) => {
     res.json({
         configured: hasEnvUser && hasEnvPassword,
         hasEnvCredentials: hasEnvUser && hasEnvPassword,
+        userEmail: rawUser,
         userMasked: maskedUser,
         replyToDefault: (process.env.OUTLOOK_USER || '').trim()
     });
@@ -37,10 +38,15 @@ router.post('/send-direct', authenticateToken, async (req, res) => {
         const replyToEmail = (req.body.fromEmail || req.body.replyTo || process.env.OUTLOOK_USER || '').trim();
         const senderName = (req.body.fromName || process.env.OUTLOOK_SENDER_NAME || 'Julian Agustino').trim();
 
-        // Gmail credentials (from request body or .env)
-        const gmailUser = (req.body.gmailUser || process.env.GMAIL_USER || '').trim();
-        const rawPassword = appPassword || process.env.GMAIL_APP_PASSWORD || process.env.OUTLOOK_APP_PASSWORD || '';
-        const cleanPassword = rawPassword.trim().replace(/\s+/g, '');
+        // Gmail credentials
+        const envUser = (process.env.GMAIL_USER || '').trim();
+        const envPassword = (process.env.GMAIL_APP_PASSWORD || '').trim().replace(/\s+/g, '');
+
+        const clientUser = (req.body.gmailUser || '').trim();
+        const clientPassword = (appPassword || '').trim().replace(/\s+/g, '');
+
+        const gmailUser = clientUser || envUser;
+        const initialPassword = clientPassword || envPassword;
 
         if (!gmailUser) {
             return res.status(400).json({
@@ -48,19 +54,11 @@ router.post('/send-direct', authenticateToken, async (req, res) => {
             });
         }
 
-        if (!cleanPassword) {
+        if (!initialPassword) {
             return res.status(400).json({
                 error: 'A 16-character Google App Password is required. Generate one at myaccount.google.com/apppasswords and enter it in settings.'
             });
         }
-
-        const transporter = nodemailer.createTransport({
-            service: 'gmail',
-            auth: {
-                user: gmailUser,
-                pass: cleanPassword
-            }
-        });
 
         const mailOptions = {
             from: senderName ? `"${senderName}" <${gmailUser}>` : gmailUser,
@@ -73,7 +71,33 @@ router.post('/send-direct', authenticateToken, async (req, res) => {
             }
         };
 
-        const info = await transporter.sendMail(mailOptions);
+        let info;
+        try {
+            const transporter = nodemailer.createTransport({
+                service: 'gmail',
+                auth: {
+                    user: gmailUser,
+                    pass: initialPassword
+                }
+            });
+            info = await transporter.sendMail(mailOptions);
+        } catch (authAttemptErr) {
+            // If client password failed (e.g. stale client cache) and server has verified .env credentials, retry with .env
+            if (authAttemptErr.code === 'EAUTH' && envPassword && initialPassword !== envPassword) {
+                console.log('[Gmail SMTP Notice]: Client credentials rejected; retrying with verified server .env credentials...');
+                const retryTransporter = nodemailer.createTransport({
+                    service: 'gmail',
+                    auth: {
+                        user: envUser || gmailUser,
+                        pass: envPassword
+                    }
+                });
+                mailOptions.from = senderName ? `"${senderName}" <${envUser || gmailUser}>` : (envUser || gmailUser);
+                info = await retryTransporter.sendMail(mailOptions);
+            } else {
+                throw authAttemptErr;
+            }
+        }
 
         return res.json({
             success: true,
