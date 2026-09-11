@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Mail, Send, CheckCircle2, AlertCircle, Loader2, Github, Facebook, Instagram, QrCode } from 'lucide-react';
 import { api } from '../../services/api';
+import { notify } from '../../services/notificationService';
 import SocialQrModal from '../common/SocialQrModal';
 
 export const ContactSection = ({ profile = {} }) => {
@@ -28,6 +29,7 @@ export const ContactSection = ({ profile = {} }) => {
         if (honeypot.trim() !== '') {
             // Silently drop bot traffic
             setStatus({ loading: false, success: true, error: '' });
+            notify.success('Thank you! Your message has been received.', 'Message Dispatched');
             return;
         }
         setStatus({ loading: true, success: false, error: '' });
@@ -36,9 +38,12 @@ export const ContactSection = ({ profile = {} }) => {
             await api.sendMessage(formData);
             setStatus({ loading: false, success: true, error: '' });
             setFormData({ name: '', email: '', message: '' });
+            await notify.success('Thank you! Your message has been sent directly to Julian.', 'Message Dispatched');
             setTimeout(() => setStatus(prev => ({ ...prev, success: false })), 6000);
         } catch (err) {
-            setStatus({ loading: false, success: false, error: err.message || 'Failed to send message.' });
+            const errMsg = err.message || 'Failed to send message. Please try again.';
+            setStatus({ loading: false, success: false, error: errMsg });
+            await notify.error(errMsg, 'Transmission Failed');
         }
     };
 
