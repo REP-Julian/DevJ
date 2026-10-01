@@ -202,13 +202,13 @@ async function runUnorouter({ prompt, system, imageBase64, mimeType, expectJson 
 }
 
 async function executeProviderCascade(args) {
-    const result = await runUnorouter(args);
-    if (result && result.text) {
-        return result;
-    }
-    throw new Error('Unorouter provider failed to respond. Please check your API key or network.');
-}
+    const { prompt, system, imageBase64, mimeType, activeProvider, expectJson, taskType } = args;
 
+    let runnerSequence = [];
+    let active = (activeProvider || '').toLowerCase();
+
+    if (active === 'unorouter-only') {
+        runnerSequence = [runUnorouter];
     } else if (active === 'groq') {
         runnerSequence = [runGroq, runGemini, runMistral, runUnorouter];
     } else if (active === 'mistral') {
