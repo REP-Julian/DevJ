@@ -3,7 +3,7 @@ import { Client, Account, Databases, Storage, ID, Query } from 'appwrite';
 // Appwrite Cloud Configuration
 export const APPWRITE_CONFIG = {
     endpoint: import.meta.env.VITE_APPWRITE_ENDPOINT || 'https://sgp.cloud.appwrite.io/v1',
-    projectId: import.meta.env.VITE_APPWRITE_PROJECT_ID || '6aa1516d001f3ded0bc0',
+    projectId: import.meta.env.VITE_APPWRITE_PROJECT_ID || '6abdd627003d684522e5',
     databaseId: import.meta.env.VITE_APPWRITE_DATABASE_ID || 'portfolio',
     bucketId: import.meta.env.VITE_APPWRITE_BUCKET_ID || 'portfolio',
     collections: {

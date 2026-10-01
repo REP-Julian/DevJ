@@ -6,6 +6,7 @@ const projectId = process.env.VITE_APPWRITE_PROJECT_ID || '6aa1516d001f3ded0bc0'
 const databaseId = process.env.VITE_APPWRITE_DATABASE_ID || 'portfolio';
 const collectionId = process.env.VITE_APPWRITE_COLLECTION_PORTFOLIO || 'portfolio';
 const messagesCollectionId = process.env.VITE_APPWRITE_COLLECTION_MESSAGES || 'messages';
+const bucketId = process.env.VITE_APPWRITE_BUCKET_ID || 'portfolio';
 const apiKey = process.env.APPWRITE_API_KEY;
 
 const headers = {
@@ -25,6 +26,7 @@ async function main() {
     console.log('• Database ID:      ', databaseId);
     console.log('• Portfolio Col:    ', collectionId);
     console.log('• Messages Col:     ', messagesCollectionId);
+    console.log('• Storage Bucket:   ', bucketId);
     console.log('------------------------------------------------------\n');
 
     if (!apiKey) {
@@ -129,9 +131,9 @@ async function main() {
                 name: 'Julian Agustino',
                 tagline: 'Full-Stack Developer & AI Systems Integrator',
                 description: 'Building resilient full-stack web applications with React, Node.js, and Appwrite—engineering clean API architectures, responsive interfaces, and production-grade LLM integrations.',
-                avatarUrl: 'https://sgp.cloud.appwrite.io/v1/storage/buckets/portfolio/files/6aa15e9e001617de4a5f/view?project=' + projectId,
-                avatarUrl2: 'https://sgp.cloud.appwrite.io/v1/storage/buckets/portfolio/files/6aa15eb6001e7c787293/view?project=' + projectId,
-                avatarUrl3: 'https://sgp.cloud.appwrite.io/v1/storage/buckets/portfolio/files/6aa15e810016d47a13ee/view?project=' + projectId,
+                avatarUrl: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?auto=format&fit=crop&w=400&q=80',
+                avatarUrl2: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&w=400&q=80',
+                avatarUrl3: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=400&q=80',
                 email: 'agustino.julian@outlook.ph',
                 githubUrl: 'https://github.com/REP-Julian',
                 facebookUrl: 'https://facebook.com',
@@ -195,8 +197,48 @@ async function main() {
         console.log('   ✔ Messages collection already configured.');
     }
 
+    // 6. Setup Storage Bucket
+    console.log('\n6. Checking Storage Bucket "' + bucketId + '"...');
+    const bucketRes = await fetch(`${endpoint}/storage/buckets/${bucketId}`, { headers });
+    if (bucketRes.status === 404) {
+        console.log('   Creating bucket "' + bucketId + '"...');
+        const createBucketRes = await fetch(`${endpoint}/storage/buckets`, {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+                bucketId,
+                name: 'Portfolio Storage',
+                permissions: [
+                    'read("any")',
+                    'create("users")',
+                    'update("users")',
+                    'delete("users")'
+                ],
+                fileSecurity: false,
+                enabled: true,
+                maximumFileSize: 104857600, // 100MB
+                allowedFileExtensions: [],
+                compression: 'none',
+                encryption: false,
+                antivirus: false
+            }),
+        });
+
+        if (createBucketRes.ok) {
+            console.log('   ✔ Storage Bucket created!');
+        } else {
+            const err = await createBucketRes.json();
+            console.error('   ❌ Failed to create bucket:', err.message);
+        }
+    } else if (bucketRes.ok) {
+        console.log('   ✔ Storage Bucket exists and is ready.');
+    } else {
+        const err = await bucketRes.json();
+        console.error('   ❌ Bucket check error:', err.message);
+    }
+
     console.log('\n======================================================');
-    console.log('  🎉 All Appwrite Database collections ready!');
+    console.log('  🎉 All Appwrite resources (Database & Storage) ready!');
     console.log('  Visitors on any phone or device can now view');
     console.log('  your live portfolio synced with Appwrite Cloud.');
     console.log('======================================================\n');
@@ -227,13 +269,15 @@ async function ensureStringAttribute(dbId, colId, key, size, required) {
 function checkScopeHelp(err) {
     if (err && err.type === 'general_unauthorized_scope') {
         console.log('\n💡 [HOW TO FIX SCOPES IN APPWRITE CONSOLE]:');
-        console.log('1. Go to https://cloud.appwrite.io -> Select project "6aa1516d001f3ded0bc0"');
+        console.log(`1. Go to https://cloud.appwrite.io -> Select project "${projectId}"`);
         console.log('2. Go to Project Settings -> API Keys (or Overview -> API Keys)');
         console.log('3. Click your API Key and check the following scopes:');
         console.log('   - databases.read & databases.write');
         console.log('   - collections.read & collections.write');
         console.log('   - attributes.read & attributes.write');
         console.log('   - documents.read & documents.write');
+        console.log('   - buckets.read & buckets.write');
+        console.log('   - files.read & files.write');
         console.log('4. Click Save, and run: npm run setup:appwrite\n');
     }
 }

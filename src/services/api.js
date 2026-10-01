@@ -1,10 +1,10 @@
 import { initialPortfolioData } from '../data/portfolioData';
 import { account, databases, storage, APPWRITE_CONFIG, ID, Query } from './appwrite';
 
-const PORTFOLIO_STORAGE_KEY = 'devj_portfolio_data_v1';
-const MESSAGES_STORAGE_KEY = 'devj_contact_messages_v1';
-const AUTH_STORAGE_KEY = 'devj_admin_auth_token_v1';
-const ADMIN_PASSWORD_HASH_KEY = 'devj_admin_password_hash_v1';
+const PORTFOLIO_STORAGE_KEY = 'devj_portfolio_data_v2';
+const MESSAGES_STORAGE_KEY = 'devj_contact_messages_v2';
+const AUTH_STORAGE_KEY = 'devj_admin_auth_token_v2';
+const ADMIN_PASSWORD_HASH_KEY = 'devj_admin_password_hash_v2';
 
 // Default Admin Credentials (can be configured in admin dashboard / Appwrite Auth)
 const DEFAULT_ADMIN_EMAIL = 'admin@devj.com';
@@ -44,27 +44,18 @@ export const getStoredPortfolio = () => {
                 updated = true;
             }
 
-            // Automatically upgrade legacy Unsplash stock photos to Appwrite Cloud assets
-            if (
-                parsed.profile?.avatarUrl?.includes('images.unsplash.com') ||
-                !parsed.profile?.avatarUrl
-            ) {
+            // Make sure empty avatars get initial fallbacks
+            if (!parsed.profile?.avatarUrl) {
                 if (!parsed.profile) parsed.profile = {};
                 parsed.profile.avatarUrl = initialPortfolioData.profile.avatarUrl;
                 updated = true;
             }
-            if (
-                parsed.profile?.avatarUrl2?.includes('images.unsplash.com') ||
-                !parsed.profile?.avatarUrl2
-            ) {
+            if (!parsed.profile?.avatarUrl2) {
                 if (!parsed.profile) parsed.profile = {};
                 parsed.profile.avatarUrl2 = initialPortfolioData.profile.avatarUrl2;
                 updated = true;
             }
-            if (
-                parsed.profile?.avatarUrl3?.includes('images.unsplash.com') ||
-                !parsed.profile?.avatarUrl3
-            ) {
+            if (!parsed.profile?.avatarUrl3) {
                 if (!parsed.profile) parsed.profile = {};
                 parsed.profile.avatarUrl3 = initialPortfolioData.profile.avatarUrl3;
                 updated = true;
@@ -309,10 +300,17 @@ export const api = {
                 Object.assign(mergedProfile, local.profile || {});
             }
 
+            // Purge broken old project Appwrite URLs
+            const filterOldAppwriteUrl = (url) => url && url.includes('6aa1516d001f3ded0bc0') ? '' : url;
+
+            const rUrl1 = filterOldAppwriteUrl(remoteProfile.avatarUrl);
+            const rUrl2 = filterOldAppwriteUrl(remoteProfile.avatarUrl2);
+            const rUrl3 = filterOldAppwriteUrl(remoteProfile.avatarUrl3);
+
             // Preserve uploaded portraits from Appwrite Storage over defaults
-            if (remoteProfile.avatarUrl) mergedProfile.avatarUrl = remoteProfile.avatarUrl;
-            if (remoteProfile.avatarUrl2) mergedProfile.avatarUrl2 = remoteProfile.avatarUrl2;
-            if (remoteProfile.avatarUrl3) mergedProfile.avatarUrl3 = remoteProfile.avatarUrl3;
+            if (rUrl1) mergedProfile.avatarUrl = rUrl1;
+            if (rUrl2) mergedProfile.avatarUrl2 = rUrl2;
+            if (rUrl3) mergedProfile.avatarUrl3 = rUrl3;
 
             // Protect email from obsolete placeholder
             if (mergedProfile.email === 'contact@devj.com' || !mergedProfile.email) {
