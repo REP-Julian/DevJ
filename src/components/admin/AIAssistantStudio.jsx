@@ -54,7 +54,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
     const [messages, setMessages] = useState([
         {
             role: 'model',
-            content: `Welcome to DevJ AI Studio!\n\nI am your DevJ AI Copilot with multi-provider intelligence (Gemini, Groq, Mistral, and OpenRouter). I have live access to your entire portfolio (Profile, Skills, Projects, Achievements, Hobbies, and Inquiries).\n\nTip: Type ? to inspect active providers or ?mistral, ?groq, ?gemini, ?openrouter to switch anytime.\n\nHow can I assist you today?`,
+            content: `Welcome to DevJ AI Studio!\n\nI am your DevJ AI Copilot with multi-provider intelligence (Gemini, Groq, Mistral, and Unorouter). I have live access to your entire portfolio (Profile, Skills, Projects, Achievements, Hobbies, and Inquiries).\n\nTip: Type ? to inspect active providers or ?mistral, ?groq, ?gemini, ?unorouter to switch anytime.\n\nHow can I assist you today?`,
         },
     ]);
     const [chatInput, setChatInput] = useState('');
@@ -594,7 +594,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                             {currentProvider === 'gemini' ? 'Gemini 3.6 Flash' :
                              currentProvider === 'groq' ? 'Groq (120B)' :
                              currentProvider === 'mistral' ? 'Mistral Small' :
-                             currentProvider === 'openrouter' ? 'OpenRouter' :
+                             currentProvider === 'unorouter' ? 'Unorouter' :
                              'Auto Cascade'}
                         </span>
                     </div>
@@ -758,7 +758,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                                         <div className="mt-2 pt-2 border-t border-gray-200/60 flex items-center justify-between text-[10px]">
                                             <span className="text-charcoal-400 font-bold flex items-center gap-1">
                                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" />
-                                                {msg.provider || (currentProvider === 'groq' ? 'Groq' : currentProvider === 'mistral' ? 'Mistral AI' : currentProvider === 'openrouter' ? 'OpenRouter' : 'Google Gemini')}
+                                                {msg.provider || (currentProvider === 'groq' ? 'Groq' : currentProvider === 'mistral' ? 'Mistral AI' : currentProvider === 'unorouter' ? 'Unorouter' : 'Google Gemini')}
                                             </span>
                                             <button
                                                 onClick={() => copyToClipboard(msg.content, idx)}
@@ -788,7 +788,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                                     <span>
                                         {currentProvider === 'groq' ? 'Groq' :
                                          currentProvider === 'mistral' ? 'Mistral AI' :
-                                         currentProvider === 'openrouter' ? 'OpenRouter' :
+                                         currentProvider === 'unorouter' ? 'Unorouter' :
                                          currentProvider === 'gemini' ? 'Gemini' :
                                          'AI Copilot'} is thinking and drafting response...
                                     </span>
@@ -819,7 +819,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                                         { cmd: '?gemini', name: 'Google Gemini', desc: '3.6 Flash + Computer Vision', Icon: Globe },
                                         { cmd: '?groq', name: 'Groq', desc: '120B ultra-fast (<350ms)', Icon: Zap },
                                         { cmd: '?mistral', name: 'Mistral AI', desc: 'Deep technical reasoning', Icon: Brain },
-                                        { cmd: '?openrouter', name: 'OpenRouter', desc: 'Resilient open-source', Icon: Shield },
+                                        { cmd: '?unorouter', name: 'Unorouter', desc: 'Resilient open-source', Icon: Shield },
                                         { cmd: '?auto', name: 'Auto Cascade', desc: 'Smart failover route', Icon: RefreshCw },
                                     ].map((item) => {
                                         const ItemIcon = item.Icon;
@@ -1836,7 +1836,7 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                         </div>
 
                         <p className="text-xs text-charcoal-600 leading-relaxed">
-                            Your portfolio runs a live multi-provider cascade across <strong>Gemini, Groq, Mistral, and OpenRouter</strong>. You can configure custom keys or switch active providers in chat using commands like <code>?mistral</code>, <code>?groq</code>, <code>?gemini</code>, or <code>?openrouter</code>.
+                            Your portfolio runs a live multi-provider cascade across <strong>Gemini, Groq, Mistral, and Unorouter</strong>. You can configure custom keys or switch active providers in chat using commands like <code>?mistral</code>, <code>?groq</code>, <code>?gemini</code>, or <code>?unorouter</code>.
                         </p>
 
                         <form onSubmit={handleSaveKey} className="space-y-4">

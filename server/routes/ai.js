@@ -1,153 +1,81 @@
 import express from 'express';
-import { GoogleGenAI } from '@google/genai';
 import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-const _d = (arr) => arr.map(c => String.fromCharCode(c ^ 42)).join('');
+// ✅ Unorouter API Key Configuration
+const UNOROUTER_API_KEY = process.env.UNOROUTER_API_KEY || process.env.VITE_UNOROUTER_API_KEY || '';
 
-// ✅ Multi-Provider API Keys Configuration
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || _d([107,123,4,107,72,18,120,100,28,97,97,103,89,104,90,83,115,75,29,89,28,80,29,72,83,111,97,77,28,107,94,27,70,108,69,66,123,64,77,66,28,76,122,117,109,73,30,101,97,122,76,66,93]);
-const GROQ_API_KEY = process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY || _d([77,89,65,117,98,82,18,76,72,91,114,26,19,121,92,25,18,97,77,94,94,110,91,100,125,109,78,83,72,25,108,115,66,97,109,120,91,65,93,126,115,98,72,125,112,120,101,66,19,123,76,98,102,91,124,66]);
-const MISTRAL_API_KEY = process.env.MISTRAL_API_KEY || process.env.VITE_MISTRAL_API_KEY || _d([124,80,64,83,101,91,75,127,89,126,122,100,91,82,90,96,82,31,26,98,78,25,69,83,75,25,69,89,79,77,125,110]);
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || process.env.VITE_OPENROUTER_API_KEY || _d([89,65,7,69,88,7,92,27,7,19,27,31,76,28,28,26,73,29,25,79,30,28,25,24,79,26,19,28,75,78,29,72,30,29,26,25,72,18,28,27,76,19,75,79,29,73,73,72,25,79,79,26,78,28,19,27,19,76,79,31,29,28,19,24,79,26,75,24,29,79,79,27,73]);
-
-// Candidate models for automatic failover (prioritizing stable high-availability models)
-const CANDIDATE_MODELS = [
-    'gemini-3.6-flash',
-    'gemini-3.5-flash-lite',
-    'gemini-3.7-flash'
-];
-
-function extractTextFromPayload(payload) {
-    if (typeof payload?.contents === 'string') return payload.contents;
-    if (Array.isArray(payload?.contents)) {
-        return payload.contents.map(c => {
-            if (typeof c === 'string') return c;
-            if (c?.parts && Array.isArray(c.parts)) {
-                return c.parts.map(p => p.text || '').join(' ');
-            }
-            return '';
-        }).join('\n');
-    }
-    return JSON.stringify(payload || '');
-}
-
-// Helper: Execute generate with automatic model failover across Gemini -> Groq -> Mistral -> OpenRouter
+// Helper: Execute generate with Unorouter
 async function executeGenerate(payload) {
-    let lastError = null;
+    if (!UNOROUTER_API_KEY) throw new Error('Unorouter API key not configured.');
+    let hasImage = false;
+    const messages = [];
 
-    // 1. Try Gemini models
-    if (GEMINI_API_KEY) {
-        const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-        for (const model of CANDIDATE_MODELS) {
-            try {
-                const response = await ai.models.generateContent({
-                    ...payload,
-                    model,
-                });
-                return response;
-            } catch (err) {
-                lastError = err;
-                const errStr = (err?.message || JSON.stringify(err)).toLowerCase();
-                const isRecoverable =
-                    errStr.includes('503') ||
-                    errStr.includes('unavailable') ||
-                    errStr.includes('429') ||
-                    errStr.includes('resource_exhausted') ||
-                    errStr.includes('rate limit') ||
-                    errStr.includes('quota') ||
-                    errStr.includes('404') ||
-                    errStr.includes('not found') ||
-                    errStr.includes('no longer available');
+    if (payload.config?.systemInstruction) {
+        messages.push({ role: 'system', content: payload.config.systemInstruction });
+    }
 
-                if (isRecoverable) {
-                    console.warn(`[Gemini] ${model} temporarily unavailable, trying next model...`);
-                    continue;
+    if (typeof payload.contents === 'string') {
+        messages.push({ role: 'user', content: payload.contents });
+    } else if (Array.isArray(payload.contents)) {
+        let currentContent = [];
+        payload.contents.forEach(item => {
+            if (typeof item === 'string') {
+                currentContent.push({ type: 'text', text: item });
+            } else if (item.inlineData) {
+                hasImage = true;
+                currentContent.push({ type: 'image_url', image_url: { url: `data:${item.inlineData.mimeType || 'image/jpeg'};base64,${item.inlineData.data}` } });
+            } else if (item.parts) {
+                const text = item.parts.map(p => p.text || '').join(' ');
+                if (item.role) {
+                    messages.push({ role: item.role === 'model' ? 'assistant' : 'user', content: text });
+                } else {
+                    currentContent.push({ type: 'text', text });
                 }
             }
-        }
-    }
-
-    // 2. Failover to Groq
-    if (GROQ_API_KEY) {
-        try {
-            const promptText = extractTextFromPayload(payload);
-            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${GROQ_API_KEY}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    model: 'openai/gpt-oss-120b',
-                    messages: [{ role: 'user', content: promptText }]
-                })
-            });
-            if (res.ok) {
-                const d = await res.json();
-                const text = d.choices?.[0]?.message?.content;
-                if (text) return { text, provider: 'groq' };
+        });
+        if (currentContent.length > 0) {
+            if (currentContent.length === 1 && currentContent[0].type === 'text') {
+                messages.push({ role: 'user', content: currentContent[0].text });
+            } else {
+                messages.push({ role: 'user', content: currentContent });
             }
-        } catch (e) {
-            console.warn('[Server AI] Groq fallback error:', e.message);
         }
     }
 
-    // 3. Failover to Mistral
-    if (MISTRAL_API_KEY) {
-        try {
-            const promptText = extractTextFromPayload(payload);
-            const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${MISTRAL_API_KEY}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    model: 'mistral-small-latest',
-                    messages: [{ role: 'user', content: promptText }]
-                })
-            });
-            if (res.ok) {
-                const d = await res.json();
-                const text = d.choices?.[0]?.message?.content;
-                if (text) return { text, provider: 'mistral' };
-            }
-        } catch (e) {
-            console.warn('[Server AI] Mistral fallback error:', e.message);
-        }
+    const payloadData = {
+        model: hasImage ? 'qwen2.5-vl-7b-instruct-awq:free' : 'kimi-k3:free',
+        messages,
+    };
+    if (payload.config?.responseMimeType === 'application/json') {
+        payloadData.response_format = { type: 'json_object' };
     }
 
-    // 4. Failover to OpenRouter
-    if (OPENROUTER_API_KEY) {
-        try {
-            const promptText = extractTextFromPayload(payload);
-            const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-                    'Content-Type': 'application/json',
-                    'HTTP-Referer': 'https://devj.agustino-julian.workers.dev',
-                    'X-Title': 'DevJ Portfolio'
-                },
-                body: JSON.stringify({
-                    model: 'nvidia/nemotron-3.5-lightning:free',
-                    messages: [{ role: 'user', content: promptText }]
-                })
-            });
-            if (res.ok) {
-                const d = await res.json();
-                const text = d.choices?.[0]?.message?.content;
-                if (text) return { text, provider: 'openrouter' };
-            }
-        } catch (e) {
-            console.warn('[Server AI] OpenRouter fallback error:', e.message);
-        }
-    }
+    const res = await fetch('https://api.unorouter.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${UNOROUTER_API_KEY}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://devj.agustino-julian.workers.dev',
+            'X-Title': 'DevJ Portfolio'
+        },
+        body: JSON.stringify(payloadData)
+    });
 
-    throw lastError || new Error('All AI models (Gemini, Groq, Mistral, OpenRouter) are at capacity. Please try again later.');
+    if (!res.ok) {
+        const errText = await res.text();
+        throw new Error(`Unorouter error [${res.status}]: ${errText}`);
+    }
+    const d = await res.json();
+    return { text: d.choices?.[0]?.message?.content || '', provider: 'unorouter' };
 }
 
 // Test API Key connection
 router.post('/test-connection', authenticateToken, async (req, res) => {
     try {
-        if (!GEMINI_API_KEY) {
-            return res.status(400).json({ error: 'Gemini API key not configured on server.' });
+        if (!UNOROUTER_API_KEY) {
+            return res.status(400).json({ error: 'Unorouter API key not configured on server.' });
         }
 
         const response = await executeGenerate({
@@ -165,8 +93,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
     try {
         const { prompt, history = [], portfolioContext = {}, imageInput = null } = req.body;
 
-        if (!GEMINI_API_KEY) {
-            return res.status(400).json({ error: 'Gemini API key not configured.' });
+        if (!UNOROUTER_API_KEY) {
+            return res.status(400).json({ error: 'Unorouter API key not configured.' });
         }
 
         const systemInstruction = `You are "DevJ AI Copilot", an elite AI assistant and creative strategist built into the portfolio CMS.
@@ -217,8 +145,8 @@ router.post('/analyze-achievement-visual', authenticateToken, async (req, res) =
     try {
         const { imageBase64, mimeType, existingData = {} } = req.body;
 
-        if (!GEMINI_API_KEY) {
-            return res.status(400).json({ error: 'Gemini API key not configured.' });
+        if (!UNOROUTER_API_KEY) {
+            return res.status(400).json({ error: 'Unorouter API key not configured.' });
         }
 
         if (!imageBase64) {
@@ -278,8 +206,8 @@ router.post('/generate-bio', authenticateToken, async (req, res) => {
     try {
         const { currentProfile = {}, tone = 'innovative and visionary' } = req.body;
 
-        if (!GEMINI_API_KEY) {
-            return res.status(400).json({ error: 'Gemini API key not configured.' });
+        if (!UNOROUTER_API_KEY) {
+            return res.status(400).json({ error: 'Unorouter API key not configured.' });
         }
 
         const prompt = `Rewrite this developer bio to sound ${tone}.
@@ -314,8 +242,8 @@ router.post('/enhance-project', authenticateToken, async (req, res) => {
     try {
         const { rawProject = {} } = req.body;
 
-        if (!GEMINI_API_KEY) {
-            return res.status(400).json({ error: 'Gemini API key not configured.' });
+        if (!UNOROUTER_API_KEY) {
+            return res.status(400).json({ error: 'Unorouter API key not configured.' });
         }
 
         const prompt = `Generate a high-converting project summary for a portfolio.
@@ -352,8 +280,8 @@ router.post('/enhance-skill', authenticateToken, async (req, res) => {
     try {
         const { rawSkill = {} } = req.body;
 
-        if (!GEMINI_API_KEY) {
-            return res.status(400).json({ error: 'Gemini API key not configured.' });
+        if (!UNOROUTER_API_KEY) {
+            return res.status(400).json({ error: 'Unorouter API key not configured.' });
         }
 
         const prompt = `Analyze this developer skill and return category, proficiency (0-100), icon, and description.
@@ -393,8 +321,8 @@ router.post('/enhance-achievement', authenticateToken, async (req, res) => {
     try {
         const { rawAchievement = {} } = req.body;
 
-        if (!GEMINI_API_KEY) {
-            return res.status(400).json({ error: 'Gemini API key not configured.' });
+        if (!UNOROUTER_API_KEY) {
+            return res.status(400).json({ error: 'Unorouter API key not configured.' });
         }
 
         const prompt = `Polish this achievement for a portfolio.
@@ -433,8 +361,8 @@ router.post('/enhance-hobby', authenticateToken, async (req, res) => {
     try {
         const { rawHobby = {} } = req.body;
 
-        if (!GEMINI_API_KEY) {
-            return res.status(400).json({ error: 'Gemini API key not configured.' });
+        if (!UNOROUTER_API_KEY) {
+            return res.status(400).json({ error: 'Unorouter API key not configured.' });
         }
 
         const prompt = `Create an engaging description for this developer's hobby.
@@ -468,8 +396,8 @@ router.post('/analyze-hobby-visual', authenticateToken, async (req, res) => {
     try {
         const { imageBase64, mimeType, existingData = {} } = req.body;
 
-        if (!GEMINI_API_KEY) {
-            return res.status(400).json({ error: 'Gemini API key not configured.' });
+        if (!UNOROUTER_API_KEY) {
+            return res.status(400).json({ error: 'Unorouter API key not configured.' });
         }
 
         if (!imageBase64) {
@@ -520,8 +448,8 @@ router.post('/analyze-skills-gap', authenticateToken, async (req, res) => {
     try {
         const { currentSkills = [] } = req.body;
 
-        if (!GEMINI_API_KEY) {
-            return res.status(400).json({ error: 'Gemini API key not configured.' });
+        if (!UNOROUTER_API_KEY) {
+            return res.status(400).json({ error: 'Unorouter API key not configured.' });
         }
 
         const prompt = `Given these developer skills:
@@ -561,8 +489,8 @@ router.post('/draft-reply', authenticateToken, async (req, res) => {
     try {
         const { senderName, senderEmail, messageText, tone = 'warm and professional', developerName, developerEmail } = req.body;
 
-        if (!GEMINI_API_KEY) {
-            return res.status(400).json({ error: 'Gemini API key not configured.' });
+        if (!UNOROUTER_API_KEY) {
+            return res.status(400).json({ error: 'Unorouter API key not configured.' });
         }
 
         const devName = (developerName || '').trim() || 'Portfolio Author';
@@ -596,8 +524,8 @@ router.post('/audit-portfolio', authenticateToken, async (req, res) => {
     try {
         const { portfolioData = {} } = req.body;
 
-        if (!GEMINI_API_KEY) {
-            return res.status(400).json({ error: 'Gemini API key not configured.' });
+        if (!UNOROUTER_API_KEY) {
+            return res.status(400).json({ error: 'Unorouter API key not configured.' });
         }
 
         const prompt = `Audit this developer portfolio and provide: overall score (0-100), 3 key strengths, 3 actionable improvements, and 3 recommended trending techs.
@@ -633,7 +561,7 @@ Return valid JSON (no markdown):
 
 // Health check - useful to verify server is running
 router.get('/health', (req, res) => {
-    const hasApiKey = !!GEMINI_API_KEY;
+    const hasApiKey = !!UNOROUTER_API_KEY;
     res.json({
         status: 'healthy',
         aiConfigured: hasApiKey,

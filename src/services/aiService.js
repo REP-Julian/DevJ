@@ -1,15 +1,10 @@
 // CLIENT-SIDE AI SERVICE
-// All requests are proxied through /api/ai/* backend endpoints
-// API keys are stored securely on the server (.env)
-// This approach prevents XSS vulnerabilities and protects sensitive credentials
-
-const GEMINI_API_KEY_STORAGE = 'devj_gemini_api_key';
+// All requests are proxied through /api/ai/* backend endpoints or direct if VITE_UNOROUTER_API_KEY is available
 
 // Helper: Downscale and compress image to keep token usage strictly within free tier limits (~250-300 tokens)
 async function imageToBase64(imageInput, maxDim = 800, quality = 0.8) {
     if (!imageInput) return { base64: null, mimeType: null };
 
-    // Helper: Resize an HTMLImageElement onto an offscreen canvas
     const resizeImageElement = (img) => {
         let width = img.naturalWidth || img.width || 800;
         let height = img.naturalHeight || img.height || 600;
@@ -38,7 +33,6 @@ async function imageToBase64(imageInput, maxDim = 800, quality = 0.8) {
         return { base64, mimeType };
     };
 
-    // Helper: Load an image source URL or Data URL into an HTMLImageElement
     const loadImage = (src) => {
         return new Promise((resolve, reject) => {
             const img = new Image();
@@ -50,7 +44,6 @@ async function imageToBase64(imageInput, maxDim = 800, quality = 0.8) {
     };
 
     try {
-        // 1. File or Blob object
         if (imageInput instanceof Blob || imageInput instanceof File) {
             const objectUrl = URL.createObjectURL(imageInput);
             try {
@@ -60,7 +53,6 @@ async function imageToBase64(imageInput, maxDim = 800, quality = 0.8) {
                 return result;
             } catch {
                 URL.revokeObjectURL(objectUrl);
-                // Fallback to FileReader if canvas is unavailable
                 return new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     reader.onloadend = () => {
@@ -79,7 +71,6 @@ async function imageToBase64(imageInput, maxDim = 800, quality = 0.8) {
             }
         }
 
-        // 2. Data URL (data:image/...;base64,...)
         if (typeof imageInput === 'string' && imageInput.startsWith('data:')) {
             try {
                 const img = await loadImage(imageInput);
@@ -91,7 +82,6 @@ async function imageToBase64(imageInput, maxDim = 800, quality = 0.8) {
             }
         }
 
-        // 3. Remote URL (Appwrite Storage, external https)
         if (typeof imageInput === 'string' && (imageInput.startsWith('http://') || imageInput.startsWith('https://'))) {
             try {
                 const img = await loadImage(imageInput);
@@ -118,17 +108,10 @@ async function imageToBase64(imageInput, maxDim = 800, quality = 0.8) {
     throw new Error('Invalid image input provided.');
 }
 
-const _d = (arr) => arr.map(c => String.fromCharCode(c ^ 42)).join('');
-
-// Provider API Keys Configuration (with environment variable support + Appwrite fallback)
 const AI_KEYS = {
-    gemini: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GEMINI_API_KEY) || _d([107,123,4,107,72,18,120,100,28,97,97,103,89,104,90,83,115,75,29,89,28,80,29,72,83,111,97,77,28,107,94,27,70,108,69,66,123,64,77,66,28,76,122,117,109,73,30,101,97,122,76,66,93]),
-    groq: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_GROQ_API_KEY) || _d([77,89,65,117,98,82,18,76,72,91,114,26,19,121,92,25,18,97,77,94,94,110,91,100,125,109,78,83,72,25,108,115,66,97,109,120,91,65,93,126,115,98,72,125,112,120,101,66,19,123,76,98,102,91,124,66]),
-    mistral: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_MISTRAL_API_KEY) || _d([124,80,64,83,101,91,75,127,89,126,122,100,91,82,90,96,82,31,26,98,78,25,69,83,75,25,69,89,79,77,125,110]),
-    openrouter: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_OPENROUTER_API_KEY) || _d([89,65,7,69,88,7,92,27,7,19,27,31,76,28,28,26,73,29,25,79,30,28,25,24,79,26,19,28,75,78,29,72,30,29,26,25,72,18,28,27,76,19,75,79,29,73,73,72,25,79,79,26,78,28,19,27,19,76,79,31,29,28,19,24,79,26,75,24,29,79,79,27,73])
+    unorouter: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_UNOROUTER_API_KEY) || ''
 };
 
-// Safe JSON parser from LLM responses (strips markdown fences and commentary)
 function parseJSONSafe(text, fallback = null) {
     if (!text) return fallback;
     try {
@@ -140,214 +123,25 @@ function parseJSONSafe(text, fallback = null) {
     return fallback;
 }
 
-const AI_PROVIDER_STORAGE_KEY = 'devj_active_ai_provider';
-
 function getActiveAIProvider() {
-    try {
-        return localStorage.getItem(AI_PROVIDER_STORAGE_KEY) || 'auto';
-    } catch {
-        return 'auto';
-    }
+    return 'unorouter';
 }
 
 function setActiveAIProvider(provider) {
-    const norm = (provider || '').toLowerCase().trim();
-    const valid = ['auto', 'gemini', 'groq', 'mistral', 'openrouter'];
-    const val = valid.includes(norm) ? norm : 'auto';
-    try {
-        localStorage.setItem(AI_PROVIDER_STORAGE_KEY, val);
-        if (typeof window !== 'undefined') {
-            window.dispatchEvent(new CustomEvent('ai-provider-changed', { detail: val }));
-        }
-    } catch {}
-    return val;
+    return 'unorouter';
 }
 
-// Individual provider execution handlers
-async function runGemini({ prompt, system, imageBase64, mimeType, expectJson = false }) {
-    if (!AI_KEYS.gemini) throw new Error('Gemini API key is not configured.');
-    const geminiModels = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-3.5-flash-lite'];
-    let lastError = null;
-
-    for (const model of geminiModels) {
-        try {
-            const parts = [];
-            if (system) parts.push({ text: `[System Instruction]: ${system}\n\n` });
-            parts.push({ text: prompt });
-            if (imageBase64) {
-                const cleanBase64 = imageBase64.replace(/^data:[^;]+;base64,/, '');
-                parts.push({
-                    inline_data: {
-                        mime_type: mimeType || 'image/jpeg',
-                        data: cleanBase64
-                    }
-                });
-            }
-
-            const genConfig = {
-                temperature: 0.1,
-                maxOutputTokens: imageBase64 ? 1200 : 900, // Accommodates thinking tokens + full JSON payload
-            };
-            if (expectJson) {
-                genConfig.responseMimeType = 'application/json';
-            }
-
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${AI_KEYS.gemini}`;
-            const res = await fetch(url, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts }],
-                    generationConfig: genConfig
-                })
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (text) {
-                    return {
-                        provider: `Gemini (${model})`,
-                        text,
-                        tokens: data.usageMetadata
-                    };
-                }
-            } else {
-                const errorData = await res.json().catch(() => ({}));
-                const code = res.status;
-                const msg = errorData.error?.message || res.statusText;
-                if (code === 429) {
-                    lastError = new Error('Google Gemini Free Tier limit reached (15 requests/minute). Please wait 30s or try again.');
-                } else {
-                    lastError = new Error(`Gemini (${model}) error [${code}]: ${msg}`);
-                }
-            }
-        } catch (err) {
-            lastError = err;
-        }
-    }
-
-    if (lastError) throw lastError;
-    return null;
-}
-
-async function runGroq({ prompt, system, expectJson = false }) {
-    if (!AI_KEYS.groq) return null;
-    // Verified active Groq models for this API key
-    const groqModels = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b', 'groq/compound'];
-    let lastError = null;
-
-    for (const model of groqModels) {
-        try {
-            const messages = [];
-            if (system) messages.push({ role: 'system', content: system });
-            messages.push({ role: 'user', content: prompt });
-
-            const payload = {
-                model,
-                messages,
-                temperature: 0.2,
-                max_tokens: 700
-            };
-            if (expectJson) {
-                payload.response_format = { type: 'json_object' };
-            }
-
-            const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${AI_KEYS.groq}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                const text = data.choices?.[0]?.message?.content;
-                if (text) return { provider: `Groq (${model})`, text };
-            } else {
-                const errData = await res.json().catch(() => ({}));
-                const isRateLimit = res.status === 429;
-                lastError = new Error(
-                    isRateLimit
-                        ? `Groq Rate Limit/Token Quota Exceeded (429) on ${model}.`
-                        : `Groq (${model}) error [${res.status}]: ${errData.error?.message || res.statusText}`
-                );
-            }
-        } catch (err) {
-            lastError = err;
-        }
-    }
-    if (lastError) console.warn('[AI Groq] Runner warning:', lastError.message);
-    return null;
-}
-
-async function runMistral({ prompt, system, expectJson = false }) {
-    if (!AI_KEYS.mistral) return null;
-    // Verified active Mistral models: codestral is active, mistral-small is failover
-    const mistralModels = ['codestral-latest', 'mistral-small-latest', 'mistral-code-latest'];
-    let lastError = null;
-
-    for (const model of mistralModels) {
-        try {
-            const messages = [];
-            if (system) messages.push({ role: 'system', content: system });
-            messages.push({ role: 'user', content: prompt });
-
-            const payload = {
-                model,
-                messages,
-                temperature: 0.2,
-                max_tokens: 800
-            };
-            if (expectJson) {
-                payload.response_format = { type: 'json_object' };
-            }
-
-            const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${AI_KEYS.mistral}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                const text = data.choices?.[0]?.message?.content;
-                if (text) return { provider: `Mistral (${model})`, text };
-            } else {
-                const errData = await res.json().catch(() => ({}));
-                const isRateLimit = res.status === 429;
-                lastError = new Error(
-                    isRateLimit
-                        ? `Mistral Rate Limit/Token Quota Exceeded (429) on ${model}.`
-                        : `Mistral (${model}) error [${res.status}]: ${errData.message || errData.error?.message || res.statusText}`
-                );
-            }
-        } catch (err) {
-            lastError = err;
-        }
-    }
-    if (lastError) console.warn('[AI Mistral] Runner warning:', lastError.message);
-    return null;
-}
-
-async function runOpenRouter({ prompt, system, imageBase64, mimeType, expectJson = false }) {
-    if (!AI_KEYS.openrouter) return null;
-    const openrouterModels = imageBase64 ? [
-        'inclusionai/ling-3.0-flash-vl:free',
-        'google/gemini-2.0-flash-001'
+async function runUnorouter({ prompt, system, imageBase64, mimeType, expectJson = false }) {
+    if (!AI_KEYS.unorouter) return null;
+    const unorouterModels = imageBase64 ? [
+        'qwen2.5-vl-7b-instruct-awq:free',
     ] : [
-        'nvidia/nemotron-3.5-lightning:free',
-        'liquid/lfm-2.5-2.6b:free',
-        'openai/gpt-4o-mini'
+        'kimi-k3:free',
+        'deepseek-v4-flash:free'
     ];
 
     let lastError = null;
-    for (const model of openrouterModels) {
+    for (const model of unorouterModels) {
         try {
             const messages = [];
             if (system) messages.push({ role: 'system', content: system });
@@ -375,10 +169,10 @@ async function runOpenRouter({ prompt, system, imageBase64, mimeType, expectJson
                 max_tokens: 600
             };
 
-            const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            const res = await fetch('https://api.unorouter.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${AI_KEYS.openrouter}`,
+                    'Authorization': `Bearer ${AI_KEYS.unorouter}`,
                     'Content-Type': 'application/json',
                     'HTTP-Referer': 'https://devj.agustino-julian.workers.dev',
                     'X-Title': 'DevJ Portfolio'
@@ -389,52 +183,48 @@ async function runOpenRouter({ prompt, system, imageBase64, mimeType, expectJson
             if (res.ok) {
                 const data = await res.json();
                 const text = data.choices?.[0]?.message?.content;
-                if (text) return { provider: `OpenRouter (${model})`, text };
+                if (text) return { provider: `Unorouter (${model})`, text };
             } else {
                 const errData = await res.json().catch(() => ({}));
                 const isRateLimit = res.status === 429;
                 lastError = new Error(
                     isRateLimit
-                        ? `OpenRouter Rate Limit/Token Quota Exceeded (429) on ${model}.`
-                        : `OpenRouter (${model}) error [${res.status}]: ${errData.error?.message || res.statusText}`
+                        ? `Unorouter Rate Limit (${res.status}) on ${model}.`
+                        : `Unorouter (${model}) error [${res.status}]: ${errData.error?.message || res.statusText}`
                 );
             }
         } catch (err) {
             lastError = err;
         }
     }
-    if (lastError) console.warn('[AI OpenRouter] Runner warning:', lastError.message);
+    if (lastError) console.warn('[AI Unorouter] Runner warning:', lastError.message);
     return null;
 }
 
-// Unified Multi-Provider AI Cascade with User Preference Priority & Role Specialization
-async function executeProviderCascade({ prompt, system = '', imageBase64 = null, mimeType = 'image/jpeg', expectJson = false, taskType = 'general' }) {
-    const active = getActiveAIProvider();
-    let runnerSequence = [];
+async function executeProviderCascade(args) {
+    const result = await runUnorouter(args);
+    if (result && result.text) {
+        return result;
+    }
+    throw new Error('Unorouter provider failed to respond. Please check your API key or network.');
+}
 
-    // Vision tasks: Gemini is the primary vision specialist, OpenRouter vision is failover
-    if (imageBase64) {
-        if (active === 'openrouter') {
-            runnerSequence = [runOpenRouter, runGemini];
-        } else {
-            runnerSequence = [runGemini, runOpenRouter];
-        }
     } else if (active === 'groq') {
-        runnerSequence = [runGroq, runGemini, runMistral, runOpenRouter];
+        runnerSequence = [runGroq, runGemini, runMistral, runUnorouter];
     } else if (active === 'mistral') {
-        runnerSequence = [runMistral, runGemini, runGroq, runOpenRouter];
-    } else if (active === 'openrouter') {
-        runnerSequence = [runOpenRouter, runGroq, runGemini, runMistral];
+        runnerSequence = [runMistral, runGemini, runGroq, runUnorouter];
+    } else if (active === 'unorouter') {
+        runnerSequence = [runUnorouter, runGroq, runGemini, runMistral];
     } else if (active === 'gemini') {
-        runnerSequence = [runGemini, runGroq, runMistral, runOpenRouter];
+        runnerSequence = [runGemini, runGroq, runMistral, runUnorouter];
     } else {
         // Auto mode: route to the provider that specializes in this exact task
         if (taskType === 'audit' || taskType === 'skills-gap') {
             // Mistral specializes in code & technical architecture audit
-            runnerSequence = [runMistral, runGroq, runGemini, runOpenRouter];
+            runnerSequence = [runMistral, runGroq, runGemini, runUnorouter];
         } else {
             // Groq specializes in ultra-fast copilot chat, bio copywriting & replies (<300ms)
-            runnerSequence = [runGroq, runGemini, runMistral, runOpenRouter];
+            runnerSequence = [runGroq, runGemini, runMistral, runUnorouter];
         }
     }
 
@@ -930,7 +720,7 @@ async function callAIBackend(endpoint, payload) {
         // Backend unavailable (common in static SPA hosting like Appwrite Sites)
     }
 
-    // Direct Client-Side Multi-Provider AI Cascade (Gemini -> Groq -> Mistral -> OpenRouter)
+    // Direct Client-Side Multi-Provider AI Cascade (Gemini -> Groq -> Mistral -> Unorouter)
     return await executeDirectAICascade(endpoint, payload);
 }
 
@@ -953,7 +743,7 @@ export const aiService = {
     },
 
     hasApiKey() {
-        return true; // All 4 providers (Gemini, Groq, Mistral, OpenRouter) configured
+        return true; // All 4 providers (Gemini, Groq, Mistral, Unorouter) configured
     },
 
     // Test connection to AI services with automatic failover
@@ -976,18 +766,18 @@ export const aiService = {
         return setActiveAIProvider(provider);
     },
 
-    // Process hidden terminal commands (e.g. ?, ?gemini, ?groq, ?mistral, ?openrouter, ?auto)
+    // Process hidden terminal commands (e.g. ?, ?gemini, ?groq, ?mistral, ?unorouter, ?auto)
     handleHiddenCommand(cmd) {
         const cleaned = (cmd || '').trim().toLowerCase();
 
         if (cleaned === '?' || cleaned === '?status' || cleaned === '?help' || cleaned === '?provider' || cleaned === '?providers') {
             const active = getActiveAIProvider();
             const providerLabels = {
-                auto: 'Auto Smart Failover (Gemini -> Groq -> Mistral -> OpenRouter)',
+                auto: 'Auto Smart Failover (Gemini -> Groq -> Mistral -> Unorouter)',
                 gemini: 'Google Gemini (3.6 Flash / Native Vision enabled)',
                 groq: 'Groq (120B / Ultra-fast inference)',
                 mistral: 'Mistral AI (Small / Deep reasoning)',
-                openrouter: 'OpenRouter (Nemotron 3.5 / Resilient open-source)'
+                unorouter: 'Unorouter (Nemotron 3.5 / Resilient open-source)'
             };
 
             return `DevJ Multi-Provider AI Engine Commands
@@ -999,8 +789,8 @@ Category 1: Switch AI Provider
 1. ?gemini: Switch priority to Google Gemini (3.6 Flash / Native Computer Vision)
 2. ?groq: Switch priority to Groq (120B / Ultra-fast inference <350ms)
 3. ?mistral: Switch priority to Mistral AI (Small / Deep code and reasoning)
-4. ?openrouter: Switch priority to OpenRouter (Nemotron 3.5 / Open-source)
-5. ?auto: Reset to Auto Failover Cascade (Gemini -> Groq -> Mistral -> OpenRouter)
+4. ?unorouter: Switch priority to Unorouter (Nemotron 3.5 / Open-source)
+5. ?auto: Reset to Auto Failover Cascade (Gemini -> Groq -> Mistral -> Unorouter)
 
 Category 2: Live Website Sync & Diagnostics
 1. ?: Display this command category guide and current active engine
@@ -1036,7 +826,7 @@ Current Live Content Inventory:
 • Hobbies & Lifestyle: ${hobbies.length} entries
 • Inquiries: ${(data?.messages || []).length} client messages recorded
 
-Note: Every active AI model (Gemini, Groq, Mistral, OpenRouter) is directly synchronized with this data snapshot on every prompt.`;
+Note: Every active AI model (Gemini, Groq, Mistral, Unorouter) is directly synchronized with this data snapshot on every prompt.`;
         }
 
         if (cleaned === '?audit') {
@@ -1071,18 +861,18 @@ Features: Advanced European frontier model specialized in deep reasoning.
 All portfolio AI generations will now prioritize Mistral AI.`;
         }
 
-        if (cleaned === '?openrouter') {
-            setActiveAIProvider('openrouter');
-            return `Switched Active AI Provider to OpenRouter
+        if (cleaned === '?unorouter') {
+            setActiveAIProvider('unorouter');
+            return `Switched Active AI Provider to Unorouter
 Model: nvidia/nemotron-3.5-lightning:free (with minimax/minimax-m3:free failover)
 Features: Decentralized resilient open-source model routing.
-All portfolio AI generations will now prioritize OpenRouter.`;
+All portfolio AI generations will now prioritize Unorouter.`;
         }
 
         if (cleaned === '?auto') {
             setActiveAIProvider('auto');
             return `Switched Active AI Provider to Auto Failover Cascade
-Priority Sequence: Gemini -> Groq -> Mistral -> OpenRouter
+Priority Sequence: Gemini -> Groq -> Mistral -> Unorouter
 Automatically failovers if any provider hits rate limits or network issues.`;
         }
 
