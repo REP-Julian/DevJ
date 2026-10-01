@@ -24,7 +24,7 @@ const PageLoader = () => (
 
 const ProtectedRoute = ({ children }) => {
     const { isAuthenticated, loading } = useAuth();
-    if (loading) return null;
+    if (loading) return <PageLoader />;
     if (!isAuthenticated) return <Navigate to="/login" replace />;
     return children;
 };

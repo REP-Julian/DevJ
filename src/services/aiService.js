@@ -204,29 +204,8 @@ async function runUnorouter({ prompt, system, imageBase64, mimeType, expectJson 
 async function executeProviderCascade(args) {
     const { prompt, system, imageBase64, mimeType, activeProvider, expectJson, taskType } = args;
 
-    let runnerSequence = [];
-    let active = (activeProvider || '').toLowerCase();
-
-    if (active === 'unorouter-only') {
-        runnerSequence = [runUnorouter];
-    } else if (active === 'groq') {
-        runnerSequence = [runGroq, runGemini, runMistral, runUnorouter];
-    } else if (active === 'mistral') {
-        runnerSequence = [runMistral, runGemini, runGroq, runUnorouter];
-    } else if (active === 'unorouter') {
-        runnerSequence = [runUnorouter, runGroq, runGemini, runMistral];
-    } else if (active === 'gemini') {
-        runnerSequence = [runGemini, runGroq, runMistral, runUnorouter];
-    } else {
-        // Auto mode: route to the provider that specializes in this exact task
-        if (taskType === 'audit' || taskType === 'skills-gap') {
-            // Mistral specializes in code & technical architecture audit
-            runnerSequence = [runMistral, runGroq, runGemini, runUnorouter];
-        } else {
-            // Groq specializes in ultra-fast copilot chat, bio copywriting & replies (<300ms)
-            runnerSequence = [runGroq, runGemini, runMistral, runUnorouter];
-        }
-    }
+    // We only have Unorouter active in this build
+    const runnerSequence = [runUnorouter];
 
     let lastError = null;
     for (const runner of runnerSequence) {

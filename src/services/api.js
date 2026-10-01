@@ -447,10 +447,13 @@ export const api = {
 
     verifyToken: async () => {
         try {
-            const user = await account.get();
+            const timeoutPromise = new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('timeout')), 3000)
+            );
+            const user = await Promise.race([account.get(), timeoutPromise]);
             if (user && user.$id) return true;
         } catch {
-            // Appwrite session inactive
+            // Appwrite session inactive or timed out
         }
 
         // Check local token fallback
