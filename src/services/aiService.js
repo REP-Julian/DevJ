@@ -238,6 +238,7 @@ async function executeProviderCascade(args) {
         }
     }
     throw lastError || new Error('ERROR_UI_CACHE: The provider failed but no error was caught. Please do a HARD REFRESH of your browser window.');
+}
 
 // Build a comprehensive, deep live website context snapshot so ALL AI models inspect full data & changes
 function formatLivePortfolioContext(context) {
@@ -318,7 +319,7 @@ ${messagesText}
 }
 
 // Clean raw markdown symbols (**, _, -, |, ###) from AI chat outputs
-export function sanitizeAIChatOutput(text) {
+function sanitizeAIChatOutput(text) {
     if (!text || typeof text !== 'string') return '';
     let res = text;
 
