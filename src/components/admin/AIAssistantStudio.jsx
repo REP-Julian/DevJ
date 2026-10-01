@@ -810,42 +810,13 @@ export const AIAssistantStudio = ({ portfolio, onUpdated }) => {
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                                {/* Category 1: AI Provider Switchers */}
                                 <div className="space-y-1 bg-white p-2.5 rounded-xl border border-gray-200/80 shadow-2xs">
                                     <span className="text-[10px] font-black text-devorange-600 uppercase tracking-wider block px-1 pb-1 border-b border-gray-100">
-                                        Switch AI Provider
+                                        Available AI Commands
                                     </span>
-                                    {[
-                                        { cmd: '?gemini', name: 'Google Gemini', desc: '3.6 Flash + Computer Vision', Icon: Globe },
-                                        { cmd: '?groq', name: 'Groq', desc: '120B ultra-fast (<350ms)', Icon: Zap },
-                                        { cmd: '?mistral', name: 'Mistral AI', desc: 'Deep technical reasoning', Icon: Brain },
-                                        { cmd: '?unorouter', name: 'Unorouter', desc: 'Resilient open-source', Icon: Shield },
-                                        { cmd: '?auto', name: 'Auto Cascade', desc: 'Smart failover route', Icon: RefreshCw },
-                                    ].map((item) => {
-                                        const ItemIcon = item.Icon;
-                                        return (
-                                            <button
-                                                key={item.cmd}
-                                                type="button"
-                                                onClick={() => {
-                                                    setChatInput(item.cmd);
-                                                }}
-                                                className={`w-full text-left px-2 py-1.5 rounded-lg flex items-center justify-between transition-colors ${
-                                                    chatInput.trim().toLowerCase() === item.cmd
-                                                        ? 'bg-devorange-500 text-white font-bold'
-                                                        : 'hover:bg-devyellow-50 text-charcoal-800'
-                                                }`}
-                                            >
-                                                <div className="flex items-center gap-2">
-                                                    <ItemIcon className="w-3.5 h-3.5 shrink-0 text-devorange-500" />
-                                                    <span className="font-bold">{item.cmd}</span>
-                                                </div>
-                                                <span className={`text-[10px] ${chatInput.trim().toLowerCase() === item.cmd ? 'text-white/90' : 'text-charcoal-400'}`}>
-                                                    {item.desc}
-                                                </span>
-                                            </button>
-                                        );
-                                    })}
+                                    <div className="text-[10px] text-charcoal-500 px-2 py-1">
+                                        Provider switching is disabled. The system is locked to free-tier models via Unorouter as requested.
+                                    </div>
                                 </div>
 
                                 {/* Category 2: Live Website Sync & Inspection */}

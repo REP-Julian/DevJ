@@ -133,8 +133,11 @@ function setActiveAIProvider(provider) {
     return 'unorouter';
 }
 
-async function runUnorouter({ prompt, system, imageBase64, mimeType, expectJson = false }) {
-    if (!AI_KEYS.unorouter) return null;
+async function runUnorouter({ prompt, system, imageBase64, mimeType, expectJson = false, customKey }) {
+    const activeKey = customKey || AI_KEYS.unorouter || (typeof localStorage !== 'undefined' ? localStorage.getItem(GEMINI_API_KEY_STORAGE) : '');
+    if (!activeKey) {
+        throw new Error('Unorouter API Key is missing. Please configure it in the UI or restart your dev server.');
+    }
     const unorouterModels = imageBase64 ? [
         'qwen2.5-vl-7b-instruct-awq:free',
     ] : [
@@ -176,7 +179,7 @@ async function runUnorouter({ prompt, system, imageBase64, mimeType, expectJson 
             const res = await fetch('https://api.unorouter.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${AI_KEYS.unorouter}`,
+                    'Authorization': `Bearer ${activeKey}`,
                     'Content-Type': 'application/json',
                     'HTTP-Referer': 'https://devj.agustino-julian.workers.dev',
                     'X-Title': 'DevJ Portfolio'
@@ -191,7 +194,12 @@ async function runUnorouter({ prompt, system, imageBase64, mimeType, expectJson 
                     continue; // Proceed to next model failover
                 }
                 const text = data.choices?.[0]?.message?.content;
-                if (text) return { provider: `Unorouter (${model})`, text };
+                if (text) {
+                    return { provider: `Unorouter (${model})`, text };
+                } else {
+                    lastError = new Error(`Unorouter API on ${model} returned empty text. Response: ${JSON.stringify(data)}`);
+                    continue;
+                }
             } else {
                 const errData = await res.json().catch(() => ({}));
                 const isRateLimit = res.status === 429;
@@ -205,12 +213,14 @@ async function runUnorouter({ prompt, system, imageBase64, mimeType, expectJson 
             lastError = err;
         }
     }
-    if (lastError) console.warn('[AI Unorouter] Runner warning:', lastError.message);
+    if (lastError) {
+        throw lastError;
+    }
     return null;
 }
 
 async function executeProviderCascade(args) {
-    const { prompt, system, imageBase64, mimeType, activeProvider, expectJson, taskType } = args;
+    const { prompt, system, imageBase64, mimeType, activeProvider, expectJson, taskType, customKey } = args;
 
     // We only have Unorouter active in this build
     const runnerSequence = [runUnorouter];
@@ -218,7 +228,7 @@ async function executeProviderCascade(args) {
     let lastError = null;
     for (const runner of runnerSequence) {
         try {
-            const result = await runner({ prompt, system, imageBase64, mimeType, expectJson });
+            const result = await runner({ prompt, system, imageBase64, mimeType, expectJson, customKey });
             if (result && result.text) {
                 return result;
             }
@@ -227,9 +237,7 @@ async function executeProviderCascade(args) {
             console.warn(`[AI Provider Cascade] ${runner.name} attempt:`, err.message);
         }
     }
-
-    throw lastError || new Error('All configured AI providers failed to respond. Please check your API keys or network.');
-}
+    throw lastError || new Error('ERROR_UI_CACHE: The provider failed but no error was caught. Please do a HARD REFRESH of your browser window.');
 
 // Build a comprehensive, deep live website context snapshot so ALL AI models inspect full data & changes
 function formatLivePortfolioContext(context) {
@@ -344,7 +352,7 @@ export function sanitizeAIChatOutput(text) {
 // Client-Side Direct Execution Router (for serverless / Appwrite Sites hosting)
 async function executeDirectAICascade(endpoint, payload) {
     if (endpoint === 'test-connection') {
-        const res = await executeProviderCascade({ prompt: 'Respond with simply: OK' });
+        const res = await executeProviderCascade({ prompt: 'Respond with simply: OK', customKey: payload.customKey });
         return { success: true, message: `Connected to ${res.provider} - Live and Active` };
     }
 
@@ -373,7 +381,8 @@ ${liveSnapshot}`;
             prompt,
             system,
             imageBase64: payload.imageBase64,
-            mimeType: payload.mimeType
+            mimeType: payload.mimeType,
+            customKey: payload.customKey
         });
         return { text: sanitizeAIChatOutput(res.text), provider: res.provider };
     }
@@ -736,7 +745,7 @@ export const aiService = {
     // Test connection to AI services with automatic failover
     async testConnection(customKey) {
         try {
-            const result = await callAIBackend('test-connection', {});
+            const result = await callAIBackend('test-connection', { customKey });
             return result.message || 'AI Engine Connected & Active';
         } catch (err) {
             throw new Error(`AI Connection Failed: ${err.message}`);
@@ -760,24 +769,17 @@ export const aiService = {
         if (cleaned === '?' || cleaned === '?status' || cleaned === '?help' || cleaned === '?provider' || cleaned === '?providers') {
             const active = getActiveAIProvider();
             const providerLabels = {
-                auto: 'Auto Smart Failover (Gemini -> Groq -> Mistral -> Unorouter)',
-                gemini: 'Google Gemini (3.6 Flash / Native Vision enabled)',
-                groq: 'Groq (120B / Ultra-fast inference)',
-                mistral: 'Mistral AI (Small / Deep reasoning)',
-                unorouter: 'Unorouter (Nemotron 3.5 / Resilient open-source)'
+                auto: 'Auto Smart Failover (Locked to Free Models)',
+                unorouter: 'Unorouter (Free Tier Cascade)'
             };
 
             return `DevJ Multi-Provider AI Engine Commands
 
 Current Active Provider:
-[Active]: ${providerLabels[active] || active.toUpperCase()}
+[Active]: ${providerLabels[active] || 'Unorouter (Free Tier Cascade)'}
 
-Category 1: Switch AI Provider
-1. ?gemini: Switch priority to Google Gemini (3.6 Flash / Native Computer Vision)
-2. ?groq: Switch priority to Groq (120B / Ultra-fast inference <350ms)
-3. ?mistral: Switch priority to Mistral AI (Small / Deep code and reasoning)
-4. ?unorouter: Switch priority to Unorouter (Nemotron 3.5 / Open-source)
-5. ?auto: Reset to Auto Failover Cascade (Gemini -> Groq -> Mistral -> Unorouter)
+Category 1: System Commands
+- Provider switching is disabled per request to enforce free-tier models only.
 
 Category 2: Live Website Sync & Diagnostics
 1. ?: Display this command category guide and current active engine
