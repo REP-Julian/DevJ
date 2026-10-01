@@ -138,6 +138,8 @@ async function runUnorouter({ prompt, system, imageBase64, mimeType, expectJson 
     const unorouterModels = imageBase64 ? [
         'qwen2.5-vl-7b-instruct-awq:free',
     ] : [
+        'gemini-3.6-flash:free',
+        'gpt-4o:free',
         'kimi-k3:free',
         'deepseek-v4-flash:free'
     ];
@@ -184,6 +186,10 @@ async function runUnorouter({ prompt, system, imageBase64, mimeType, expectJson 
 
             if (res.ok) {
                 const data = await res.json();
+                if (data.error) {
+                    lastError = new Error(`Unorouter API Error on ${model}: ${data.error.message || data.error.type || 'Unknown'}`);
+                    continue; // Proceed to next model failover
+                }
                 const text = data.choices?.[0]?.message?.content;
                 if (text) return { provider: `Unorouter (${model})`, text };
             } else {
