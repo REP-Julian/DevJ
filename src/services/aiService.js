@@ -112,6 +112,8 @@ const AI_KEYS = {
     unorouter: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_UNOROUTER_API_KEY) || ''
 };
 
+const GEMINI_API_KEY_STORAGE = 'gemini_api_key_v2';
+
 function parseJSONSafe(text, fallback = null) {
     if (!text) return fallback;
     try {

@@ -342,14 +342,25 @@ export const api = {
                 mergedProfile.description = initialPortfolioData.profile.description;
             }
 
+            // Purge broken old project Appwrite URLs for arrays
+            const cleanArrayUrls = (arr) => {
+                if (!Array.isArray(arr)) return arr;
+                return arr.map(item => {
+                    if (item.imageUrl) {
+                        item.imageUrl = filterOldAppwriteUrl(item.imageUrl) ? item.imageUrl : '';
+                    }
+                    return item;
+                });
+            };
+
             const merged = {
                 ...initialPortfolioData,
                 ...remoteData,
                 profile: mergedProfile,
                 skills: (remoteData.skills && remoteData.skills.length > 0) ? remoteData.skills : (local.skills || initialPortfolioData.skills || []),
-                achievements: (remoteData.achievements && remoteData.achievements.length > 0) ? remoteData.achievements : (local.achievements || initialPortfolioData.achievements || []),
-                projects: (remoteData.projects && remoteData.projects.length > 0) ? remoteData.projects : (local.projects || initialPortfolioData.projects || []),
-                hobbies: (remoteData.hobbies && remoteData.hobbies.length > 0) ? remoteData.hobbies : (local.hobbies || initialPortfolioData.hobbies || [])
+                achievements: (remoteData.achievements && remoteData.achievements.length > 0) ? cleanArrayUrls(remoteData.achievements) : (local.achievements || initialPortfolioData.achievements || []),
+                projects: (remoteData.projects && remoteData.projects.length > 0) ? cleanArrayUrls(remoteData.projects) : (local.projects || initialPortfolioData.projects || []),
+                hobbies: (remoteData.hobbies && remoteData.hobbies.length > 0) ? cleanArrayUrls(remoteData.hobbies) : (local.hobbies || initialPortfolioData.hobbies || [])
             };
 
             saveStoredPortfolio(merged);
