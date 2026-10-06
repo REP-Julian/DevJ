@@ -1,3 +1,28 @@
 {
-    "projectId": "6abdd627003d684522e5"
+    "projectId": "6abdd627003d684522e5",
+    "sites": [
+        {
+            "$id": "6abdd6a700048fb137e4",
+            "name": "DevJ",
+            "path": "sites/devj",
+            "framework": "react",
+            "logging": true,
+            "timeout": 30,
+            "buildRuntime": "node-22",
+            "adapter": "static",
+            "installCommand": "npm install",
+            "buildCommand": "npm run build",
+            "outputDirectory": "./dist",
+            "fallbackFile": "index.html",
+            "installationId": "6abdd6682129ed6fcd65",
+            "providerRepositoryId": "1353483292",
+            "providerBranch": "main",
+            "providerSilentMode": false,
+            "providerRootDirectory": "./",
+            "startCommand": "",
+            "buildSpecification": "s-2vcpu-2gb",
+            "runtimeSpecification": "s-0.5vcpu-512mb",
+            "deploymentRetention": 0
+        }
+    ]
 }

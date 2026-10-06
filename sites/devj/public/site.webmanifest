@@ -1,0 +1,34 @@
+{
+  "name": "DevJ Portfolio",
+  "short_name": "DevJ",
+  "description": "AI Engineer & Full-Stack Developer Portfolio",
+  "start_url": "https://devj.com/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "theme_color": "#1E1E24",
+  "background_color": "#FAFAFA",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='45' fill='%231E1E24'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23FACC15' font-weight='900' font-size='96' font-family='sans-serif'%3EDV%3C/text%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%231E1E24'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' fill='%23FACC15' font-weight='900' font-size='256' font-family='sans-serif'%3EDV%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["technology", "portfolio", "developer"],
+  "screenshots": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 540 720'%3E%3Crect width='540' height='720' fill='%23FAFAFA'/%3E%3Crect y='0' width='540' height='200' fill='%231E1E24'/%3E%3Ctext x='270' y='100' dominant-baseline='middle' text-anchor='middle' fill='%23FACC15' font-weight='900' font-size='48' font-family='sans-serif'%3EDevJ Portfolio%3C/text%3E%3C/svg%3E",
+      "sizes": "540x720",
+      "type": "image/svg+xml",
+      "form_factor": "narrow"
+    }
+  ]
+}

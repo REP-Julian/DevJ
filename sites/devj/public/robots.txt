@@ -1,0 +1,47 @@
+# SEO and Crawler Control
+
+# Allow all search engines
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /login
+Disallow: /uploads/
+Disallow: /*.json$
+Disallow: /.env
+Disallow: /.git
+
+# Specific rules for Google
+User-agent: Googlebot
+Allow: /
+
+# Specific rules for Bing
+User-agent: Bingbot
+Allow: /
+
+# Crawl delay (requests per second)
+Crawl-delay: 1
+
+# Sitemap location
+Sitemap: https://devj.com/sitemap.xml
+Sitemap: https://devj.com/sitemap-index.xml
+
+# Social media crawlers (high priority)
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+# Avoid crawling sensitive files
+User-agent: *
+Disallow: /private/
+Disallow: /secret/
+Disallow: /*.jpg$ # Prevent indexing individual images
+Disallow: /*.png$
+Disallow: /*.gif$

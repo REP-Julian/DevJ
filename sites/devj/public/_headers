@@ -1,0 +1,67 @@
+/*
+  # ========== SECURITY HEADERS ==========
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), camera=(), microphone=()
+  Content-Security-Policy: default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https: blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https: wss:;
+  
+  # ========== SEO HEADERS ==========
+  Access-Control-Allow-Origin: *
+  Cache-Control: no-cache, no-store, must-revalidate
+  
+  # ========== PERFORMANCE HEADERS ==========
+  Link: <https://fonts.googleapis.com>; rel=preconnect
+  Link: <https://fonts.gstatic.com>; rel=preconnect, crossorigin
+
+# ========== HTML FILES - Always Fresh ==========
+/index.html
+  Cache-Control: no-cache, no-store, must-revalidate
+  Content-Type: text/html; charset=utf-8
+
+# ========== JS/CSS - Aggressive Caching ==========
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# ========== IMAGES - Long Caching ==========
+/images/*
+  Cache-Control: public, max-age=31536000, immutable
+  
+/*.png
+  Cache-Control: public, max-age=31536000, immutable
+  Content-Type: image/png
+
+/*.jpg
+  Cache-Control: public, max-age=31536000, immutable
+  Content-Type: image/jpeg
+
+/*.svg
+  Cache-Control: public, max-age=31536000, immutable
+  Content-Type: image/svg+xml
+
+/*.webp
+  Cache-Control: public, max-age=31536000, immutable
+  Content-Type: image/webp
+
+# ========== FONTS - Permanent Caching ==========
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# ========== SEO FILES ==========
+/robots.txt
+  Content-Type: text/plain
+  Cache-Control: public, max-age=86400
+
+/sitemap.xml
+  Content-Type: application/xml
+  Cache-Control: public, max-age=86400
+
+/site.webmanifest
+  Content-Type: application/manifest+json
+  Cache-Control: public, max-age=86400
+
+# ========== API - No Caching ==========
+/api/*
+  Cache-Control: no-cache, no-store, must-revalidate
+  Content-Type: application/json

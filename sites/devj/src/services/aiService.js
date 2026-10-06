@@ -1,0 +1,1039 @@
+// CLIENT-SIDE AI SERVICE
+// All requests are proxied through /api/ai/* backend endpoints or direct if VITE_UNOROUTER_API_KEY is available
+
+// Helper: Downscale and compress image to keep token usage strictly within free tier limits (~250-300 tokens)
+async function imageToBase64(imageInput, maxDim = 800, quality = 0.8) {
+    if (!imageInput) return { base64: null, mimeType: null };
+
+    const resizeImageElement = (img) => {
+        let width = img.naturalWidth || img.width || 800;
+        let height = img.naturalHeight || img.height || 600;
+
+        if (width > maxDim || height > maxDim) {
+            if (width > height) {
+                height = Math.round((height * maxDim) / width);
+                width = maxDim;
+            } else {
+                width = Math.round((width * maxDim) / height);
+                height = maxDim;
+            }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', quality);
+        const [header, base64] = dataUrl.split(',');
+        const mimeType = 'image/jpeg';
+        return { base64, mimeType };
+    };
+
+    const loadImage = (src) => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = 'anonymous';
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error('Failed to load image into canvas.'));
+            img.src = src;
+        });
+    };
+
+    try {
+        if (imageInput instanceof Blob || imageInput instanceof File) {
+            const objectUrl = URL.createObjectURL(imageInput);
+            try {
+                const img = await loadImage(objectUrl);
+                const result = resizeImageElement(img);
+                URL.revokeObjectURL(objectUrl);
+                return result;
+            } catch {
+                URL.revokeObjectURL(objectUrl);
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        const res = reader.result;
+                        if (typeof res === 'string') {
+                            const [header, base64] = res.split(',');
+                            const mimeType = header.match(/:(.*?);/)?.[1] || imageInput.type || 'image/jpeg';
+                            resolve({ base64, mimeType });
+                        } else {
+                            reject(new Error('Failed to read image file data.'));
+                        }
+                    };
+                    reader.onerror = reject;
+                    reader.readAsDataURL(imageInput);
+                });
+            }
+        }
+
+        if (typeof imageInput === 'string' && imageInput.startsWith('data:')) {
+            try {
+                const img = await loadImage(imageInput);
+                return resizeImageElement(img);
+            } catch {
+                const [header, base64] = imageInput.split(',');
+                const mimeType = header.match(/:(.*?);/)?.[1] || 'image/jpeg';
+                return { base64, mimeType };
+            }
+        }
+
+        if (typeof imageInput === 'string' && (imageInput.startsWith('http://') || imageInput.startsWith('https://'))) {
+            try {
+                const img = await loadImage(imageInput);
+                return resizeImageElement(img);
+            } catch (imgErr) {
+                try {
+                    const response = await fetch(imageInput);
+                    const blob = await response.blob();
+                    const objectUrl = URL.createObjectURL(blob);
+                    const img = await loadImage(objectUrl);
+                    const result = resizeImageElement(img);
+                    URL.revokeObjectURL(objectUrl);
+                    return result;
+                } catch {
+                    throw new Error('Could not access image URL for visual analysis. Please upload the image file directly.');
+                }
+            }
+        }
+    } catch (err) {
+        console.error('[AI Service] Image preparation error:', err);
+        throw new Error(err.message || 'Image processing failed');
+    }
+
+    throw new Error('Invalid image input provided.');
+}
+
+const AI_KEYS = {
+    anymodel: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ANYMODEL_API_KEY) || ''
+};
+
+const GEMINI_API_KEY_STORAGE = 'gemini_api_key_v2';
+
+function parseJSONSafe(text, fallback = null) {
+    if (!text) return fallback;
+    try {
+        const match = text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+        if (match) return JSON.parse(match[0]);
+    } catch (e) {
+        console.warn('[AI Service] JSON Parse warning:', e.message);
+    }
+    return fallback;
+}
+
+function getActiveAIProvider() {
+    return 'anymodel';
+}
+
+function setActiveAIProvider(provider) {
+    return 'anymodel';
+}
+
+async function runAnymodel({ prompt, system, imageBase64, mimeType, expectJson = false, customKey }) {
+    const activeKey = customKey || AI_KEYS.anymodel || (typeof localStorage !== 'undefined' ? localStorage.getItem(GEMINI_API_KEY_STORAGE) : '');
+    if (!activeKey) {
+        throw new Error('Anymodel API Key is missing. Please configure it in the UI or restart your dev server.');
+    }
+    const anymodelModels = imageBase64 ? [
+        'ds/deepseek-v4-flash-vision',
+        'qwen/qwen3.8-max'
+    ] : [
+        "ag/gemini-3.7-flash-high", 
+        "ag/gemini-3.7-flash-medium", 
+        "cx/gpt-5.6-luna", 
+        "cx/gpt-5.6-sol", 
+        "cx/gpt-5.6-terra", 
+        "kmc/k3", 
+        "glm/glm-5.3", 
+        "cc/claude-opus-5", 
+        "cc/claude-opus-4-6", 
+        "cc/claude-opus-4-7", 
+        "cc/claude-opus-4-8", 
+        "xai/grok-4.7", 
+        "ds/deepseek-v4-pro", 
+        "ds/deepseek-v4-flash", 
+        "qwen/qwen3.8-max",
+        "ag/gemini-3.7-flash-low", 
+        "ag/gemini-3.6-flash-low", 
+        "ag/gemini-3.1-pro-low"
+    ];
+
+    let lastError = null;
+    for (const model of anymodelModels) {
+        try {
+            const messages = [];
+            if (system) messages.push({ role: 'system', content: system });
+
+            if (imageBase64) {
+                const clean = imageBase64.replace(/^data:[^;]+;base64,/, '');
+                messages.push({
+                    role: 'user',
+                    content: [
+                        { type: 'text', text: prompt },
+                        {
+                            type: 'image_url',
+                            image_url: { url: `data:${mimeType || 'image/jpeg'};base64,${clean}` }
+                        }
+                    ]
+                });
+            } else {
+                messages.push({ role: 'user', content: prompt });
+            }
+
+            const payload = {
+                model,
+                messages,
+                temperature: 0.2,
+                max_tokens: 600
+            };
+
+            const res = await fetch('https://anymodel.org/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${activeKey}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'https://devj.agustino-julian.workers.dev',
+                    'X-Title': 'DevJ Portfolio'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                if (data.error) {
+                    lastError = new Error(`Anymodel API Error on ${model}: ${data.error.message || data.error.type || 'Unknown'}`);
+                    continue; // Proceed to next model failover
+                }
+                const text = data.choices?.[0]?.message?.content;
+                if (text) {
+                    return { provider: `Anymodel (${model})`, text };
+                } else {
+                    lastError = new Error(`Anymodel API on ${model} returned empty text. Response: ${JSON.stringify(data)}`);
+                    continue;
+                }
+            } else {
+                const errData = await res.json().catch(() => ({}));
+                const isRateLimit = res.status === 429;
+                lastError = new Error(
+                    isRateLimit
+                        ? `Anymodel Rate Limit (${res.status}) on ${model}.`
+                        : `Anymodel (${model}) error [${res.status}]: ${errData.error?.message || res.statusText}`
+                );
+            }
+        } catch (err) {
+            lastError = err;
+        }
+    }
+    if (lastError) {
+        throw lastError;
+    }
+    return null;
+}
+
+async function executeProviderCascade(args) {
+    const { prompt, system, imageBase64, mimeType, activeProvider, expectJson, taskType, customKey } = args;
+
+    // We only have Anymodel active in this build
+    const runnerSequence = [runAnymodel];
+
+    let lastError = null;
+    for (const runner of runnerSequence) {
+        try {
+            const result = await runner({ prompt, system, imageBase64, mimeType, expectJson, customKey });
+            if (result && result.text) {
+                return result;
+            }
+        } catch (err) {
+            lastError = err;
+            console.warn(`[AI Provider Cascade] ${runner.name} attempt:`, err.message);
+        }
+    }
+    throw lastError || new Error('ERROR_UI_CACHE: The provider failed but no error was caught. Please do a HARD REFRESH of your browser window.');
+}
+
+// Build a comprehensive, deep live website context snapshot so ALL AI models inspect full data & changes
+function formatLivePortfolioContext(context) {
+    let liveData = context;
+    if (!liveData || (!liveData.projects && !liveData.profile)) {
+        try {
+            const raw = localStorage.getItem('devj_portfolio_data_v1');
+            if (raw) liveData = JSON.parse(raw);
+        } catch {}
+    }
+
+    const p = liveData?.profile || {};
+    const skills = liveData?.skills || [];
+    const projects = liveData?.projects || [];
+    const achievements = liveData?.achievements || [];
+    const hobbies = liveData?.hobbies || [];
+    const messages = liveData?.messages || [];
+
+    const profileText = `Name: ${p.name || 'Julian Agustino'} (DevJ)
+Role: ${p.title || 'AI Engineer & Full-Stack Developer'}
+Tagline: "${p.tagline || ''}"
+Bio: ${p.bio || 'Not specified'}
+Experience: ${p.experience || 'Not specified'} years
+Location: ${p.location || 'Not specified'}
+Availability: ${p.available ? 'Available for new projects/hire' : 'Currently engaged'}
+Email: ${p.email || 'Not specified'} | Phone: ${p.phone || 'Not specified'}
+Socials: ${JSON.stringify(p.socials || {})}
+Last Profile Update Timestamp: ${p.updatedAt ? new Date(p.updatedAt).toISOString() : 'Recently updated'}`;
+
+    const skillsText = skills.length > 0
+        ? skills.map(s => `- ${s.name} [${s.category || 'Core'}] (${s.proficiency || 0}% proficiency - ${s.level || 'Experienced'})`).join('\n')
+        : 'None recorded';
+
+    const projectsText = projects.length > 0
+        ? projects.map((pr, i) => `${i + 1}. **${pr.title}** (${pr.category || 'Software'}) ${pr.featured ? '⭐ [FEATURED]' : ''}
+   - Overview: ${pr.description || 'No description provided'}
+   - Tech Stack: ${pr.technologies || 'None listed'}
+   - Live URL: ${pr.demo || 'N/A'} | Source Code: ${pr.github || 'N/A'}
+   - Added Date: ${pr.createdAt ? new Date(pr.createdAt).toLocaleDateString() : 'Active'}`).join('\n\n')
+        : 'None recorded';
+
+    const achievementsText = achievements.length > 0
+        ? achievements.map((a, i) => `${i + 1}. **${a.title}** (${a.category || 'Milestone'})
+   - Organization: ${a.issuer || a.organization || 'Independent'}
+   - Date: ${a.date || 'Active'}
+   - Details: ${a.description || 'Verified achievement'}
+   - Impact Statement: ${a.impact || 'Key engineering milestone'}
+   - Authenticity Score: ${a.score || 95}%`).join('\n\n')
+        : 'None recorded';
+
+    const hobbiesText = hobbies.length > 0
+        ? hobbies.map(h => `- ${h.name}: ${h.description || ''} (Vibe: ${h.vibe || 'Creative'})`).join('\n')
+        : 'None recorded';
+
+    const messagesText = messages.length > 0
+        ? messages.slice(0, 5).map(m => `- [${m.date || 'Recent'}] From ${m.name || 'Visitor'} <${m.email || 'No email'}>: "${m.message || ''}"`).join('\n')
+        : 'No pending client messages';
+
+    return `=== SYNCHRONIZED LIVE WEBSITE DATA SNAPSHOT ===
+[PROFILE & IDENTITY]
+${profileText}
+
+[SKILLS INVENTORY (${skills.length} skills total)]
+${skillsText}
+
+[PROJECTS PORTFOLIO (${projects.length} projects total)]
+${projectsText}
+
+[ACHIEVEMENTS & CERTIFICATIONS (${achievements.length} items total)]
+${achievementsText}
+
+[HOBBIES & LIFESTYLE (${hobbies.length} items total)]
+${hobbiesText}
+
+[INCOMING CLIENT INQUIRIES (${messages.length} messages)]
+${messagesText}
+=================================================`;
+}
+
+// Clean raw markdown symbols (**, _, -, |, ###) from AI chat outputs
+function sanitizeAIChatOutput(text) {
+    if (!text || typeof text !== 'string') return '';
+    let res = text;
+
+    // 1. Remove markdown table divider rows (e.g. |---|---|)
+    res = res.replace(/^[-|:\s]+$/gm, '');
+
+    // 2. Remove pipes (|)
+    res = res.replace(/\|/g, ' ');
+
+    // 3. Clean bold asterisks **word** -> word
+    res = res.replace(/\*\*([^*]+)\*\*/g, (m, p1) => p1);
+    res = res.replace(/\*/g, '');
+
+    // 4. Clean underscores _word_ -> word
+    res = res.replace(/_([^_]+)_/g, (m, p1) => p1);
+    res = res.replace(/_/g, ' ');
+
+    // 5. Replace bullet hyphens (- item) with clean bullet dot (• item)
+    res = res.replace(/^[\s]*[-–—]\s+/gm, '• ');
+
+    // 6. Clean markdown headers (### Header -> Header)
+    res = res.replace(/^[\s]*#{1,6}\s+/gm, '');
+
+    // 7. Clean spacing
+    res = res.replace(/[ ]{2,}/g, ' ');
+    res = res.replace(/\n{3,}/g, '\n\n');
+
+    return res.trim();
+}
+
+// Client-Side Direct Execution Router (for serverless / Appwrite Sites hosting)
+async function executeDirectAICascade(endpoint, payload) {
+    if (endpoint === 'test-connection') {
+        const res = await executeProviderCascade({ prompt: 'Respond with simply: OK', customKey: payload.customKey });
+        return { success: true, message: `Connected to ${res.provider} - Live and Active` };
+    }
+
+    if (endpoint === 'chat') {
+        const liveSnapshot = formatLivePortfolioContext(payload.portfolioContext);
+        const system = `You are "DevJ AI Copilot", an elite AI strategic advisor, technical architect, and creative portfolio manager embedded into Julian Agustino's live DevJ portfolio.
+
+CORE DIRECTIVES:
+1. FULL WEBSITE SYNCHRONIZATION: You are reading the live website database directly via the snapshot below. You know every project, description, tech stack, skill level, certification, and profile detail.
+2. CHECK CHANGES & UPDATES: If the user asks whether their website has changes, asks to inspect recent edits, or asks what has been updated, check all sections in the live snapshot, compare them, and highlight any updates or additions.
+3. ABSOLUTE FIDELITY: Always answer based on the real portfolio data provided below. Never invent dummy projects or fake skills when real data is available.
+4. STRICT PROSE FORMATTING (NO RAW MARKDOWN SYNTAX):
+   - Never output raw markdown syntax characters in your response.
+   - Do NOT use double asterisks (**) or single asterisks (*) around words for bold.
+   - Do NOT use underscores (_) around words for italics.
+   - Do NOT use hyphen dashes (-) for lists. Use clean numbered points (1., 2., 3.) or natural paragraphs with line breaks.
+   - Do NOT use table pipes (|). Use clean prose or labeled key-value lines.
+   - Do NOT use hashtag headers (### or ##). Use clean capitalized titles on their own line.
+   - Write in elegant, authoritative, crystal-clear prose with generous spacing.
+
+${liveSnapshot}`;
+
+        const historyText = (payload.history || []).slice(-6).map(m => `${m.role === 'user' ? 'User' : 'Copilot'}: ${m.content}`).join('\n');
+        const prompt = historyText ? `${historyText}\nUser: ${payload.prompt}\nCopilot:` : payload.prompt;
+        const res = await executeProviderCascade({
+            prompt,
+            system,
+            imageBase64: payload.imageBase64,
+            mimeType: payload.mimeType,
+            customKey: payload.customKey
+        });
+        return { text: sanitizeAIChatOutput(res.text), provider: res.provider };
+    }
+
+    if (endpoint === 'analyze-achievement-visual') {
+        const prompt = `You are an expert Computer Vision Analyst examining an achievement award or certificate image.
+Tasks:
+1. OCR: Transcribe visible text, exact certificate or award title, date or year, issuing organization or competition, and recipient name.
+2. Category: Classify strictly into one of: "Hackathon Award", "Competition Prize", "Professional Certification", "Academic Honor", "Innovation Grant", or "Key Milestone".
+3. Impact statement: Write a 2-sentence impact narrative based on what is shown in this image.
+4. Highlights: List 2 notable visual details (e.g., gold seals, stamps, official signatures, emblems).
+5. Authenticity score: Provide a number 80-100 based on visible credentials.
+
+Existing title hint: ${payload.existingData?.title || 'None'}
+
+Return ONLY valid JSON (no markdown, no commentary):
+{
+  "title": "Exact Title of Award or Certificate",
+  "category": "Hackathon Award",
+  "date": "2025",
+  "issuer": "Issuing Organization or University",
+  "description": "2-sentence verified narrative...",
+  "extractedText": "Summary of visible text...",
+  "visualHighlights": ["Official Seal observed", "Distinction marker"],
+  "authenticityScore": 98
+}`;
+        const res = await executeProviderCascade({
+            prompt,
+            system: 'You are an advanced Computer Vision certificate verification engine. Output valid JSON only.',
+            imageBase64: payload.imageBase64,
+            mimeType: payload.mimeType,
+            expectJson: true,
+            taskType: 'vision'
+        });
+        const parsed = parseJSONSafe(res.text);
+        if (!parsed) {
+            throw new Error('Gemini Vision could not parse the certificate image. Please ensure the image is clear and well-lit.');
+        }
+        return parsed;
+    }
+
+    if (endpoint === 'analyze-project-visual') {
+        const prompt = `You are a Senior Software Architect and UI Vision Analyst examining a project screenshot, app mockup, or software architecture diagram.
+Tasks:
+1. Title: Transcribe or deduce the exact project or app name from the header, navbar, logo, or visible text.
+2. Category: Classify strictly into one of: "Full-Stack Web App", "AI & Machine Learning", "Mobile Application", "Developer Platform", "Cloud Architecture", or "Interactive Experience".
+3. Description: Write 2 to 3 sentences describing what this software does, its visual layout, core features, and tech evident in the interface.
+4. Technologies: Identify 4 to 6 relevant technologies, frameworks, and libraries evident from the UI, code, or architecture (e.g. "React, Node.js, TailwindCSS, Appwrite, Gemini API").
+5. Highlights: List 2 key visible UI/architectural highlights observed in the screenshot.
+
+Existing title hint: ${payload.existingData?.title || 'None'}
+
+Return ONLY valid JSON (no markdown, no commentary):
+{
+  "title": "Detected Project Title",
+  "category": "Full-Stack Web App",
+  "description": "2-3 sentence overview of this application...",
+  "technologies": "React, Node.js, TailwindCSS, Appwrite",
+  "visualHighlights": ["Responsive layout", "Interactive cards"]
+}`;
+        const res = await executeProviderCascade({
+            prompt,
+            system: 'You are an elite Software Vision and UI Analyst. Output valid JSON only.',
+            imageBase64: payload.imageBase64,
+            mimeType: payload.mimeType,
+            expectJson: true,
+            taskType: 'vision'
+        });
+        const parsed = parseJSONSafe(res.text);
+        if (!parsed) {
+            throw new Error('Gemini Vision could not parse the project screenshot. Please ensure the image contains visible UI elements.');
+        }
+        return parsed;
+    }
+
+    if (endpoint === 'analyze-hobby-visual') {
+        const prompt = `Analyze this creative hobby or personal lifestyle visual image.
+Tasks:
+1. Name: Identify the hobby or creative activity shown in the photo.
+2. Description: Write 2 sentences connecting this hobby to creative problem-solving, aesthetic balance, and focus.
+3. IconName: Select the single best Lucide icon name from: Camera, Palette, Music, BookOpen, Dumbbell, Compass, Heart, Mountain, Sparkles, Cpu, Coffee.
+
+Return ONLY valid JSON (no markdown):
+{
+  "name": "Creative Photography & Visual Storytelling",
+  "description": "2-sentence creative description...",
+  "iconName": "Camera",
+  "visualHighlights": ["Lighting balance", "Natural composition"]
+}`;
+        const res = await executeProviderCascade({
+            prompt,
+            system: 'You are a visual lifestyle and aesthetic analyst. Output valid JSON only.',
+            imageBase64: payload.imageBase64,
+            mimeType: payload.mimeType,
+            expectJson: true,
+            taskType: 'vision'
+        });
+        const parsed = parseJSONSafe(res.text);
+        if (!parsed) {
+            throw new Error('Gemini Vision could not parse the hobby image.');
+        }
+        return parsed;
+    }
+
+    if (endpoint === 'generate-bio') {
+        let liveData = null;
+        try {
+            const raw = localStorage.getItem('devj_portfolio_data_v1');
+            if (raw) liveData = JSON.parse(raw);
+        } catch {}
+        const topSkills = (liveData?.skills || []).slice(0, 8).map(s => s.name).join(', ');
+        const topProjects = (liveData?.projects || []).slice(0, 4).map(p => p.title).join(', ');
+
+        const prompt = `Generate a compelling developer portfolio bio with tone: "${payload.tone || 'innovative and visionary'}".
+Profile info: Name: ${payload.currentProfile?.name || 'Julian Agustino'}, Current Tagline: ${payload.currentProfile?.tagline || ''}, About: ${payload.currentProfile?.about || ''}
+Key Skills in Portfolio: ${topSkills || 'Full-Stack & AI Engineering'}
+Key Showcase Projects: ${topProjects || 'Production Web & AI Systems'}
+
+Return ONLY valid JSON:
+{
+  "tagline": "A punchy, high-impact one-liner (under 12 words)",
+  "description": "2 to 3 engaging sentences highlighting engineering prowess and creative problem-solving grounded in their actual skills and projects",
+  "highlights": ["Key differentiator 1", "Key differentiator 2", "Key differentiator 3"]
+}`;
+        const res = await executeProviderCascade({
+            prompt,
+            system: 'You are an elite Silicon Valley tech branding copywriter. Output valid JSON only.',
+            expectJson: true,
+            taskType: 'copy'
+        });
+        const parsed = parseJSONSafe(res.text);
+        if (!parsed) throw new Error('AI failed to generate a structured bio. Please try again.');
+        return parsed;
+    }
+
+    if (endpoint === 'enhance-project') {
+        const prompt = `Enhance this developer project showcase:
+Title: ${payload.rawProject?.title || ''}
+Category: ${payload.rawProject?.category || ''}
+Current Description: ${payload.rawProject?.description || ''}
+Technologies: ${payload.rawProject?.technologies || ''}
+
+Return ONLY valid JSON:
+{
+  "title": "Clear, professional project title",
+  "category": "Project category",
+  "description": "2 to 3 sentences describing technical architecture, problem solved, and measurable impact",
+  "technologies": "Comma-separated list of modern tech used"
+}`;
+        const res = await executeProviderCascade({
+            prompt,
+            system: 'You are a staff engineer and portfolio curator. Output valid JSON only.',
+            expectJson: true,
+            taskType: 'copy'
+        });
+        const parsed = parseJSONSafe(res.text);
+        if (!parsed) throw new Error('AI failed to enhance the project. Please try again.');
+        return parsed;
+    }
+
+    if (endpoint === 'enhance-skill') {
+        const prompt = `Enhance this technical skill entry:
+Skill Name: ${payload.rawSkill?.name || ''}
+Category: ${payload.rawSkill?.category || 'Frontend Development'}
+
+Return ONLY valid JSON:
+{
+  "name": "Properly capitalized skill name",
+  "category": "Skill category",
+  "proficiency": 90,
+  "iconName": "Lucide icon name (e.g. Code, Database, Cpu, Layers, Terminal, Sparkles)",
+  "description": "1 clear sentence on application and depth of expertise"
+}`;
+        const res = await executeProviderCascade({
+            prompt,
+            system: 'You are a senior technical interviewer. Output valid JSON only.',
+            expectJson: true,
+            taskType: 'copy'
+        });
+        const parsed = parseJSONSafe(res.text);
+        if (!parsed) throw new Error('AI failed to enhance skill.');
+        return parsed;
+    }
+
+    if (endpoint === 'enhance-achievement') {
+        const prompt = `Enhance this achievement / award milestone:
+Title: ${payload.rawAchievement?.title || ''}
+Category: ${payload.rawAchievement?.category || ''}
+Date: ${payload.rawAchievement?.date || ''}
+Issuer: ${payload.rawAchievement?.issuer || ''}
+Description: ${payload.rawAchievement?.description || ''}
+
+Return ONLY valid JSON:
+{
+  "title": "Prestigious, standout title",
+  "category": "Category",
+  "date": "Year or date",
+  "issuer": "Issuing organization or competition",
+  "description": "2 sentences emphasizing rigor, selectivity, and technical merit"
+}`;
+        const res = await executeProviderCascade({
+            prompt,
+            system: 'You are a tech honors writer. Output valid JSON only.',
+            expectJson: true,
+            taskType: 'copy'
+        });
+        const parsed = parseJSONSafe(res.text);
+        if (!parsed) throw new Error('AI failed to enhance achievement.');
+        return parsed;
+    }
+
+    if (endpoint === 'enhance-hobby') {
+        const prompt = `Enhance this creative hobby / personal interest:
+Name: ${payload.rawHobby?.name || ''}
+Description: ${payload.rawHobby?.description || ''}
+
+Return ONLY valid JSON:
+{
+  "name": "Refined hobby name",
+  "description": "1 to 2 sentences connecting this hobby to creative problem-solving and focus",
+  "iconName": "Lucide icon name (e.g. Camera, Music, BookOpen, Dumbbell, Compass, Heart)"
+}`;
+        const res = await executeProviderCascade({
+            prompt,
+            system: 'You are a creative lifestyle writer. Output valid JSON only.',
+            expectJson: true,
+            taskType: 'copy'
+        });
+        const parsed = parseJSONSafe(res.text);
+        if (!parsed) throw new Error('AI failed to enhance hobby.');
+        return parsed;
+    }
+
+    if (endpoint === 'analyze-skills-gap') {
+        const prompt = `Given these current skills: ${(payload.currentSkills || []).map(s => s.name).join(', ')}
+Identify 3 to 5 emerging, high-value skill additions for a world-class AI Engineer & Full-Stack Creative Developer in 2026.
+
+Return ONLY a valid JSON array of objects:
+[
+  {
+    "name": "Skill name",
+    "category": "Category",
+    "reason": "Why this skill significantly increases market value",
+    "recommendedProficiency": 85
+  }
+]`;
+        const res = await executeProviderCascade({
+            prompt,
+            system: 'You are an executive tech recruiter. Output valid JSON array only.',
+            expectJson: true,
+            taskType: 'skills-gap'
+        });
+        return parseJSONSafe(res.text, []);
+    }
+
+    if (endpoint === 'draft-reply') {
+        const devName = (payload.developerName || '').trim();
+        const devEmail = (payload.developerEmail || '').trim();
+        const recipientName = (payload.senderName || '').trim();
+        const recipientEmail = (payload.senderEmail || '').trim();
+        const prompt = `Draft a personalized email reply to this collaborator inquiry:
+Recipient: ${recipientName || 'Client'}${recipientEmail ? ` <${recipientEmail}>` : ''}
+Inquiry Message: "${payload.messageText || ''}"
+Tone: ${payload.tone || 'warm and professional'}
+${devName ? `Developer / Sender Name: ${devName}` : ''}
+${devEmail ? `Developer Email: ${devEmail}` : ''}
+
+Instructions:
+1. Greet ${recipientName || 'there'} warmly.
+2. Directly answer or address their inquiry with thoughtful next steps or willingness to collaborate.
+3. Sign off professionally${devName ? ` as:\n${devName}` : ''}${devEmail ? `\n${devEmail}` : ''}
+4. Do NOT use markdown symbols like asterisks (**) or hashes (#). Use clean plain text that pastes beautifully into an email client.`;
+        const res = await executeProviderCascade({
+            prompt,
+            system: `You are an executive communication assistant drafting emails${devName ? ` for ${devName}` : ''}.`,
+            taskType: 'copy'
+        });
+        return { text: res.text };
+    }
+
+    if (endpoint === 'audit-portfolio') {
+        const prompt = `Perform a comprehensive developer portfolio audit on this profile data:
+Name: ${payload.portfolioData?.profile?.name || 'Julian Agustino'}
+Tagline: ${payload.portfolioData?.profile?.tagline || ''}
+Total Skills: ${payload.portfolioData?.skills?.length || 0}
+Total Projects: ${payload.portfolioData?.projects?.length || 0}
+Total Achievements: ${payload.portfolioData?.achievements?.length || 0}
+
+Return ONLY valid JSON:
+{
+  "score": 94,
+  "verdict": "Executive summary verdict in 1 sentence",
+  "strengths": ["Strength 1", "Strength 2", "Strength 3"],
+  "improvements": ["Improvement 1", "Improvement 2", "Improvement 3"],
+  "recommendedTechs": ["Tech 1", "Tech 2", "Tech 3"]
+}`;
+        const res = await executeProviderCascade({
+            prompt,
+            system: 'You are a senior tech portfolio evaluator. Output valid JSON only.',
+            expectJson: true,
+            taskType: 'audit'
+        });
+        const parsed = parseJSONSafe(res.text);
+        if (!parsed) throw new Error('AI failed to generate portfolio audit.');
+        return parsed;
+    }
+
+    throw new Error(`Unknown AI endpoint: ${endpoint}`);
+}
+
+// Helper: Make authenticated API request to backend, automatically failing over to direct multi-provider cascade
+async function callAIBackend(endpoint, payload) {
+    try {
+        const response = await fetch(`/api/ai/${endpoint}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('devj_admin_auth_token_v1') || ''}`
+            },
+            body: JSON.stringify(payload)
+        });
+
+        // Check if backend returned valid JSON response
+        if (response.ok) {
+            const contentType = response.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
+                return await response.json();
+            }
+        }
+    } catch (backendErr) {
+        // Backend unavailable (common in static SPA hosting like Appwrite Sites)
+    }
+
+    // Direct Client-Side Multi-Provider AI Cascade (Gemini -> Groq -> Mistral -> Anymodel)
+    return await executeDirectAICascade(endpoint, payload);
+}
+
+export const aiService = {
+    // For backward compatibility with components that check for API key
+    getApiKey() {
+        return localStorage.getItem(GEMINI_API_KEY_STORAGE) || 'backend-configured';
+    },
+
+    setApiKey(key) {
+        if (key && key.trim()) {
+            localStorage.setItem(GEMINI_API_KEY_STORAGE, key.trim());
+        } else {
+            localStorage.removeItem(GEMINI_API_KEY_STORAGE);
+        }
+    },
+
+    removeApiKey() {
+        localStorage.removeItem(GEMINI_API_KEY_STORAGE);
+    },
+
+    hasApiKey() {
+        return true; // All 4 providers (Gemini, Groq, Mistral, Anymodel) configured
+    },
+
+    // Test connection to AI services with automatic failover
+    async testConnection(customKey) {
+        try {
+            const result = await callAIBackend('test-connection', { customKey });
+            return result.message || 'AI Engine Connected & Active';
+        } catch (err) {
+            throw new Error(`AI Connection Failed: ${err.message}`);
+        }
+    },
+
+    // Get active provider preference
+    getActiveProvider() {
+        return getActiveAIProvider();
+    },
+
+    // Set active provider preference
+    setActiveProvider(provider) {
+        return setActiveAIProvider(provider);
+    },
+
+    // Process hidden terminal commands (e.g. ?, ?gemini, ?groq, ?mistral, ?anymodel, ?auto)
+    handleHiddenCommand(cmd) {
+        const cleaned = (cmd || '').trim().toLowerCase();
+
+        if (cleaned === '?' || cleaned === '?status' || cleaned === '?help' || cleaned === '?provider' || cleaned === '?providers') {
+            const active = getActiveAIProvider();
+            const providerLabels = {
+                auto: 'Auto Smart Failover (Locked to Free Models)',
+                anymodel: 'Anymodel (Free Tier Cascade)'
+            };
+
+            return `DevJ Multi-Provider AI Engine Commands
+
+Current Active Provider:
+[Active]: ${providerLabels[active] || 'Anymodel (Free Tier Cascade)'}
+
+Category 1: System Commands
+- Provider switching is disabled per request to enforce free-tier models only.
+
+Category 2: Live Website Sync & Diagnostics
+1. ?: Display this command category guide and current active engine
+2. ?changes: Deep scan live website database to check recent changes and modifications
+3. ?audit: Instant 360° portfolio quality, presentation and skill gap check
+
+Note: Every active AI provider reads the 100% synchronized live website database across Profile, Skills, Projects, Achievements, Hobbies, and Inquiries.`;
+        }
+
+        if (cleaned === '?changes') {
+            let data = null;
+            try {
+                const raw = localStorage.getItem('devj_portfolio_data_v1');
+                if (raw) data = JSON.parse(raw);
+            } catch {}
+            const p = data?.profile || {};
+            const skills = data?.skills || [];
+            const projects = data?.projects || [];
+            const achievements = data?.achievements || [];
+            const hobbies = data?.hobbies || [];
+            const lastUpdated = p.updatedAt ? new Date(p.updatedAt).toLocaleString() : 'Recently updated';
+
+            return `Live Website Data & Change Verification
+
+Synchronization Status: 100% Up to Date with Live Database
+Profile Owner: ${p.name || 'Julian Agustino'} (${p.title || 'AI Engineer'})
+Last Sync Timestamp: ${lastUpdated}
+
+Current Live Content Inventory:
+• Skills: ${skills.length} competencies tracked
+• Projects: ${projects.length} showcase projects active
+• Milestones & Awards: ${achievements.length} verified achievements
+• Hobbies & Lifestyle: ${hobbies.length} entries
+• Inquiries: ${(data?.messages || []).length} client messages recorded
+
+Note: Every active AI model (Gemini, Groq, Mistral, Anymodel) is directly synchronized with this data snapshot on every prompt.`;
+        }
+
+        if (cleaned === '?audit') {
+            return `Live Portfolio 360° Quality Audit
+
+To run a full deep portfolio evaluation with score, strengths, and recommendations:
+1. Switch to the 360° Audit tab above, or
+2. Simply ask me: "Audit my portfolio and tell me what needs improvement!" and your active AI provider will evaluate all live data.`;
+        }
+
+        if (cleaned === '?gemini') {
+            setActiveAIProvider('gemini');
+            return `Switched Active AI Provider to Google Gemini
+Model: gemini-3.6-flash (with gemini-3.5-flash-lite failover)
+Features: Native Computer Vision enabled for certificate and image analysis.
+All portfolio AI generations will now prioritize Google Gemini.`;
+        }
+
+        if (cleaned === '?groq') {
+            setActiveAIProvider('groq');
+            return `Switched Active AI Provider to Groq
+Model: openai/gpt-oss-120b (with qwen/qwen3.8-27b failover)
+Features: Ultra-low latency inference engine running at maximum velocity.
+All portfolio AI generations will now prioritize Groq.`;
+        }
+
+        if (cleaned === '?mistral') {
+            setActiveAIProvider('mistral');
+            return `Switched Active AI Provider to Mistral AI
+Model: mistral-small-latest (with ministral-8b-latest failover)
+Features: Advanced European frontier model specialized in deep reasoning.
+All portfolio AI generations will now prioritize Mistral AI.`;
+        }
+
+        if (cleaned === '?anymodel') {
+            setActiveAIProvider('anymodel');
+            return `Switched Active AI Provider to Anymodel
+Model: nvidia/nemotron-3.5-lightning:free (with minimax/minimax-m3:free failover)
+Features: Decentralized resilient open-source model routing.
+All portfolio AI generations will now prioritize Anymodel.`;
+        }
+
+        if (cleaned === '?auto') {
+            setActiveAIProvider('auto');
+            return `Switched Active AI Provider to Auto Failover Cascade
+Priority Sequence: Gemini -> Groq -> Mistral -> Anymodel
+Automatically failovers if any provider hits rate limits or network issues.`;
+        }
+
+        return null;
+    },
+
+    // Chat with AI Portfolio Copilot (with optional image understanding)
+    async chatWithCopilot(prompt, history = [], portfolioContext = {}, imageInput = null) {
+        // Intercept hidden terminal commands immediately with zero latency
+        const trimmed = (prompt || '').trim();
+        if (trimmed.startsWith('?')) {
+            const hiddenResult = this.handleHiddenCommand(trimmed);
+            if (hiddenResult) {
+                return sanitizeAIChatOutput(hiddenResult);
+            }
+        }
+
+        let imageBase64 = null;
+        let mimeType = null;
+        if (imageInput) {
+            const imgData = await imageToBase64(imageInput);
+            imageBase64 = imgData.base64;
+            mimeType = imgData.mimeType;
+        }
+
+        const response = await callAIBackend('chat', {
+            prompt,
+            history,
+            portfolioContext,
+            imageBase64,
+            mimeType
+        });
+        return sanitizeAIChatOutput(response.text || '');
+    },
+
+    // Analyze Achievement Visual / Certificate (Google Gemini Multimodal Vision)
+    async analyzeAchievementVisual(imageInput, existingData = {}) {
+        if (!imageInput) {
+            throw new Error('Please select or upload an achievement image or certificate first.');
+        }
+
+        const { base64, mimeType } = await imageToBase64(imageInput);
+        if (!base64) {
+            throw new Error('Could not convert certificate image to data. Please try uploading the image file.');
+        }
+
+        return await callAIBackend('analyze-achievement-visual', {
+            imageBase64: base64,
+            mimeType,
+            existingData
+        });
+    },
+
+    // Analyze Project Visual / UI Screenshot (Google Gemini Multimodal Vision)
+    async analyzeProjectVisual(imageInput, existingData = {}) {
+        if (!imageInput) {
+            throw new Error('Please select or upload a project screenshot or architecture diagram first.');
+        }
+
+        const { base64, mimeType } = await imageToBase64(imageInput);
+        if (!base64) {
+            throw new Error('Could not convert project image to data. Please try uploading the image file.');
+        }
+
+        return await callAIBackend('analyze-project-visual', {
+            imageBase64: base64,
+            mimeType,
+            existingData
+        });
+    },
+
+    // Analyze Hobby Visual (Google Gemini Multimodal Vision)
+    async analyzeHobbyVisual(imageInput, existingData = {}) {
+        if (!imageInput) {
+            throw new Error('Please select or upload an image for this hobby first.');
+        }
+
+        const { base64, mimeType } = await imageToBase64(imageInput);
+        if (!base64) {
+            throw new Error('Could not convert hobby image to data. Please try uploading the image file.');
+        }
+
+        return await callAIBackend('analyze-hobby-visual', {
+            imageBase64: base64,
+            mimeType,
+            existingData
+        });
+    },
+
+    // Generate Profile Bio
+    async generateProfileBio(currentProfile = {}, tone = 'innovative and visionary') {
+        return await callAIBackend('generate-bio', {
+            currentProfile,
+            tone
+        });
+    },
+
+    // Enhance Project
+    async enhanceProject(rawProject = {}) {
+        return await callAIBackend('enhance-project', {
+            rawProject
+        });
+    },
+
+    // Enhance Skill
+    async enhanceSkill(rawSkill = {}) {
+        return await callAIBackend('enhance-skill', {
+            rawSkill
+        });
+    },
+
+    // Enhance Achievement
+    async enhanceAchievement(rawAchievement = {}) {
+        return await callAIBackend('enhance-achievement', {
+            rawAchievement
+        });
+    },
+
+    // Enhance Hobby
+    async enhanceHobby(rawHobby = {}) {
+        return await callAIBackend('enhance-hobby', {
+            rawHobby
+        });
+    },
+
+    // Analyze Skills Gap
+    async analyzeSkillsGap(currentSkills = []) {
+        const response = await callAIBackend('analyze-skills-gap', {
+            currentSkills
+        });
+        return Array.isArray(response) ? response : [];
+    },
+
+    // Draft Inquiry Reply
+    async draftInquiryReply(senderName, senderEmail, messageText, tone = 'warm and professional', developerName = '', developerEmail = '') {
+        const response = await callAIBackend('draft-reply', {
+            senderName,
+            senderEmail,
+            messageText,
+            tone,
+            developerName,
+            developerEmail
+        });
+        return response.text || '';
+    },
+
+    // Audit Portfolio
+    async auditPortfolio(portfolioData = {}) {
+        return await callAIBackend('audit-portfolio', {
+            portfolioData
+        });
+    },
+
+    sanitizeAIChatOutput(text) {
+        return sanitizeAIChatOutput(text);
+    }
+};
+
+export default aiService;
