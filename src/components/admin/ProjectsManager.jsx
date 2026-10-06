@@ -137,36 +137,7 @@ export const ProjectsManager = ({ projects = [], onUpdated }) => {
                         <h3 className="font-extrabold text-sm text-charcoal-900">
                             {isCreating ? 'Create Project' : 'Edit Project'}
                         </h3>
-                        <button
-                            type="button"
-                            onClick={async () => {
-                                if (!formData.title.trim()) {
-                                    notify.error('Please enter a project title or keywords first', 'Missing Title');
-                                    return;
-                                }
-                                setAiLoading(true);
-                                try {
-                                    const res = await aiService.enhanceProject(formData);
-                                    setFormData(prev => ({
-                                        ...prev,
-                                        title: res.title || prev.title,
-                                        category: res.category || prev.category,
-                                        description: res.description || prev.description,
-                                        technologies: res.technologies || prev.technologies,
-                                    }));
-                                    notify.success('Project details and tech stack enhanced with AI!', 'AI Polish Complete');
-                                } catch (e) {
-                                    notify.error(e.message || 'AI generation failed', 'Enhance Failed');
-                                } finally {
-                                    setAiLoading(false);
-                                }
-                            }}
-                            disabled={aiLoading}
-                            className="px-3 py-1 rounded-xl bg-devyellow-100 hover:bg-devyellow-200 text-devorange-600 border border-devyellow-300 text-xs font-extrabold flex items-center gap-1.5 transition-all hover:scale-105 active:scale-95"
-                        >
-                            {aiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 text-devyellow-600 fill-devyellow-400" />}
-                            <span>{aiLoading ? 'Enhancing with Gemini...' : 'AI Auto-Fill / Enhance'}</span>
-                        </button>
+
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
