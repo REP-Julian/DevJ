@@ -109,7 +109,7 @@ async function imageToBase64(imageInput, maxDim = 800, quality = 0.8) {
 }
 
 const AI_KEYS = {
-    unorouter: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_UNOROUTER_API_KEY) || ''
+    anymodel: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ANYMODEL_API_KEY) || ''
 };
 
 const GEMINI_API_KEY_STORAGE = 'gemini_api_key_v2';
@@ -126,29 +126,44 @@ function parseJSONSafe(text, fallback = null) {
 }
 
 function getActiveAIProvider() {
-    return 'unorouter';
+    return 'anymodel';
 }
 
 function setActiveAIProvider(provider) {
-    return 'unorouter';
+    return 'anymodel';
 }
 
-async function runUnorouter({ prompt, system, imageBase64, mimeType, expectJson = false, customKey }) {
-    const activeKey = customKey || AI_KEYS.unorouter || (typeof localStorage !== 'undefined' ? localStorage.getItem(GEMINI_API_KEY_STORAGE) : '');
+async function runAnymodel({ prompt, system, imageBase64, mimeType, expectJson = false, customKey }) {
+    const activeKey = customKey || AI_KEYS.anymodel || (typeof localStorage !== 'undefined' ? localStorage.getItem(GEMINI_API_KEY_STORAGE) : '');
     if (!activeKey) {
-        throw new Error('Unorouter API Key is missing. Please configure it in the UI or restart your dev server.');
+        throw new Error('Anymodel API Key is missing. Please configure it in the UI or restart your dev server.');
     }
-    const unorouterModels = imageBase64 ? [
-        'qwen2.5-vl-7b-instruct-awq:free',
+    const anymodelModels = imageBase64 ? [
+        'ds/deepseek-v4-flash-vision',
+        'qwen/qwen3.8-max'
     ] : [
-        'gemini-3.6-flash:free',
-        'gpt-4o:free',
-        'kimi-k3:free',
-        'deepseek-v4-flash:free'
+        "ag/gemini-3.7-flash-high", 
+        "ag/gemini-3.7-flash-medium", 
+        "cx/gpt-5.6-luna", 
+        "cx/gpt-5.6-sol", 
+        "cx/gpt-5.6-terra", 
+        "kmc/k3", 
+        "glm/glm-5.3", 
+        "cc/claude-opus-5", 
+        "cc/claude-opus-4-6", 
+        "cc/claude-opus-4-7", 
+        "cc/claude-opus-4-8", 
+        "xai/grok-4.7", 
+        "ds/deepseek-v4-pro", 
+        "ds/deepseek-v4-flash", 
+        "qwen/qwen3.8-max",
+        "ag/gemini-3.7-flash-low", 
+        "ag/gemini-3.6-flash-low", 
+        "ag/gemini-3.1-pro-low"
     ];
 
     let lastError = null;
-    for (const model of unorouterModels) {
+    for (const model of anymodelModels) {
         try {
             const messages = [];
             if (system) messages.push({ role: 'system', content: system });
@@ -176,7 +191,7 @@ async function runUnorouter({ prompt, system, imageBase64, mimeType, expectJson 
                 max_tokens: 600
             };
 
-            const res = await fetch('https://api.unorouter.com/v1/chat/completions', {
+            const res = await fetch('https://anymodel.org/v1/chat/completions', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${activeKey}`,
@@ -190,14 +205,14 @@ async function runUnorouter({ prompt, system, imageBase64, mimeType, expectJson 
             if (res.ok) {
                 const data = await res.json();
                 if (data.error) {
-                    lastError = new Error(`Unorouter API Error on ${model}: ${data.error.message || data.error.type || 'Unknown'}`);
+                    lastError = new Error(`Anymodel API Error on ${model}: ${data.error.message || data.error.type || 'Unknown'}`);
                     continue; // Proceed to next model failover
                 }
                 const text = data.choices?.[0]?.message?.content;
                 if (text) {
-                    return { provider: `Unorouter (${model})`, text };
+                    return { provider: `Anymodel (${model})`, text };
                 } else {
-                    lastError = new Error(`Unorouter API on ${model} returned empty text. Response: ${JSON.stringify(data)}`);
+                    lastError = new Error(`Anymodel API on ${model} returned empty text. Response: ${JSON.stringify(data)}`);
                     continue;
                 }
             } else {
@@ -205,8 +220,8 @@ async function runUnorouter({ prompt, system, imageBase64, mimeType, expectJson 
                 const isRateLimit = res.status === 429;
                 lastError = new Error(
                     isRateLimit
-                        ? `Unorouter Rate Limit (${res.status}) on ${model}.`
-                        : `Unorouter (${model}) error [${res.status}]: ${errData.error?.message || res.statusText}`
+                        ? `Anymodel Rate Limit (${res.status}) on ${model}.`
+                        : `Anymodel (${model}) error [${res.status}]: ${errData.error?.message || res.statusText}`
                 );
             }
         } catch (err) {
@@ -222,8 +237,8 @@ async function runUnorouter({ prompt, system, imageBase64, mimeType, expectJson 
 async function executeProviderCascade(args) {
     const { prompt, system, imageBase64, mimeType, activeProvider, expectJson, taskType, customKey } = args;
 
-    // We only have Unorouter active in this build
-    const runnerSequence = [runUnorouter];
+    // We only have Anymodel active in this build
+    const runnerSequence = [runAnymodel];
 
     let lastError = null;
     for (const runner of runnerSequence) {
@@ -717,7 +732,7 @@ async function callAIBackend(endpoint, payload) {
         // Backend unavailable (common in static SPA hosting like Appwrite Sites)
     }
 
-    // Direct Client-Side Multi-Provider AI Cascade (Gemini -> Groq -> Mistral -> Unorouter)
+    // Direct Client-Side Multi-Provider AI Cascade (Gemini -> Groq -> Mistral -> Anymodel)
     return await executeDirectAICascade(endpoint, payload);
 }
 
@@ -740,7 +755,7 @@ export const aiService = {
     },
 
     hasApiKey() {
-        return true; // All 4 providers (Gemini, Groq, Mistral, Unorouter) configured
+        return true; // All 4 providers (Gemini, Groq, Mistral, Anymodel) configured
     },
 
     // Test connection to AI services with automatic failover
@@ -763,7 +778,7 @@ export const aiService = {
         return setActiveAIProvider(provider);
     },
 
-    // Process hidden terminal commands (e.g. ?, ?gemini, ?groq, ?mistral, ?unorouter, ?auto)
+    // Process hidden terminal commands (e.g. ?, ?gemini, ?groq, ?mistral, ?anymodel, ?auto)
     handleHiddenCommand(cmd) {
         const cleaned = (cmd || '').trim().toLowerCase();
 
@@ -771,13 +786,13 @@ export const aiService = {
             const active = getActiveAIProvider();
             const providerLabels = {
                 auto: 'Auto Smart Failover (Locked to Free Models)',
-                unorouter: 'Unorouter (Free Tier Cascade)'
+                anymodel: 'Anymodel (Free Tier Cascade)'
             };
 
             return `DevJ Multi-Provider AI Engine Commands
 
 Current Active Provider:
-[Active]: ${providerLabels[active] || 'Unorouter (Free Tier Cascade)'}
+[Active]: ${providerLabels[active] || 'Anymodel (Free Tier Cascade)'}
 
 Category 1: System Commands
 - Provider switching is disabled per request to enforce free-tier models only.
@@ -816,7 +831,7 @@ Current Live Content Inventory:
 • Hobbies & Lifestyle: ${hobbies.length} entries
 • Inquiries: ${(data?.messages || []).length} client messages recorded
 
-Note: Every active AI model (Gemini, Groq, Mistral, Unorouter) is directly synchronized with this data snapshot on every prompt.`;
+Note: Every active AI model (Gemini, Groq, Mistral, Anymodel) is directly synchronized with this data snapshot on every prompt.`;
         }
 
         if (cleaned === '?audit') {
@@ -851,18 +866,18 @@ Features: Advanced European frontier model specialized in deep reasoning.
 All portfolio AI generations will now prioritize Mistral AI.`;
         }
 
-        if (cleaned === '?unorouter') {
-            setActiveAIProvider('unorouter');
-            return `Switched Active AI Provider to Unorouter
+        if (cleaned === '?anymodel') {
+            setActiveAIProvider('anymodel');
+            return `Switched Active AI Provider to Anymodel
 Model: nvidia/nemotron-3.5-lightning:free (with minimax/minimax-m3:free failover)
 Features: Decentralized resilient open-source model routing.
-All portfolio AI generations will now prioritize Unorouter.`;
+All portfolio AI generations will now prioritize Anymodel.`;
         }
 
         if (cleaned === '?auto') {
             setActiveAIProvider('auto');
             return `Switched Active AI Provider to Auto Failover Cascade
-Priority Sequence: Gemini -> Groq -> Mistral -> Unorouter
+Priority Sequence: Gemini -> Groq -> Mistral -> Anymodel
 Automatically failovers if any provider hits rate limits or network issues.`;
         }
 

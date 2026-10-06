@@ -3,12 +3,12 @@ import { authenticateToken } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// ✅ Unorouter API Key Configuration
-const UNOROUTER_API_KEY = process.env.UNOROUTER_API_KEY || process.env.VITE_UNOROUTER_API_KEY || '';
+// ✅ Anymodel API Key Configuration
+const ANYMODEL_API_KEY = process.env.ANYMODEL_API_KEY || process.env.VITE_ANYMODEL_API_KEY || '';
 
-// Helper: Execute generate with Unorouter
+// Helper: Execute generate with Anymodel
 async function executeGenerate(payload) {
-    if (!UNOROUTER_API_KEY) throw new Error('Unorouter API key not configured.');
+    if (!ANYMODEL_API_KEY) throw new Error('Anymodel API key not configured.');
     let hasImage = false;
     const messages = [];
 
@@ -44,38 +44,79 @@ async function executeGenerate(payload) {
         }
     }
 
-    const payloadData = {
-        model: hasImage ? 'qwen2.5-vl-7b-instruct-awq:free' : 'kimi-k3:free',
-        messages,
-    };
-    if (payload.config?.responseMimeType === 'application/json') {
-        payloadData.response_format = { type: 'json_object' };
-    }
+    const anymodelModels = hasImage ? [
+        'ds/deepseek-v4-flash-vision',
+        'qwen/qwen3.8-max'
+    ] : [
+        "ag/gemini-3.7-flash-high", 
+        "ag/gemini-3.7-flash-medium", 
+        "cx/gpt-5.6-luna", 
+        "cx/gpt-5.6-sol", 
+        "cx/gpt-5.6-terra", 
+        "kmc/k3", 
+        "glm/glm-5.3", 
+        "cc/claude-opus-5", 
+        "cc/claude-opus-4-6", 
+        "cc/claude-opus-4-7", 
+        "cc/claude-opus-4-8", 
+        "xai/grok-4.7", 
+        "ds/deepseek-v4-pro", 
+        "ds/deepseek-v4-flash", 
+        "qwen/qwen3.8-max",
+        "ag/gemini-3.7-flash-low", 
+        "ag/gemini-3.6-flash-low", 
+        "ag/gemini-3.1-pro-low"
+    ];
 
-    const res = await fetch('https://api.unorouter.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${UNOROUTER_API_KEY}`,
-            'Content-Type': 'application/json',
-            'HTTP-Referer': 'https://devj.agustino-julian.workers.dev',
-            'X-Title': 'DevJ Portfolio'
-        },
-        body: JSON.stringify(payloadData)
-    });
+    let lastError = null;
+    
+    for (const model of anymodelModels) {
+        try {
+            const payloadData = {
+                model: model,
+                messages,
+            };
+            if (payload.config?.responseMimeType === 'application/json') {
+                payloadData.response_format = { type: 'json_object' };
+            }
 
-    if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Unorouter error [${res.status}]: ${errText}`);
+            const res = await fetch('https://anymodel.org/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${ANYMODEL_API_KEY}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'https://devj.agustino-julian.workers.dev',
+                    'X-Title': 'DevJ Portfolio'
+                },
+                body: JSON.stringify(payloadData)
+            });
+
+            if (!res.ok) {
+                const errText = await res.text();
+                lastError = new Error(`Anymodel error [${res.status}] on ${model}: ${errText}`);
+                continue; // Try next model
+            }
+            
+            const d = await res.json();
+            if (d.error) {
+                lastError = new Error(`Anymodel API Error on ${model}: ${d.error.message || d.error.type || 'Unknown'}`);
+                continue; // Try next model
+            }
+            
+            return { text: d.choices?.[0]?.message?.content || '', provider: `anymodel (${model})` };
+        } catch (err) {
+            lastError = err;
+        }
     }
-    const d = await res.json();
-    return { text: d.choices?.[0]?.message?.content || '', provider: 'unorouter' };
+    
+    throw lastError || new Error('All models in the Anymodel cascade failed.');
 }
 
 // Test API Key connection
 router.post('/test-connection', authenticateToken, async (req, res) => {
     try {
-        if (!UNOROUTER_API_KEY) {
-            return res.status(400).json({ error: 'Unorouter API key not configured on server.' });
+        if (!ANYMODEL_API_KEY) {
+            return res.status(400).json({ error: 'Anymodel API key not configured on server.' });
         }
 
         const response = await executeGenerate({
@@ -93,8 +134,8 @@ router.post('/chat', authenticateToken, async (req, res) => {
     try {
         const { prompt, history = [], portfolioContext = {}, imageInput = null } = req.body;
 
-        if (!UNOROUTER_API_KEY) {
-            return res.status(400).json({ error: 'Unorouter API key not configured.' });
+        if (!ANYMODEL_API_KEY) {
+            return res.status(400).json({ error: 'Anymodel API key not configured.' });
         }
 
         const systemInstruction = `You are "DevJ AI Copilot", an elite AI assistant and creative strategist built into the portfolio CMS.
@@ -145,8 +186,8 @@ router.post('/analyze-achievement-visual', authenticateToken, async (req, res) =
     try {
         const { imageBase64, mimeType, existingData = {} } = req.body;
 
-        if (!UNOROUTER_API_KEY) {
-            return res.status(400).json({ error: 'Unorouter API key not configured.' });
+        if (!ANYMODEL_API_KEY) {
+            return res.status(400).json({ error: 'Anymodel API key not configured.' });
         }
 
         if (!imageBase64) {
@@ -206,8 +247,8 @@ router.post('/generate-bio', authenticateToken, async (req, res) => {
     try {
         const { currentProfile = {}, tone = 'innovative and visionary' } = req.body;
 
-        if (!UNOROUTER_API_KEY) {
-            return res.status(400).json({ error: 'Unorouter API key not configured.' });
+        if (!ANYMODEL_API_KEY) {
+            return res.status(400).json({ error: 'Anymodel API key not configured.' });
         }
 
         const prompt = `Rewrite this developer bio to sound ${tone}.
@@ -242,8 +283,8 @@ router.post('/enhance-project', authenticateToken, async (req, res) => {
     try {
         const { rawProject = {} } = req.body;
 
-        if (!UNOROUTER_API_KEY) {
-            return res.status(400).json({ error: 'Unorouter API key not configured.' });
+        if (!ANYMODEL_API_KEY) {
+            return res.status(400).json({ error: 'Anymodel API key not configured.' });
         }
 
         const prompt = `Generate a high-converting project summary for a portfolio.
@@ -280,8 +321,8 @@ router.post('/enhance-skill', authenticateToken, async (req, res) => {
     try {
         const { rawSkill = {} } = req.body;
 
-        if (!UNOROUTER_API_KEY) {
-            return res.status(400).json({ error: 'Unorouter API key not configured.' });
+        if (!ANYMODEL_API_KEY) {
+            return res.status(400).json({ error: 'Anymodel API key not configured.' });
         }
 
         const prompt = `Analyze this developer skill and return category, proficiency (0-100), icon, and description.
@@ -321,8 +362,8 @@ router.post('/enhance-achievement', authenticateToken, async (req, res) => {
     try {
         const { rawAchievement = {} } = req.body;
 
-        if (!UNOROUTER_API_KEY) {
-            return res.status(400).json({ error: 'Unorouter API key not configured.' });
+        if (!ANYMODEL_API_KEY) {
+            return res.status(400).json({ error: 'Anymodel API key not configured.' });
         }
 
         const prompt = `Polish this achievement for a portfolio.
@@ -361,8 +402,8 @@ router.post('/enhance-hobby', authenticateToken, async (req, res) => {
     try {
         const { rawHobby = {} } = req.body;
 
-        if (!UNOROUTER_API_KEY) {
-            return res.status(400).json({ error: 'Unorouter API key not configured.' });
+        if (!ANYMODEL_API_KEY) {
+            return res.status(400).json({ error: 'Anymodel API key not configured.' });
         }
 
         const prompt = `Create an engaging description for this developer's hobby.
@@ -396,8 +437,8 @@ router.post('/analyze-hobby-visual', authenticateToken, async (req, res) => {
     try {
         const { imageBase64, mimeType, existingData = {} } = req.body;
 
-        if (!UNOROUTER_API_KEY) {
-            return res.status(400).json({ error: 'Unorouter API key not configured.' });
+        if (!ANYMODEL_API_KEY) {
+            return res.status(400).json({ error: 'Anymodel API key not configured.' });
         }
 
         if (!imageBase64) {
@@ -448,8 +489,8 @@ router.post('/analyze-skills-gap', authenticateToken, async (req, res) => {
     try {
         const { currentSkills = [] } = req.body;
 
-        if (!UNOROUTER_API_KEY) {
-            return res.status(400).json({ error: 'Unorouter API key not configured.' });
+        if (!ANYMODEL_API_KEY) {
+            return res.status(400).json({ error: 'Anymodel API key not configured.' });
         }
 
         const prompt = `Given these developer skills:
@@ -489,8 +530,8 @@ router.post('/draft-reply', authenticateToken, async (req, res) => {
     try {
         const { senderName, senderEmail, messageText, tone = 'warm and professional', developerName, developerEmail } = req.body;
 
-        if (!UNOROUTER_API_KEY) {
-            return res.status(400).json({ error: 'Unorouter API key not configured.' });
+        if (!ANYMODEL_API_KEY) {
+            return res.status(400).json({ error: 'Anymodel API key not configured.' });
         }
 
         const devName = (developerName || '').trim() || 'Portfolio Author';
@@ -524,8 +565,8 @@ router.post('/audit-portfolio', authenticateToken, async (req, res) => {
     try {
         const { portfolioData = {} } = req.body;
 
-        if (!UNOROUTER_API_KEY) {
-            return res.status(400).json({ error: 'Unorouter API key not configured.' });
+        if (!ANYMODEL_API_KEY) {
+            return res.status(400).json({ error: 'Anymodel API key not configured.' });
         }
 
         const prompt = `Audit this developer portfolio and provide: overall score (0-100), 3 key strengths, 3 actionable improvements, and 3 recommended trending techs.
@@ -561,7 +602,7 @@ Return valid JSON (no markdown):
 
 // Health check - useful to verify server is running
 router.get('/health', (req, res) => {
-    const hasApiKey = !!UNOROUTER_API_KEY;
+    const hasApiKey = !!ANYMODEL_API_KEY;
     res.json({
         status: 'healthy',
         aiConfigured: hasApiKey,

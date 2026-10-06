@@ -46,7 +46,7 @@ export const AdminLayout = ({ children, activeTab, setActiveTab }) => {
     const providerBadge = activeProvider === 'gemini' ? 'Gemini' :
                           activeProvider === 'groq' ? 'Groq' :
                           activeProvider === 'mistral' ? 'Mistral' :
-                          activeProvider === 'unorouter' ? 'Unorouter' :
+                          activeProvider === 'anymodel' ? 'Anymodel' :
                           'Auto';
 
     const navItems = [

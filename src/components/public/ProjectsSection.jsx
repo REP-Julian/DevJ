@@ -17,7 +17,7 @@ export const ProjectsSection = ({ projects = [] }) => {
             id: '2',
             title: 'DevJ AI Studio & Multi-Provider CMS',
             category: 'Distributed AI Architecture',
-            description: 'Production Appwrite back-office engine orchestrating multi-provider LLMs (Gemini, Groq, Mistral, Unorouter) with Server-Sent Events (SSE) streaming, automated fallback routing, token budgeting, and zero-rebuild live portfolio updates.',
+            description: 'Production Appwrite back-office engine orchestrating multi-provider LLMs (Gemini, Groq, Mistral, Anymodel) with Server-Sent Events (SSE) streaming, automated fallback routing, token budgeting, and zero-rebuild live portfolio updates.',
             technologies: 'React, Node.js, Express, Appwrite Cloud, SSE Streaming, Google Gen AI SDK',
             imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
             githubUrl: 'https://github.com/REP-Julian/DevJ',
