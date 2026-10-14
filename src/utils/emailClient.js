@@ -212,12 +212,9 @@ export const sendDirectEmail = async ({
 
     const senderEmail = (fromEmail || getActiveSenderEmail()).trim();
 
-    let token = localStorage.getItem('devj_admin_auth_token_v1') || '';
+    const token = localStorage.getItem('devj_admin_auth_token_v2') || localStorage.getItem('devj_admin_auth_token_v1') || '';
     if (!token) {
-        token = `appwrite_session_${Date.now()}`;
-        try {
-            localStorage.setItem('devj_admin_auth_token_v1', token);
-        } catch {}
+        throw new Error('Admin authentication required to dispatch direct emails.');
     }
     const adminEmail = localStorage.getItem('devj_admin_email') || '';
 

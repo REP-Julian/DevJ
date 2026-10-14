@@ -4,19 +4,9 @@ import { account, databases, storage, APPWRITE_CONFIG, ID, Query } from './appwr
 const PORTFOLIO_STORAGE_KEY = 'devj_portfolio_data_v2';
 const MESSAGES_STORAGE_KEY = 'devj_contact_messages_v2';
 const AUTH_STORAGE_KEY = 'devj_admin_auth_token_v2';
-const ADMIN_PASSWORD_HASH_KEY = 'devj_admin_password_hash_v2';
 
-// Default Admin Credentials (can be configured in admin dashboard / Appwrite Auth)
+// Default Admin Email
 const DEFAULT_ADMIN_EMAIL = 'admin@devj.com';
-const DEFAULT_ADMIN_HASH = '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'; // sha256 for 'admin123'
-
-// Utility: SHA-256 Hasher
-async function sha256(message) {
-    const msgBuffer = new TextEncoder().encode(message);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-}
 
 export const getStoredPortfolio = () => {
     try {
@@ -384,97 +374,128 @@ export const api = {
     },
 
     login: async (email, password) => {
-        const cleanEmail = email.trim().toLowerCase();
+        const cleanEmail = (email || '').trim().toLowerCase();
+        if (!cleanEmail || !password) {
+            throw new Error('Please enter both email and password.');
+        }
 
-        // 1. Authenticate with Appwrite Auth
+        // 1. Authenticate with Express / Prisma Backend to acquire cryptographic JWT
+        let backendAuth = null;
+        let backendAuthError = null;
+        const authEndpoints = ['/api/auth/login', 'http://localhost:5000/api/auth/login', 'http://127.0.0.1:5000/api/auth/login'];
+
+        for (const ep of authEndpoints) {
+            try {
+                const res = await fetch(ep, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: cleanEmail, password }),
+                });
+
+                if (res.ok) {
+                    backendAuth = await res.json();
+                    break;
+                } else if (res.status === 401 || res.status === 400) {
+                    const errData = await res.json().catch(() => ({}));
+                    backendAuthError = errData.message || 'Invalid email or password.';
+                    break;
+                }
+            } catch {
+                // Backend not reachable on this endpoint, continue
+            }
+        }
+
+        if (backendAuthError) {
+            throw new Error(backendAuthError);
+        }
+
+        if (backendAuth && backendAuth.token) {
+            localStorage.setItem(AUTH_STORAGE_KEY, backendAuth.token);
+            localStorage.setItem('devj_admin_email', backendAuth.admin?.email || cleanEmail);
+
+            // Background Appwrite Auth synchronization if Appwrite is active
+            try {
+                if (typeof account.createEmailPasswordSession === 'function') {
+                    await account.createEmailPasswordSession(cleanEmail, password).catch(() => {});
+                }
+            } catch {}
+
+            return {
+                email: backendAuth.admin?.email || cleanEmail,
+                token: backendAuth.token,
+                admin: backendAuth.admin,
+            };
+        }
+
+        // 2. Fallback: Authenticate with Appwrite Cloud Auth if backend server is not running (e.g. static hosting)
         try {
-            // Delete any stale existing session first
             try {
                 await account.deleteSession('current');
-            } catch {
-                // Ignore if no existing session
-            }
+            } catch {}
 
             let session;
             if (typeof account.createEmailPasswordSession === 'function') {
                 session = await account.createEmailPasswordSession(cleanEmail, password);
             } else if (typeof account.createEmailSession === 'function') {
                 session = await account.createEmailSession(cleanEmail, password);
-            } else {
-                session = await account.createSession(cleanEmail, password);
             }
 
             const user = await account.get();
-            const token = session.$id || `appwrite_${Date.now()}`;
-            localStorage.setItem(AUTH_STORAGE_KEY, token);
-            localStorage.setItem('devj_admin_email', user.email);
-
-            return { email: user.email, token, user };
-        } catch (appwriteErr) {
-            console.warn('Appwrite Auth attempt notice:', appwriteErr);
-
-            // Handle invalid credentials error from Appwrite
-            if (appwriteErr.code === 401 || (appwriteErr.message && appwriteErr.message.toLowerCase().includes('invalid credential'))) {
-                throw new Error('Invalid email or password. Please verify your Appwrite admin credentials.');
-            }
-
-            // If user not found in Appwrite Auth on first setup, attempt initial account bootstrap
-            if (appwriteErr.code === 404 || (appwriteErr.message && appwriteErr.message.toLowerCase().includes('not found'))) {
-                try {
-                    await account.create(ID.unique(), cleanEmail, password, 'DevJ Admin');
-                    const newSession = typeof account.createEmailPasswordSession === 'function'
-                        ? await account.createEmailPasswordSession(cleanEmail, password)
-                        : await account.createEmailSession(cleanEmail, password);
-                    const newUser = await account.get();
-                    const token = newSession.$id || `appwrite_${Date.now()}`;
-                    localStorage.setItem(AUTH_STORAGE_KEY, token);
-                    localStorage.setItem('devj_admin_email', newUser.email);
-                    return { email: newUser.email, token, user: newUser };
-                } catch (regErr) {
-                    console.warn('Appwrite auto-bootstrap note:', regErr);
-                }
-            }
-
-            // Fallback for local offline development / initial admin credentials
-            const inputHash = await sha256(password);
-            const storedHash = localStorage.getItem(ADMIN_PASSWORD_HASH_KEY) || DEFAULT_ADMIN_HASH;
-            const storedEmail = localStorage.getItem('devj_admin_email') || DEFAULT_ADMIN_EMAIL;
-
-            if (
-                (cleanEmail === storedEmail.toLowerCase() || cleanEmail === DEFAULT_ADMIN_EMAIL) &&
-                (inputHash === storedHash || password === 'admin123' || password === 'admin')
-            ) {
-                const token = `appwrite_local_${Date.now()}_${Math.random().toString(36).substring(2)}`;
+            const token = session?.$id || '';
+            if (token) {
                 localStorage.setItem(AUTH_STORAGE_KEY, token);
-                localStorage.setItem('devj_admin_email', cleanEmail);
-                return { email: cleanEmail, token };
+                localStorage.setItem('devj_admin_email', user.email);
+                return { email: user.email, token, user };
             }
-
-            throw new Error(appwriteErr.message || 'Invalid email or password. Please check your credentials.');
+        } catch (appwriteErr) {
+            if (appwriteErr.code === 401 || (appwriteErr.message && appwriteErr.message.toLowerCase().includes('invalid credential'))) {
+                throw new Error('Invalid email or password.');
+            }
         }
+
+        throw new Error('Authentication failed. Please verify your credentials or server connection.');
     },
 
     verifyToken: async () => {
+        const token = localStorage.getItem(AUTH_STORAGE_KEY);
+        if (!token) return false;
+
+        // 1. Verify cryptographic JWT signature with backend
+        const verifyEndpoints = ['/api/auth/verify', 'http://localhost:5000/api/auth/verify', 'http://127.0.0.1:5000/api/auth/verify'];
+        for (const ep of verifyEndpoints) {
+            try {
+                const res = await fetch(ep, {
+                    headers: { 'Authorization': `Bearer ${token}` },
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.valid) return true;
+                } else if (res.status === 401 || res.status === 403) {
+                    localStorage.removeItem(AUTH_STORAGE_KEY);
+                    return false;
+                }
+            } catch {
+                // Server offline, check Appwrite next
+            }
+        }
+
+        // 2. Verify active Appwrite session if backend was unreachable
         try {
-            const timeoutPromise = new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('timeout')), 3000)
+            const timeoutPromise = new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('timeout')), 2500)
             );
             const user = await Promise.race([account.get(), timeoutPromise]);
             if (user && user.$id) return true;
-        } catch {
-            // Appwrite session inactive or timed out
-        }
+        } catch {}
 
-        // Check local token fallback
-        const token = localStorage.getItem(AUTH_STORAGE_KEY);
-        return Boolean(token && (token.startsWith('appwrite_') || token.length > 15));
+        return false;
     },
 
     logout: async () => {
         try {
             await account.deleteSession('current');
         } catch (e) {
-            console.warn('Appwrite logout note:', e);
+            // Appwrite session already cleared
         }
         localStorage.removeItem(AUTH_STORAGE_KEY);
     },
@@ -483,7 +504,7 @@ export const api = {
         const cleanEmail = (newEmail || '').trim().toLowerCase();
         let updatedInAppwrite = false;
 
-        // 1. Update in Appwrite Auth
+        // Update in Appwrite Auth if active
         try {
             if (newPassword && newPassword.trim()) {
                 await account.updatePassword(newPassword, oldPassword);
@@ -497,19 +518,9 @@ export const api = {
                 }
             }
         } catch (err) {
-            console.warn('Appwrite account update notice:', err);
-            const oldHash = await sha256(oldPassword);
-            const storedHash = localStorage.getItem(ADMIN_PASSWORD_HASH_KEY) || DEFAULT_ADMIN_HASH;
-            if (oldHash !== storedHash && oldPassword !== 'admin123' && oldPassword !== 'admin') {
-                throw new Error(err.message || 'Current password is incorrect.');
-            }
+            console.warn('Appwrite account update notice:', err.message);
         }
 
-        // 2. Update local cache
-        if (newPassword) {
-            const newHash = await sha256(newPassword);
-            localStorage.setItem(ADMIN_PASSWORD_HASH_KEY, newHash);
-        }
         if (cleanEmail) {
             localStorage.setItem('devj_admin_email', cleanEmail);
         }
@@ -673,7 +684,6 @@ export const api = {
             const formData = new FormData();
             formData.append('fileId', 'messages_data');
             formData.append('file', blob, 'messages-data.json');
-            formData.append('permissions[]', 'read("any")');
 
             try {
                 await fetch(
@@ -968,6 +978,10 @@ export const api = {
             let activeEs = null;
             let didFailover = false;
 
+            const token = localStorage.getItem(AUTH_STORAGE_KEY) || '';
+            const primaryUrl = token ? `/api/contact/stream?token=${encodeURIComponent(token)}` : '/api/contact/stream';
+            const failoverUrl = token ? `http://localhost:5000/api/contact/stream?token=${encodeURIComponent(token)}` : 'http://localhost:5000/api/contact/stream';
+
             const connectSSE = (url) => {
                 try {
                     const es = new EventSource(url);
@@ -990,10 +1004,10 @@ export const api = {
                         } catch {}
                     });
                     es.onerror = () => {
-                        if (!didFailover && url === '/api/contact/stream') {
+                        if (!didFailover && url === primaryUrl) {
                             didFailover = true;
                             try { es.close(); } catch {}
-                            activeEs = connectSSE('http://localhost:5000/api/contact/stream');
+                            activeEs = connectSSE(failoverUrl);
                         }
                     };
                     return es;
@@ -1002,7 +1016,7 @@ export const api = {
                 }
             };
 
-            activeEs = connectSSE('/api/contact/stream');
+            activeEs = connectSSE(primaryUrl);
             cleanups.push(() => {
                 if (activeEs) {
                     try { activeEs.close(); } catch {}

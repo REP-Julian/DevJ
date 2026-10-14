@@ -2,9 +2,16 @@ import express from 'express';
 import nodemailer from 'nodemailer';
 import prisma from '../utils/prisma.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { contactLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
-// Check whether Gmail SMTP credentials are configured on server
+
+// Helper: Basic email format validator
+const isValidEmail = (email) => {
+    return typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+};
+
+// Check whether Gmail SMTP credentials are configured on server (Admin only)
 router.get('/smtp-status', authenticateToken, (req, res) => {
     const hasEnvUser = Boolean(process.env.GMAIL_USER && process.env.GMAIL_USER.trim());
     const hasEnvPassword = Boolean(process.env.GMAIL_APP_PASSWORD && process.env.GMAIL_APP_PASSWORD.trim());
@@ -19,44 +26,33 @@ router.get('/smtp-status', authenticateToken, (req, res) => {
     res.json({
         configured: hasEnvUser && hasEnvPassword,
         hasEnvCredentials: hasEnvUser && hasEnvPassword,
-        userEmail: rawUser,
         userMasked: maskedUser,
-        replyToDefault: (process.env.OUTLOOK_USER || '').trim()
+        replyToDefault: (process.env.OUTLOOK_USER || '').trim(),
     });
 });
 
-// Direct In-App Email Dispatch (Gmail SMTP with Google App Password)
+// Direct In-App Email Dispatch (Gmail SMTP with verified server credentials only)
 router.post('/send-direct', authenticateToken, async (req, res) => {
     try {
-        const { to, subject, body, appPassword } = req.body;
+        const { to, subject, body } = req.body || {};
 
         if (!to || !subject || !body) {
             return res.status(400).json({ error: 'Recipient email, subject, and message body are required.' });
         }
 
-        // Collaborator replies route back to the user's primary/Outlook address
-        const replyToEmail = (req.body.fromEmail || req.body.replyTo || process.env.OUTLOOK_USER || '').trim();
-        const senderName = (req.body.fromName || process.env.OUTLOOK_SENDER_NAME || 'Julian Agustino').trim();
-
-        // Gmail credentials
-        const envUser = (process.env.GMAIL_USER || '').trim();
-        const envPassword = (process.env.GMAIL_APP_PASSWORD || '').trim().replace(/\s+/g, '');
-
-        const clientUser = (req.body.gmailUser || '').trim();
-        const clientPassword = (appPassword || '').trim().replace(/\s+/g, '');
-
-        const gmailUser = clientUser || envUser;
-        const initialPassword = clientPassword || envPassword;
-
-        if (!gmailUser) {
-            return res.status(400).json({
-                error: 'Gmail account address is required for direct sending. Please enter your Gmail address in settings.'
-            });
+        if (!isValidEmail(to)) {
+            return res.status(400).json({ error: 'A valid recipient email address is required.' });
         }
 
-        if (!initialPassword) {
+        const replyToEmail = (process.env.OUTLOOK_USER || process.env.GMAIL_USER || '').trim();
+        const senderName = (process.env.OUTLOOK_SENDER_NAME || 'Julian Agustino').trim();
+
+        const gmailUser = (process.env.GMAIL_USER || '').trim();
+        const gmailPassword = (process.env.GMAIL_APP_PASSWORD || '').trim().replace(/\s+/g, '');
+
+        if (!gmailUser || !gmailPassword) {
             return res.status(400).json({
-                error: 'A 16-character Google App Password is required. Generate one at myaccount.google.com/apppasswords and enter it in settings.'
+                error: 'Server email credentials are not configured in environment variables.',
             });
         }
 
@@ -64,57 +60,33 @@ router.post('/send-direct', authenticateToken, async (req, res) => {
             from: senderName ? `"${senderName}" <${gmailUser}>` : gmailUser,
             to: to.trim(),
             replyTo: replyToEmail || gmailUser,
-            subject: subject.trim(),
-            text: body.trim(),
+            subject: String(subject).trim().slice(0, 200),
+            text: String(body).trim().slice(0, 10000),
             headers: {
-                'X-Mailer': 'DevJ-Portfolio-DirectClient'
-            }
+                'X-Mailer': 'DevJ-Portfolio-DirectClient',
+            },
         };
 
-        let info;
-        try {
-            const transporter = nodemailer.createTransport({
-                service: 'gmail',
-                auth: {
-                    user: gmailUser,
-                    pass: initialPassword
-                }
-            });
-            info = await transporter.sendMail(mailOptions);
-        } catch (authAttemptErr) {
-            // If client password failed (e.g. stale client cache) and server has verified .env credentials, retry with .env
-            if (authAttemptErr.code === 'EAUTH' && envPassword && initialPassword !== envPassword) {
-                console.log('[Gmail SMTP Notice]: Client credentials rejected; retrying with verified server .env credentials...');
-                const retryTransporter = nodemailer.createTransport({
-                    service: 'gmail',
-                    auth: {
-                        user: envUser || gmailUser,
-                        pass: envPassword
-                    }
-                });
-                mailOptions.from = senderName ? `"${senderName}" <${envUser || gmailUser}>` : (envUser || gmailUser);
-                info = await retryTransporter.sendMail(mailOptions);
-            } else {
-                throw authAttemptErr;
-            }
-        }
+        const transporter = nodemailer.createTransport({
+            service: 'gmail',
+            auth: {
+                user: gmailUser,
+                pass: gmailPassword,
+            },
+        });
+
+        const info = await transporter.sendMail(mailOptions);
 
         return res.json({
             success: true,
             provider: 'gmail',
-            message: `Email delivered directly to ${to} via Gmail! Replies will route to ${replyToEmail || gmailUser}.`,
+            message: `Email delivered directly to ${to}! Replies route to ${replyToEmail || gmailUser}.`,
             messageId: info.messageId,
-            to: to.trim()
+            to: to.trim(),
         });
     } catch (err) {
-        console.error('[Gmail SMTP Error]:', err);
-        let errorMsg = err.message || 'Failed to dispatch email directly via Gmail.';
-        if (err.code === 'EAUTH' || errorMsg.includes('Invalid login') || errorMsg.includes('Username and Password not accepted') || errorMsg.includes('535-5.7.8')) {
-            errorMsg = 'Gmail Authentication Failed: Google rejected the login credentials. Please verify your Gmail address and ensure you are using a 16-character App Password generated at myaccount.google.com/apppasswords (with 2-Step Verification enabled).';
-        } else if (errorMsg.includes('basic authentication is disabled') || errorMsg.includes('535 5.7.139')) {
-            errorMsg = 'Microsoft Restriction: Microsoft has disabled Basic Authentication for personal Outlook accounts. Use your Gmail App Password for direct sending, or click "Send via Outlook Web" below.';
-        }
-        return res.status(500).json({ error: errorMsg });
+        console.error('[Gmail SMTP Error]:', err.message);
+        return res.status(500).json({ error: 'Failed to dispatch email directly via Gmail.' });
     }
 });
 
@@ -122,9 +94,7 @@ router.post('/send-direct', authenticateToken, async (req, res) => {
 const sseClients = new Set();
 
 /**
- * Broadcast real-time events to all connected admin clients
- * @param {'new_message' | 'update_message' | 'delete_message'} type
- * @param {any} data
+ * Broadcast real-time events to authenticated admin listeners
  */
 export const broadcastMessageEvent = (type, data) => {
     const payload = `event: ${type}\ndata: ${JSON.stringify(data)}\n\n`;
@@ -138,7 +108,7 @@ export const broadcastMessageEvent = (type, data) => {
 };
 
 /**
- * Synchronize all database messages directly to Appwrite Cloud Storage (Bucket "portfolio", File "messages_data")
+ * Synchronize messages to Appwrite Cloud Storage with restricted (non-public) access
  */
 export const syncMessagesToAppwrite = async () => {
     try {
@@ -156,7 +126,7 @@ export const syncMessagesToAppwrite = async () => {
             message: m.message,
             createdAt: m.createdAt,
             replied: Boolean(m.replied),
-            repliedAt: m.repliedAt || null
+            repliedAt: m.repliedAt || null,
         }));
 
         const headers = {
@@ -168,30 +138,27 @@ export const syncMessagesToAppwrite = async () => {
         const formData = new FormData();
         formData.append('fileId', 'messages_data');
         formData.append('file', blob, 'messages-data.json');
-        formData.append('permissions[]', 'read("any")');
+        // Do NOT set read("any") - private admin data only!
 
         try {
             await fetch(`${endpoint}/storage/buckets/portfolio/files/messages_data`, {
                 method: 'DELETE',
-                headers
+                headers,
             });
         } catch {}
 
         await fetch(`${endpoint}/storage/buckets/portfolio/files`, {
             method: 'POST',
             headers,
-            body: formData
+            body: formData,
         });
     } catch (err) {
         console.warn('[Appwrite Cloud Messages Sync Notice]:', err.message);
     }
 };
 
-// Initial sync to Appwrite Cloud Storage
-syncMessagesToAppwrite().catch(() => {});
-
-// Real-Time SSE Stream Endpoint
-router.get('/stream', (req, res) => {
+// Real-Time SSE Stream Endpoint (Protected: Admin token required)
+router.get('/stream', authenticateToken, (req, res) => {
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache, no-transform');
     res.setHeader('Connection', 'keep-alive');
@@ -200,12 +167,10 @@ router.get('/stream', (req, res) => {
         res.flushHeaders();
     }
 
-    // Send connected handshake
     res.write(`event: connected\ndata: ${JSON.stringify({ status: 'connected', timestamp: new Date().toISOString() })}\n\n`);
 
     sseClients.add(res);
 
-    // Heartbeat every 25 seconds to keep connection alive
     const heartbeat = setInterval(() => {
         try {
             res.write(':heartbeat\n\n');
@@ -221,19 +186,38 @@ router.get('/stream', (req, res) => {
     });
 });
 
-router.post('/', async (req, res) => {
+// Public contact submission with rate limiting and strict validation
+router.post('/', contactLimiter, async (req, res) => {
     try {
-        const { name, email, message, subject } = req.body;
+        const { name, email, message, subject } = req.body || {};
+
         if (!name || !email || !message) {
-            return res.status(400).json({ message: 'Please provide all required fields' });
+            return res.status(400).json({ message: 'Please provide all required fields (name, email, message).' });
+        }
+
+        const trimmedName = String(name).trim();
+        const trimmedEmail = String(email).trim().toLowerCase();
+        const trimmedMessage = String(message).trim();
+        const trimmedSubject = subject ? String(subject).trim().slice(0, 150) : 'Direct Inquiry';
+
+        if (trimmedName.length < 2 || trimmedName.length > 100) {
+            return res.status(400).json({ message: 'Name must be between 2 and 100 characters.' });
+        }
+
+        if (!isValidEmail(trimmedEmail) || trimmedEmail.length > 120) {
+            return res.status(400).json({ message: 'Please provide a valid email address.' });
+        }
+
+        if (trimmedMessage.length < 5 || trimmedMessage.length > 5000) {
+            return res.status(400).json({ message: 'Message must be between 5 and 5000 characters.' });
         }
 
         const newMessage = await prisma.message.create({
             data: {
-                name: String(name).trim(),
-                email: String(email).trim(),
-                message: String(message).trim(),
-                subject: subject ? String(subject).trim() : 'Direct Inquiry',
+                name: trimmedName,
+                email: trimmedEmail,
+                message: trimmedMessage,
+                subject: trimmedSubject,
             },
         });
 
@@ -245,37 +229,24 @@ router.post('/', async (req, res) => {
             message: newMessage.message,
             createdAt: newMessage.createdAt,
             replied: newMessage.replied || false,
-            repliedAt: newMessage.repliedAt || null
+            repliedAt: newMessage.repliedAt || null,
         };
 
-        // Broadcast to all connected admin interfaces in real time
         broadcastMessageEvent('new_message', formatted);
-
-        // Background sync to Appwrite Cloud Storage
         syncMessagesToAppwrite().catch(() => {});
 
-        console.log(`[Direct Contact]: New message received from "${newMessage.name}" <${newMessage.email}>`);
         res.status(201).json({ message: 'Message sent successfully!', data: formatted });
     } catch (error) {
-        console.error('[Direct Contact Error]:', error);
+        console.error('[Direct Contact Error]:', error.message);
         res.status(500).json({ message: 'Failed to deliver message' });
     }
 });
 
-const allowAdminOrToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
-    if (!token || token === 'null' || token === 'undefined' || token.startsWith('appwrite_') || token.startsWith('devj_')) {
-        req.user = { email: req.headers['x-admin-email'] || 'admin@devj.com', role: 'admin' };
-        return next();
-    }
-    return authenticateToken(req, res, next);
-};
-
-router.get('/messages', allowAdminOrToken, async (req, res) => {
+// Admin message list (Protected)
+router.get('/messages', authenticateToken, async (req, res) => {
     try {
         const messages = await prisma.message.findMany({ orderBy: { createdAt: 'desc' } });
-        const formatted = messages.map(m => ({
+        const formatted = messages.map((m) => ({
             id: String(m.id),
             name: m.name,
             email: m.email,
@@ -283,22 +254,23 @@ router.get('/messages', allowAdminOrToken, async (req, res) => {
             message: m.message,
             createdAt: m.createdAt,
             replied: Boolean(m.replied),
-            repliedAt: m.repliedAt
+            repliedAt: m.repliedAt,
         }));
         res.json(formatted);
     } catch (error) {
-        console.error('[Get Messages Error]:', error);
+        console.error('[Get Messages Error]:', error.message);
         res.status(500).json({ message: 'Failed to retrieve messages' });
     }
 });
 
-router.patch('/messages/:id', allowAdminOrToken, async (req, res) => {
+// Admin message update (Protected)
+router.patch('/messages/:id', authenticateToken, async (req, res) => {
     try {
         const id = parseInt(req.params.id, 10);
         if (isNaN(id)) {
             return res.status(400).json({ message: 'Invalid message ID' });
         }
-        const { replied, read } = req.body;
+        const { replied, read } = req.body || {};
         const updateData = {};
         if (typeof replied === 'boolean') {
             updateData.replied = replied;
@@ -310,7 +282,7 @@ router.patch('/messages/:id', allowAdminOrToken, async (req, res) => {
 
         const updated = await prisma.message.update({
             where: { id },
-            data: updateData
+            data: updateData,
         });
 
         const formatted = {
@@ -321,7 +293,7 @@ router.patch('/messages/:id', allowAdminOrToken, async (req, res) => {
             message: updated.message,
             createdAt: updated.createdAt,
             replied: Boolean(updated.replied),
-            repliedAt: updated.repliedAt
+            repliedAt: updated.repliedAt,
         };
 
         broadcastMessageEvent('update_message', formatted);
@@ -329,23 +301,26 @@ router.patch('/messages/:id', allowAdminOrToken, async (req, res) => {
 
         res.json({ message: 'Message updated successfully', data: formatted });
     } catch (error) {
-        console.error('[Update Message Error]:', error);
+        console.error('[Update Message Error]:', error.message);
         res.status(500).json({ message: 'Failed to update message' });
     }
 });
 
-router.delete('/messages/:id', allowAdminOrToken, async (req, res) => {
+// Admin message delete (Protected)
+router.delete('/messages/:id', authenticateToken, async (req, res) => {
     try {
         const id = parseInt(req.params.id, 10);
-        if (!isNaN(id)) {
-            await prisma.message.delete({ where: { id } }).catch(() => {});
+        if (isNaN(id)) {
+            return res.status(400).json({ message: 'Invalid message ID' });
         }
+        await prisma.message.delete({ where: { id } }).catch(() => {});
+
         broadcastMessageEvent('delete_message', { id: String(req.params.id) });
         syncMessagesToAppwrite().catch(() => {});
 
         res.json({ message: 'Message deleted' });
     } catch (error) {
-        console.error('[Delete Message Error]:', error);
+        console.error('[Delete Message Error]:', error.message);
         res.status(500).json({ message: 'Failed to delete message' });
     }
 });

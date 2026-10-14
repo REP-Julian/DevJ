@@ -6,6 +6,7 @@ import SocialQrModal from '../common/SocialQrModal';
 
 export const ContactSection = ({ profile = {} }) => {
     const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+    const [honeypot, setHoneypot] = useState('');
     const [status, setStatus] = useState({ loading: false, success: false, error: '' });
     const [qrModal, setQrModal] = useState({
         isOpen: false,
@@ -25,13 +26,24 @@ export const ContactSection = ({ profile = {} }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        
+
+        // Bot trap: if hidden field is filled, silently stop
+        if (honeypot.trim() !== '') {
+            setStatus({ loading: false, success: true, error: '' });
+            return;
+        }
+
         const cleanName = formData.name.trim();
         const cleanEmail = formData.email.trim();
         const cleanMessage = formData.message.trim();
 
         if (!cleanName || !cleanEmail || !cleanMessage) {
             setStatus({ loading: false, success: false, error: 'Please fill in your name, email, and message.' });
+            return;
+        }
+
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+            setStatus({ loading: false, success: false, error: 'Please provide a valid email address.' });
             return;
         }
 
@@ -160,6 +172,17 @@ export const ContactSection = ({ profile = {} }) => {
                         {/* Right Col: Contact Form */}
                         <div className="lg:col-span-7 bg-white text-charcoal-900 p-8 rounded-2xl shadow-sm">
                             <form onSubmit={handleSubmit} className="space-y-4">
+                                {/* Honeypot anti-spam field (hidden from genuine users) */}
+                                <input
+                                    type="text"
+                                    name="hp_website"
+                                    value={honeypot}
+                                    onChange={(e) => setHoneypot(e.target.value)}
+                                    tabIndex={-1}
+                                    autoComplete="off"
+                                    className="hidden pointer-events-none"
+                                    aria-hidden="true"
+                                />
                                 <div>
                                     <label className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 mb-1">
                                         Your Name

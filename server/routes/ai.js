@@ -1,7 +1,11 @@
 import express from 'express';
 import { authenticateToken } from '../middleware/auth.js';
+import { aiLimiter } from '../middleware/rateLimiter.js';
 
 const router = express.Router();
+
+// Apply AI rate limiter to all AI endpoints
+router.use(aiLimiter);
 
 // ✅ Anymodel API Key Configuration
 const ANYMODEL_API_KEY = process.env.ANYMODEL_API_KEY || process.env.VITE_ANYMODEL_API_KEY || '';
@@ -88,7 +92,8 @@ async function executeGenerate(payload) {
                     'HTTP-Referer': 'https://devj.agustino-julian.workers.dev',
                     'X-Title': 'DevJ Portfolio'
                 },
-                body: JSON.stringify(payloadData)
+                body: JSON.stringify(payloadData),
+                signal: AbortSignal.timeout(20000)
             });
 
             if (!res.ok) {

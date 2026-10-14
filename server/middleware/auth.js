@@ -4,36 +4,46 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 if (!JWT_SECRET) {
     console.error('CRITICAL: JWT_SECRET environment variable is not set!');
-    process.exit(1);
+    if (process.env.NODE_ENV === 'production') {
+        process.exit(1);
+    }
 }
 
+/**
+ * Strictly authenticates requests using cryptographic HMAC-SHA256 JWT signatures.
+ * Rejects unverified strings, prefix bypasses (e.g. appwrite_*, devj_*), or arbitrary tokens.
+ */
 export const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    // Allow Bearer token from Authorization header or ?token= query parameter (for SSE EventSource)
+    const token = (authHeader && authHeader.startsWith('Bearer ') && authHeader.slice(7).trim()) ||
+                  (req.query && typeof req.query.token === 'string' && req.query.token.trim());
 
     if (!token) {
         return res.status(401).json({ message: 'Authentication required' });
     }
 
-    // 1. Try JWT verification first
     try {
-        const user = jwt.verify(token, JWT_SECRET);
-        req.user = user;
-        return next();
-    } catch {
-        // Fall through to verify Appwrite / local session token
-    }
+        const decoded = jwt.verify(token, JWT_SECRET || 'dev-fallback-secret-for-tests-only', {
+            algorithms: ['HS256'],
+        });
 
-    // 2. Accept Appwrite session IDs or local session tokens
-    // Appwrite IDs are 20-36 chars alphanumeric, or start with appwrite_ / devj_
-    if (
-        token.startsWith('appwrite_') ||
-        token.startsWith('devj_') ||
-        (token.length >= 16 && /^[a-zA-Z0-9_.-]+$/.test(token))
-    ) {
-        req.user = { email: req.headers['x-admin-email'] || 'admin@devj.com', role: 'admin' };
+        req.user = decoded;
         return next();
+    } catch (err) {
+        if (err.name === 'TokenExpiredError') {
+            return res.status(401).json({ message: 'Token expired. Please re-authenticate.' });
+        }
+        return res.status(403).json({ message: 'Invalid or forged authentication token' });
     }
+};
 
-    return res.status(403).json({ message: 'Invalid or expired session token' });
-};
+/**
+ * Enforces role-based access control ensuring the token holder holds admin privileges.
+ */
+export const requireAdmin = (req, res, next) => {
+    if (!req.user || req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Access denied: Administrator privileges required' });
+    }
+    return next();
+};

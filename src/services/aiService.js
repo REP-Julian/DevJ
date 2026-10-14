@@ -716,7 +716,7 @@ async function callAIBackend(endpoint, payload) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('devj_admin_auth_token_v1') || ''}`
+                'Authorization': `Bearer ${localStorage.getItem('devj_admin_auth_token_v2') || localStorage.getItem('devj_admin_auth_token_v1') || ''}`
             },
             body: JSON.stringify(payload)
         });

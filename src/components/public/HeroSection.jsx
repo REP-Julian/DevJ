@@ -143,7 +143,7 @@ export const HeroSection = ({ profile }) => {
                             href="#projects"
                             className="px-6 sm:px-7 py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider bg-gradient-to-r from-devyellow-400 via-devorange-400 to-devorange-500 text-charcoal-900 shadow-warm-md hover:shadow-warm-lg hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2"
                         >
-                            <span>Explore Works</span>
+                            <span>View Projects</span>
                             <ArrowRight className="w-4 h-4" />
                         </a>
                         <a
@@ -162,6 +162,23 @@ export const HeroSection = ({ profile }) => {
                             <FileText className="w-4 h-4 text-devorange-600" />
                             <span>Resume / CV</span>
                         </a>
+                    </div>
+
+                    {/* Compact Core Technology Stack Badge Strip */}
+                    <div className="pt-3 border-t border-gray-100 flex flex-col gap-2">
+                        <span className="text-[11px] font-black uppercase tracking-wider text-charcoal-400">
+                            Demonstrated Core Stack
+                        </span>
+                        <div className="flex flex-wrap items-center gap-2">
+                            {['React 18', 'Node.js & Express', 'SQLite / Prisma', 'Appwrite Cloud', 'Google Gen AI', 'Tailwind CSS'].map((tech) => (
+                                <span
+                                    key={tech}
+                                    className="px-2.5 py-1 rounded-md bg-white border border-gray-200/90 text-[11px] font-bold text-charcoal-700 shadow-xs"
+                                >
+                                    {tech}
+                                </span>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
@@ -204,6 +221,10 @@ export const HeroSection = ({ profile }) => {
                                                     <img
                                                         src={imgSrc}
                                                         alt={`Julian Agustino - Software Engineer portrait ${idx + 1}`}
+                                                        width="320"
+                                                        height="420"
+                                                        loading={idx === 0 ? "eager" : "lazy"}
+                                                        fetchPriority={idx === 0 ? "high" : "low"}
                                                         onError={(e) => {
                                                              e.currentTarget.onerror = null;
                                                              e.currentTarget.src = defaultImages[idx % defaultImages.length];
