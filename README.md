@@ -1,83 +1,118 @@
-# 🚀 DevJ — Modern Creative AI & Full-Stack Portfolio
+# Julian Agustino (DevJ) — Personal Full-Stack Developer Portfolio
 
-> A high-performance, dynamic portfolio and interactive content management system built with **React**, **Vite**, **TailwindCSS**, **Appwrite.io (Auth, Storage & Databases)**, and **Google Gemini Multimodal AI**.
+A minimal, clean, and responsive personal portfolio website showcasing my work as a full-stack developer. Built with **React 18**, **Tailwind CSS**, **Node.js**, **Express**, **SQLite / Prisma**, **Appwrite Cloud**, and **Google Gen AI**.
 
----
+## 🌟 Featured Projects
 
-## 🌟 Key Features
+### 1. [PawTrack Management System](https://github.com/REP-Julian)
+An animal rescue operational platform engineered to eliminate paper record loss for rescue shelters.
+- **Core features**: Pet intake logging, veterinary medical history auditing, adoption applicant management pipeline, and role-based staff authentication.
+- **Tech stack**: React, Node.js, Express, SQLite, Prisma ORM, Tailwind CSS, JWT Auth.
 
-### 🎨 Creative Frontend & Modern Aesthetics
-- **3D Pop-out Stage Carousels**: Smooth cubic-bezier interactive card decks on **Honors & Achievements** and **Featured Projects**.
-- **Hero Multi-Portrait Switcher**: Smooth 3D rotating portrait carousel with hover pause and seamless transitions.
-- **Frontier AI & Tech Stack**: Specialized vector badges for Google Gemini, ChatGPT, Claude AI, DeepSeek AI, React, Python, TypeScript, Node.js, and more.
-- **Interactive Social Connect with QR Code Modals**: Visitors can click social channels (GitHub, Facebook, Instagram, Telegram, WhatsApp) to open instant QR codes for mobile scanning or open direct links.
+### 2. [DevJ AI Studio & CMS](https://github.com/REP-Julian/DevJ)
+A personal back-office dashboard and content management system with multi-model AI orchestration.
+- **Core features**: Real-time Server-Sent Events (SSE) AI streaming, automated provider fallback routing, zero-rebuild live portfolio updates, and multimodal vision analysis for project media.
+- **Tech stack**: React, Node.js, Express, Appwrite Cloud, Server-Sent Events, Google Gen AI SDK (`@google/genai`).
 
-### 🤖 Gemini AI Studio & Multimodal Copilot
-- **Live Contextual Copilot**: AI assistant with real-time awareness across all 6 portfolio modules (Profile, Skills, Projects, Achievements, Hobbies, Inquiries).
-- **Multimodal Computer Vision**: Automatically scans, reads (OCR), and analyzes achievement certificates, awards, diplomas, and photography visuals.
-- **Proactive Live Sync**: Detects newly added portfolio items in real-time and acknowledges them dynamically in chat.
-- **360° Portfolio Audit**: Evaluates portfolio completeness, impact metrics, and provides actionable recruiter-ready suggestions.
-
-### ☁️ Appwrite.io Cloud Backend & Storage
-- **Appwrite Authentication**: Secure session-based admin authentication with protected endpoints.
-- **Appwrite Storage Buckets**: High-speed image uploads with client-side WebP compression and instant direct delivery.
-- **Appwrite Databases**: Cloud database synchronization for multi-device management.
-- **Local Fallback Engine**: Unbreakable offline cache ensures zero downtime even during network disconnects.
-
-### 🛡️ Enterprise Security Suite
-- **Zero API Key Exposure**: All sensitive keys remain strictly in local `.env` and are barred from Git by `.gitignore`.
-- **Anti-Inspect & DevTools Protection**: Protects against casual source inspection and context manipulation.
-- **Brute-Force Rate Limiter**: Automated lockout protection on the Admin CMS portal.
+### 3. [VibeMatrix Developer Workspace](https://github.com/REP-Julian)
+A lightweight developer dashboard for rapid prototyping and state inspection.
+- **Core features**: Persistent workspace sessions across browser reloads, quick RESTful endpoint test runner, reactive state inspector, and audio synthesis feedback.
+- **Tech stack**: React, Tailwind CSS, Web Audio API, Vite, Express.
 
 ---
 
-## 🛠️ Technology Stack
+## 🛠️ Skills & Technologies
 
-- **Frontend**: [React 18](https://react.dev/) + [Vite](https://vitejs.dev/)
-- **Styling**: [TailwindCSS](https://tailwindcss.com/) + Custom Design Tokens
-- **Icons**: [Lucide React](https://lucide.dev/)
-- **Backend & Auth**: [Appwrite.io](https://appwrite.io/)
-- **Image Storage**: [Appwrite Storage](https://appwrite.io/docs/products/storage)
-- **AI & Vision Engine**: [Google Gemini 3.7 & 3.6 Flash](https://ai.google.dev/) via `@google/genai`
-
----
-
-## ⚙️ Environment Setup
-
-1. Copy the example environment file to create your local `.env`:
-   ```bash
-   cp .env.example .env
-   ```
-
-2. Open `.env` and fill in your credentials for Appwrite and Google Gemini API as outlined in `.env.example`.
-
-> [!IMPORTANT]
-> Never commit your `.env` file to version control. The repository's `.gitignore` is pre-configured to strictly ignore `.env`, `.env.local`, and all environment variants.
+| Domain | Technologies & Tools |
+| :--- | :--- |
+| **Frontend** | React 18, Tailwind CSS, Vite, JavaScript (ES6+), TypeScript, HTML5 / Semantic Web |
+| **Backend & APIs** | Node.js, Express, RESTful APIs, Server-Sent Events (SSE), JWT Authentication, CORS |
+| **Databases & Cloud** | SQLite, Prisma ORM, Appwrite Cloud (Auth, Databases, Storage Buckets), Pinecone |
+| **AI & Tooling** | Google Gen AI SDK (Gemini Flash), OpenAI API, LangChain, Ollama (Local GGUF), Hugging Face |
+| **Design & Accessibility** | Responsive Design, Mobile-First UI, Keyboard Accessibility, Reduced Motion (`prefers-reduced-motion`) |
 
 ---
 
-## 🚀 Getting Started Locally
+## ✨ Portfolio Key Highlights
 
-### 1. Install Dependencies
+- **Personal & Clean UI**: Minimalist warm aesthetic using custom charcoal, yellow, and orange color tokens without corporate boilerplate or distraction.
+- **Interactive Multi-Portrait Showcase**: 3D responsive portrait deck with smooth touch-swipe navigation and pause-on-hover functionality.
+- **Fast Project Exploration**: Clean project cards with direct GitHub and live demo links, accompanied by an accessible detail modal with keyboard dismiss (`Escape`).
+- **Full-Stack Content Management**: Secured admin interface with JWT authentication, rate limiting, and dual Appwrite Cloud / offline-first synchronization.
+- **Multimodal AI Vision**: Embedded Gemini integration capable of scanning UI screenshots to auto-fill project metadata.
+- **Accessible & Responsive**: Fully responsive grid from mobile to desktop with visible `:focus-visible` keyboard rings and reduced-motion preference compliance.
+
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+- **Node.js**: version `18.0.0` or higher
+- **npm**: version `9.0.0` or higher
+
+### 1. Clone the Repository
+```bash
+git clone https://github.com/REP-Julian/DevJ.git
+cd DevJ
+```
+
+### 2. Install Dependencies
 ```bash
 npm install
 ```
 
-### 2. Start Development Server
+### 3. Configure Environment Variables
+Copy `.env.example` to create your local `.env` file:
+```bash
+cp .env.example .env
+```
+Fill in the appropriate configuration keys:
+- `PORT`: Local server port (default: `5000`)
+- `JWT_SECRET`: Secret key for signing admin authentication tokens
+- `GEMINI_API_KEY`: Google Gemini API key for AI assistant features
+- `APPWRITE_ENDPOINT`, `APPWRITE_PROJECT_ID`, `APPWRITE_DATABASE_ID`, `APPWRITE_BUCKET_ID`: (Optional) Appwrite Cloud credentials
+
+### 4. Run Locally
+
+**Frontend Development Server (Vite):**
 ```bash
 npm run dev
 ```
 Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-### 3. Access Admin CMS
-- URL: [http://localhost:5173/login](http://localhost:5173/login)
-- **⚠️ SECURITY:** Change default admin credentials immediately in `src/services/api.js` after first login
-- Ensure `JWT_SECRET` is set in your `.env` file
+**Backend Server (Express):**
+```bash
+npm run server
+```
+Server runs on [http://localhost:5000](http://localhost:5000).
 
-### 4. Build for Production
+---
+
+## 🧪 Testing & Verification
+
+Run the security audit and endpoint verification test suite:
+```bash
+npm test
+```
+Tests verify:
+- Cryptographic JWT generation and validation
+- Route authorization and token expiration checks
+- Rate limiting on sensitive endpoints
+- Contact form input sanitization and payload bounds
+- Server-Sent Events (SSE) token validation
+
+To create an optimized production build:
 ```bash
 npm run build
 ```
+
+---
+
+## 📬 Contact & Connect
+
+- **Email**: [agustino.julian@outlook.ph](mailto:agustino.julian@outlook.ph)
+- **GitHub**: [github.com/REP-Julian](https://github.com/REP-Julian)
+- **Portfolio**: [DevJ Portfolio](https://github.com/REP-Julian/DevJ)
 
 ---
 
