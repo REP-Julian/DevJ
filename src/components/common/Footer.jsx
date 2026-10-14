@@ -8,9 +8,10 @@ export const Footer = ({ profile = {} }) => {
 
     const navLinks = [
         { name: 'Home', href: '/#home' },
+        { name: 'Projects', href: '/#projects' },
+        { name: 'About', href: '/#about' },
         { name: 'Skills', href: '/#skills' },
         { name: 'Achievements', href: '/#achievements' },
-        { name: 'Projects', href: '/#projects' },
         { name: 'Hobbies', href: '/#hobbies' },
         { name: 'Contact', href: '/#contact' },
     ];
@@ -36,13 +37,13 @@ export const Footer = ({ profile = {} }) => {
                                 </span>
                                 <span className="text-xs text-charcoal-500 font-semibold ml-1.5">(DevJ)</span>
                                 <p className="text-xs text-charcoal-500">
-                                    Full-Stack Developer &amp; AI Systems Integrator
+                                    Full-Stack Developer
                                 </p>
                             </div>
                         </div>
 
                         <p className="text-xs text-charcoal-500 max-w-sm leading-relaxed">
-                            Building reliable full-stack applications with React, Node.js, and Appwrite, integrated with modern LLM endpoints and custom REST APIs.
+                            Building clean, practical web applications and developer tools with React, Node.js, Express, and Appwrite.
                         </p>
 
                     </div>

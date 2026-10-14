@@ -18,7 +18,8 @@ export const getStoredPortfolio = () => {
             // Automatically purge legacy buzzwords from stale local storage
             if (
                 parsed.profile?.tagline?.includes('Vibe Developer') ||
-                parsed.profile?.tagline?.includes('Enthusiast')
+                parsed.profile?.tagline?.includes('Enthusiast') ||
+                parsed.profile?.tagline?.includes('AI Systems Integrator')
             ) {
                 if (!parsed.profile) parsed.profile = {};
                 parsed.profile.tagline = initialPortfolioData.profile.tagline;
@@ -27,10 +28,16 @@ export const getStoredPortfolio = () => {
             if (
                 parsed.profile?.description?.includes('possibilities of artificial intelligence') ||
                 parsed.profile?.description?.includes('turning ideas into interactive') ||
-                parsed.profile?.description?.includes('custom REST APIs')
+                parsed.profile?.description?.includes('custom REST APIs') ||
+                parsed.profile?.description?.includes('engineering clean API architectures')
             ) {
                 if (!parsed.profile) parsed.profile = {};
                 parsed.profile.description = initialPortfolioData.profile.description;
+                updated = true;
+            }
+            if (!parsed.profile?.about) {
+                if (!parsed.profile) parsed.profile = {};
+                parsed.profile.about = initialPortfolioData.profile.about;
                 updated = true;
             }
 

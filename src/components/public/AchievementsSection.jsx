@@ -157,15 +157,18 @@ export const AchievementsSection = ({ achievements = [] }) => {
     };
 
     return (
-        <section id="achievements" className="py-24 bg-charcoal-50/50 relative overflow-hidden">
+        <section id="achievements" className="py-20 sm:py-24 bg-charcoal-50/50 relative overflow-hidden scroll-mt-16">
             <div className="max-w-7xl mx-auto px-6">
-                <div className="text-center max-w-3xl mx-auto mb-16 space-y-3">
-                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-devyellow-100 text-devorange-600 text-xs font-extrabold uppercase tracking-wider">
+                <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-14 space-y-3">
+                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-devyellow-100 text-devorange-600 text-xs font-bold uppercase tracking-wider">
                         Milestones
                     </div>
-                    <h2 className="text-3xl sm:text-5xl font-black text-charcoal-900 tracking-tight">
-                        Honors & Achievements
+                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-charcoal-900 tracking-tight">
+                        Achievements &amp; Milestones
                     </h2>
+                    <p className="text-sm sm:text-base text-charcoal-500 font-normal leading-relaxed">
+                        Hackathons, awards, and certifications earned throughout my development journey.
+                    </p>
                 </div>
 
                 <div className="bg-white rounded-3xl p-6 sm:p-10 lg:p-14 border border-gray-200/80 shadow-warm-md">
@@ -290,7 +293,7 @@ export const AchievementsSection = ({ achievements = [] }) => {
 
                             <div className="pt-4 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-charcoal-500">
                                 <span className="flex items-center gap-1 text-devorange-600">
-                                    <Sparkles className="w-4 h-4" /> Official Milestone Recognition
+                                    <Sparkles className="w-4 h-4" /> Milestone Recognition
                                 </span>
                                 <span>{currentIndex + 1} of {items.length}</span>
                             </div>

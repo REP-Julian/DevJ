@@ -18,13 +18,18 @@ export const HeroSection = ({ profile }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isHovered, setIsHovered] = useState(false);
 
-    // Auto-switch image every 3.5 seconds with pause on hover
+    // Auto-switch image every 4 seconds with pause on hover & reduced-motion check
     useEffect(() => {
-        if (isHovered) return;
+        const prefersReducedMotion =
+            typeof window !== 'undefined' &&
+            window.matchMedia &&
+            window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        if (isHovered || prefersReducedMotion) return;
 
         const timer = setInterval(() => {
             setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
-        }, 3500);
+        }, 4000);
 
         return () => clearInterval(timer);
     }, [images.length, isHovered]);
@@ -101,7 +106,7 @@ export const HeroSection = ({ profile }) => {
     return (
         <section
             id="home"
-            className="relative min-h-screen pt-32 pb-20 flex items-center justify-center overflow-hidden bg-gradient-to-b from-white via-devyellow-100/20 to-white"
+            className="relative min-h-[92vh] pt-32 pb-20 flex items-center justify-center overflow-hidden bg-gradient-to-b from-white via-devyellow-100/20 to-white"
         >
             <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-devyellow-300/30 via-devorange-300/20 to-transparent rounded-full blur-3xl pointer-events-none" />
 
@@ -110,7 +115,7 @@ export const HeroSection = ({ profile }) => {
                 <div className="lg:col-span-7 space-y-6 text-left">
                     <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-devyellow-300 shadow-warm-sm text-xs font-bold text-devorange-600 uppercase tracking-wider">
                         <Sparkles className="w-3.5 h-3.5 text-devyellow-500 fill-devyellow-400" />
-                        <span>Full-Stack Developer & AI Systems Integrator</span>
+                        <span>Full-Stack Developer</span>
                     </div>
 
                     <div className="space-y-2">
@@ -129,26 +134,25 @@ export const HeroSection = ({ profile }) => {
                     </div>
 
                     <p className="text-xl sm:text-2xl font-bold text-charcoal-800 leading-snug">
-                        {profile?.tagline ||
-                            'Full-Stack Developer & AI Systems Integrator'}
+                        {profile?.tagline || 'Building clean, practical web applications'}
                     </p>
 
                     <p className="text-base sm:text-lg text-charcoal-500 max-w-xl font-normal leading-relaxed">
                         {profile?.description ||
-                            'Building resilient full-stack web applications with React, Node.js, and Appwrite—engineering clean API architectures, responsive interfaces, and production-grade LLM integrations.'}
+                            'I build responsive web applications and developer tools using React, Node.js, and modern APIs. Focused on clean code, good UX, and solving real problems.'}
                     </p>
 
                     <div className="pt-2 flex flex-wrap items-center gap-3 sm:gap-4">
                         <a
                             href="#projects"
-                            className="px-6 sm:px-7 py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider bg-gradient-to-r from-devyellow-400 via-devorange-400 to-devorange-500 text-charcoal-900 shadow-warm-md hover:shadow-warm-lg hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2"
+                            className="px-6 sm:px-7 py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider bg-gradient-to-r from-devyellow-400 via-devorange-400 to-devorange-500 text-charcoal-900 shadow-warm-md hover:shadow-warm-lg hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
                         >
                             <span>View Projects</span>
                             <ArrowRight className="w-4 h-4" />
                         </a>
                         <a
                             href="#contact"
-                            className="px-6 sm:px-7 py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider bg-white border border-gray-200 text-charcoal-800 hover:border-devorange-400 hover:text-devorange-600 hover:bg-devyellow-100/30 transition-all shadow-sm hover:-translate-y-0.5"
+                            className="px-6 sm:px-7 py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider bg-white border border-gray-200 text-charcoal-800 hover:border-devorange-400 hover:text-devorange-600 hover:bg-devyellow-100/30 transition-all shadow-sm hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
                         >
                             Contact Me
                         </a>
@@ -156,7 +160,7 @@ export const HeroSection = ({ profile }) => {
                             href={profile?.resumeUrl || (profile?.email ? `mailto:${profile.email}?subject=Resume%20Request%20-%20${encodeURIComponent(profile?.name || 'Developer')}` : '#contact')}
                             target={profile?.resumeUrl ? "_blank" : undefined}
                             rel="noreferrer"
-                            className="px-5 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider bg-white border border-gray-200 text-charcoal-700 hover:border-charcoal-400 hover:text-charcoal-900 transition-all shadow-xs flex items-center gap-2 hover:-translate-y-0.5"
+                            className="px-5 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider bg-white border border-gray-200 text-charcoal-700 hover:border-charcoal-400 hover:text-charcoal-900 transition-all shadow-xs flex items-center gap-2 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
                             title="Download or Request Resume / CV"
                         >
                             <FileText className="w-4 h-4 text-devorange-600" />
@@ -166,14 +170,14 @@ export const HeroSection = ({ profile }) => {
 
                     {/* Compact Core Technology Stack Badge Strip */}
                     <div className="pt-3 border-t border-gray-100 flex flex-col gap-2">
-                        <span className="text-[11px] font-black uppercase tracking-wider text-charcoal-400">
-                            Demonstrated Core Stack
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-charcoal-400">
+                            Technologies I Work With
                         </span>
                         <div className="flex flex-wrap items-center gap-2">
-                            {['React 18', 'Node.js & Express', 'SQLite / Prisma', 'Appwrite Cloud', 'Google Gen AI', 'Tailwind CSS'].map((tech) => (
+                            {['React', 'Node.js & Express', 'SQLite / Prisma', 'Appwrite Cloud', 'Tailwind CSS', 'Google Gen AI'].map((tech) => (
                                 <span
                                     key={tech}
-                                    className="px-2.5 py-1 rounded-md bg-white border border-gray-200/90 text-[11px] font-bold text-charcoal-700 shadow-xs"
+                                    className="px-2.5 py-1 rounded-md bg-white border border-gray-200/90 text-[11px] font-semibold text-charcoal-700 shadow-xs"
                                 >
                                     {tech}
                                 </span>
@@ -191,9 +195,9 @@ export const HeroSection = ({ profile }) => {
                     >
                         <div className="relative p-6 sm:p-8 bg-gradient-to-br from-white via-devyellow-100/30 to-devorange-100/20 rounded-3xl border border-gray-100 shadow-warm-md hover:shadow-warm-lg transition-shadow duration-300">
                             {/* Top Badge */}
-                            <div className="absolute -top-3 -right-3 z-40 bg-charcoal-900 text-white text-xs font-black px-4 py-2 rounded-xl shadow-warm-md border border-devyellow-400 flex items-center gap-1.5">
-                                <Sparkles className="w-3.5 h-3.5 text-devyellow-400 animate-pulse" />
-                                <span>Engineering Portfolio</span>
+                            <div className="absolute -top-3 -right-3 z-40 bg-charcoal-900 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-warm-md border border-devyellow-400 flex items-center gap-1.5">
+                                <Sparkles className="w-3.5 h-3.5 text-devyellow-400" />
+                                <span>Developer Portfolio</span>
                             </div>
 
                             {/* Gallery 3D Stage with touch swipe support */}
@@ -220,7 +224,7 @@ export const HeroSection = ({ profile }) => {
                                                 <div className="w-full h-full rounded-[14px] overflow-hidden bg-white relative">
                                                     <img
                                                         src={imgSrc}
-                                                        alt={`Julian Agustino - Software Engineer portrait ${idx + 1}`}
+                                                        alt={`Julian Agustino portrait ${idx + 1}`}
                                                         width="320"
                                                         height="420"
                                                         loading={idx === 0 ? "eager" : "lazy"}
@@ -247,7 +251,7 @@ export const HeroSection = ({ profile }) => {
                                     <h3 className="font-extrabold text-charcoal-900 text-sm">
                                         {profile?.name || 'Julian Agustino'}
                                     </h3>
-                                    <p className="text-xs text-charcoal-500 font-medium">Full-Stack Developer & AI Systems</p>
+                                    <p className="text-xs text-charcoal-500 font-medium">Full-Stack Developer</p>
                                 </div>
 
                                 {/* Controls: Arrows & Dot Indicators */}
@@ -255,7 +259,7 @@ export const HeroSection = ({ profile }) => {
                                     <button
                                         onClick={handlePrev}
                                         aria-label="Previous photo"
-                                        className="w-8 h-8 rounded-lg text-charcoal-500 hover:text-devorange-600 hover:bg-devyellow-100/50 transition-all active:scale-90 flex items-center justify-center touch-manipulation"
+                                        className="w-8 h-8 rounded-lg text-charcoal-500 hover:text-devorange-600 hover:bg-devyellow-100/50 transition-all active:scale-90 flex items-center justify-center touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
                                     >
                                         <ChevronLeft className="w-4 h-4" />
                                     </button>
@@ -266,7 +270,7 @@ export const HeroSection = ({ profile }) => {
                                                 key={idx}
                                                 onClick={() => setCurrentIndex(idx)}
                                                 aria-label={`View photo ${idx + 1}`}
-                                                className={`h-2 rounded-full transition-all duration-500 ease-out touch-manipulation ${
+                                                className={`h-2 rounded-full transition-all duration-500 ease-out touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 ${
                                                     idx === currentIndex
                                                         ? 'w-6 bg-gradient-to-r from-devyellow-400 to-devorange-500 shadow-sm'
                                                         : 'w-2 bg-gray-200 hover:bg-gray-300'
@@ -278,7 +282,7 @@ export const HeroSection = ({ profile }) => {
                                     <button
                                         onClick={handleNext}
                                         aria-label="Next photo"
-                                        className="w-8 h-8 rounded-lg text-charcoal-500 hover:text-devorange-600 hover:bg-devyellow-100/50 transition-all active:scale-90 flex items-center justify-center touch-manipulation"
+                                        className="w-8 h-8 rounded-lg text-charcoal-500 hover:text-devorange-600 hover:bg-devyellow-100/50 transition-all active:scale-90 flex items-center justify-center touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
                                     >
                                         <ChevronRight className="w-4 h-4" />
                                     </button>
