@@ -138,15 +138,15 @@ let clientCachedModels = null;
 let clientLastModelsFetch = 0;
 
 const CLIENT_FALLBACK_VISION = [
-    'ds/deepseek-v4-flash-vision',
-    'am/llama-3.2-11b-vision-instruct',
+    'ag/gemini-2.5-flash',
+    'ag/gemini-3-flash',
+    'glm/glm-5.3-flash',
     'glm/glm-4.6v',
+    'am/llama-3.2-11b-vision-instruct',
     'cc/claude-sonnet-5',
     'cc/claude-opus-5',
     'qwen/qwen3.8-27b',
-    'qwen/qwen3.7-max',
-    'ag/gemini-2.5-flash',
-    'ag/gemini-3-flash'
+    'ds/deepseek-v4-flash-vision'
 ];
 
 const CLIENT_FALLBACK_TEXT = [
@@ -201,7 +201,10 @@ async function runAnymodel({ prompt, system, imageBase64, mimeType, expectJson =
     if (imageBase64) {
         const isVision = (id) => {
             const s = id.toLowerCase();
-            return s.includes('vision') ||
+            return s.includes('gemini-2.5-flash') ||
+                   s.includes('gemini-3-flash') ||
+                   s.includes('glm-5.3-flash') ||
+                   s.includes('vision') ||
                    s.includes('4.6v') ||
                    s.includes('claude-sonnet') ||
                    s.includes('claude-opus') ||

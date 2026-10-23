@@ -15,17 +15,17 @@ let cachedModels = null;
 let lastModelsFetch = 0;
 const MODELS_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
-// Verified baseline vision & OCR fallback models
+// Verified baseline vision & OCR fallback models (ordered by tested responsiveness & accuracy)
 const FALLBACK_VISION_MODELS = [
-    'ds/deepseek-v4-flash-vision',
-    'am/llama-3.2-11b-vision-instruct',
+    'ag/gemini-2.5-flash',
+    'ag/gemini-3-flash',
+    'glm/glm-5.3-flash',
     'glm/glm-4.6v',
+    'am/llama-3.2-11b-vision-instruct',
     'cc/claude-sonnet-5',
     'cc/claude-opus-5',
     'qwen/qwen3.8-27b',
-    'qwen/qwen3.7-max',
-    'ag/gemini-2.5-flash',
-    'ag/gemini-3-flash'
+    'ds/deepseek-v4-flash-vision'
 ];
 
 // Verified baseline text/chat fallback models
@@ -76,7 +76,10 @@ function resolveModelCascade(availableModels, hasImage) {
         // Models with Vision, OCR, and multimodal document understanding
         const isVision = (id) => {
             const s = id.toLowerCase();
-            return s.includes('vision') ||
+            return s.includes('gemini-2.5-flash') ||
+                   s.includes('gemini-3-flash') ||
+                   s.includes('glm-5.3-flash') ||
+                   s.includes('vision') ||
                    s.includes('4.6v') ||
                    s.includes('claude-sonnet') ||
                    s.includes('claude-opus') ||
@@ -149,6 +152,7 @@ async function executeGenerate(payload) {
             const payloadData = {
                 model: model,
                 messages,
+                max_tokens: 1000
             };
             if (payload.config?.responseMimeType === 'application/json') {
                 payloadData.response_format = { type: 'json_object' };
@@ -163,7 +167,7 @@ async function executeGenerate(payload) {
                     'X-Title': 'DevJ Portfolio'
                 },
                 body: JSON.stringify(payloadData),
-                signal: AbortSignal.timeout(12000)
+                signal: AbortSignal.timeout(hasImage ? 15000 : 10000)
             });
 
             if (!res.ok) {
@@ -343,11 +347,80 @@ Return valid JSON (no markdown):
             },
         });
 
-        const result = JSON.parse(response.text);
+        let result;
+        try {
+            result = JSON.parse(response.text);
+        } catch {
+            const match = response.text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+            if (match) result = JSON.parse(match[0]);
+            else throw new Error('Failed to parse AI vision output as JSON');
+        }
         res.json(result);
     } catch (error) {
         console.error('[AI Service] Vision analysis error:', error);
         res.status(500).json({ error: error.message || 'Vision analysis failed' });
+    }
+});
+
+// Analyze Project Visual (Computer Vision)
+router.post('/analyze-project-visual', authenticateToken, async (req, res) => {
+    try {
+        const { imageBase64, mimeType, existingData = {} } = req.body;
+
+        if (!ANYMODEL_API_KEY) {
+            return res.status(400).json({ error: 'Anymodel API key not configured.' });
+        }
+
+        if (!imageBase64) {
+            return res.status(400).json({ error: 'Image data required.' });
+        }
+
+        const prompt = `You are a Senior Software Architect and UI Vision Analyst examining a project screenshot, app mockup, or software architecture diagram.
+Tasks:
+1. Title: Transcribe or deduce the exact project or app name from the header, navbar, logo, or visible text.
+2. Category: Classify strictly into one of: "Full-Stack Web App", "AI and Machine Learning", "Mobile Application", "Developer Platform", "Cloud Architecture", or "Interactive Experience".
+3. Description: Write 2 to 3 sentences describing what this software does, its visual layout, core features, and tech evident in the interface.
+4. Technologies: Identify 4 to 6 relevant technologies, frameworks, and libraries evident from the UI, code, or architecture (e.g. "React, Node.js, TailwindCSS, Appwrite, Gemini API").
+5. Highlights: List 2 key visible UI/architectural highlights observed in the screenshot.
+
+Existing title hint: ${existingData.title || 'None'}
+
+Return valid JSON (no markdown):
+{
+  "title": "Detected Project Title",
+  "category": "Full-Stack Web App",
+  "description": "2-3 sentence overview of this application",
+  "technologies": "React, Node.js, TailwindCSS, Appwrite",
+  "visualHighlights": ["Responsive layout", "Interactive cards"]
+}`;
+
+        const response = await executeGenerate({
+            contents: [
+                {
+                    inlineData: {
+                        data: imageBase64,
+                        mimeType: mimeType || 'image/jpeg',
+                    },
+                },
+                prompt
+            ],
+            config: {
+                responseMimeType: 'application/json',
+            },
+        });
+
+        let result;
+        try {
+            result = JSON.parse(response.text);
+        } catch {
+            const match = response.text.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+            if (match) result = JSON.parse(match[0]);
+            else throw new Error('Failed to parse AI vision output as JSON');
+        }
+        res.json(result);
+    } catch (error) {
+        console.error('[AI Service] Project visual analysis error:', error);
+        res.status(500).json({ error: error.message || 'Project visual analysis failed' });
     }
 });
 
