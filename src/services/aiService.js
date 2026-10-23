@@ -138,11 +138,11 @@ let clientCachedModels = null;
 let clientLastModelsFetch = 0;
 
 const CLIENT_FALLBACK_VISION = [
-    'ag/gemini-3.8-flash-high',
-    'ag/gemini-3.8-flash-medium',
-    'ag/gemini-3.8-flash-low',
     'ag/gemini-2.5-flash',
     'ag/gemini-3-flash',
+    'ag/gemini-3.8-flash-low',
+    'ag/gemini-3.8-flash-medium',
+    'ag/gemini-3.8-flash-high',
     'glm/glm-5.3-flash',
     'glm/glm-4.6v',
     'am/llama-3.2-11b-vision-instruct',
@@ -153,11 +153,11 @@ const CLIENT_FALLBACK_VISION = [
 ];
 
 const CLIENT_FALLBACK_TEXT = [
-    'ag/gemini-3.8-flash-high',
-    'ag/gemini-3.8-flash-medium',
-    'ag/gemini-3.8-flash-low',
     'ag/gemini-2.5-flash',
     'ag/gemini-3-flash',
+    'ag/gemini-3.8-flash-low',
+    'ag/gemini-3.8-flash-medium',
+    'ag/gemini-3.8-flash-high',
     'ds/deepseek-v4-flash',
     'cx/gpt-6-astra',
     'cc/claude-opus-5',
@@ -270,7 +270,7 @@ async function runAnymodel({ prompt, system, imageBase64, mimeType, expectJson =
                     'X-Title': 'DevJ Portfolio'
                 },
                 body: JSON.stringify(payload),
-                signal: AbortSignal.timeout(12000)
+                signal: AbortSignal.timeout(6500)
             });
 
             if (res.ok) {
