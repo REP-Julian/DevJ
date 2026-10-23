@@ -138,6 +138,9 @@ let clientCachedModels = null;
 let clientLastModelsFetch = 0;
 
 const CLIENT_FALLBACK_VISION = [
+    'ag/gemini-3.8-flash-high',
+    'ag/gemini-3.8-flash-medium',
+    'ag/gemini-3.8-flash-low',
     'ag/gemini-2.5-flash',
     'ag/gemini-3-flash',
     'glm/glm-5.3-flash',
@@ -150,6 +153,11 @@ const CLIENT_FALLBACK_VISION = [
 ];
 
 const CLIENT_FALLBACK_TEXT = [
+    'ag/gemini-3.8-flash-high',
+    'ag/gemini-3.8-flash-medium',
+    'ag/gemini-3.8-flash-low',
+    'ag/gemini-2.5-flash',
+    'ag/gemini-3-flash',
     'ds/deepseek-v4-flash',
     'cx/gpt-6-astra',
     'cc/claude-opus-5',
@@ -161,8 +169,7 @@ const CLIENT_FALLBACK_TEXT = [
     'cc/claude-sonnet-5',
     'kmc/kimi-for-coding',
     'kmc/k3',
-    'glm/glm-5.3',
-    'ag/gemini-2.5-flash'
+    'glm/glm-5.3'
 ];
 
 async function getClientDynamicModels(activeKey) {

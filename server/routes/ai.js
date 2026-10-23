@@ -17,6 +17,9 @@ const MODELS_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 // Verified baseline vision & OCR fallback models (ordered by tested responsiveness & accuracy)
 const FALLBACK_VISION_MODELS = [
+    'ag/gemini-3.8-flash-high',
+    'ag/gemini-3.8-flash-medium',
+    'ag/gemini-3.8-flash-low',
     'ag/gemini-2.5-flash',
     'ag/gemini-3-flash',
     'glm/glm-5.3-flash',
@@ -30,6 +33,11 @@ const FALLBACK_VISION_MODELS = [
 
 // Verified baseline text/chat fallback models
 const FALLBACK_TEXT_MODELS = [
+    'ag/gemini-3.8-flash-high',
+    'ag/gemini-3.8-flash-medium',
+    'ag/gemini-3.8-flash-low',
+    'ag/gemini-2.5-flash',
+    'ag/gemini-3-flash',
     'ds/deepseek-v4-flash',
     'cx/gpt-6-astra',
     'cc/claude-opus-5',
@@ -41,8 +49,7 @@ const FALLBACK_TEXT_MODELS = [
     'cc/claude-sonnet-5',
     'kmc/kimi-for-coding',
     'kmc/k3',
-    'glm/glm-5.3',
-    'ag/gemini-2.5-flash'
+    'glm/glm-5.3'
 ];
 
 // Dynamically auto-detect all available models from Anymodel API
