@@ -46,21 +46,21 @@ A high-performance personal portfolio engineered with React 18, Tailwind CSS, Ex
 
 ### 1. PawTrack Management System
 Operational rescue shelter platform designed to digitize animal intake, medical histories, and adoption pipelines.
-- **Highlights**: Role-based JWT authentication, relational schema with SQLite and Express REST API, medical audit trails.
-- **Stack**: React, Node.js, Express, SQLite, Prisma ORM, Tailwind CSS, JWT.
-- **Repository**: [github.com/REP-Julian](https://github.com/REP-Julian)
+- **Highlights**: Centralized adoption tracking, digital pet medical histories, rescue logistics management.
+- **Stack**: React, Node.js, Express, SQLite, Tailwind CSS.
+- **Repository**: [github.com/REP-Julian/Pawtrack-app](https://github.com/REP-Julian/Pawtrack-app)
 
-### 2. DevJ AI Studio & CMS
-Personal administrative back-office and CMS supporting live portfolio synchronization and multi-model AI assistance.
-- **Highlights**: Real-time Server-Sent Events (SSE) streaming, automated fallback routing between providers, multimodal visual analysis for project assets.
-- **Stack**: React, Node.js, Express, Appwrite Cloud, Server-Sent Events, Google Gen AI SDK.
-- **Repository**: [github.com/REP-Julian/DevJ](https://github.com/REP-Julian/DevJ)
+### 2. QCU Lost and Found Portal
+Digital community service platform developed for Quezon City University students, staff, and faculty.
+- **Highlights**: Categorized item submission, status lifecycle tracking (Reported, Verified, Claimed), identity verification workflow.
+- **Stack**: TypeScript, React, Tailwind CSS, Node.js.
+- **Repository**: [github.com/REP-Julian/Lost-and-Found](https://github.com/REP-Julian/Lost-and-Found)
 
-### 3. VibeMatrix Developer Workspace
-Lightweight browser dashboard for RESTful endpoint testing, client state inspection, and scratchpad note-taking.
-- **Highlights**: Zero bundle bloat, persistent sessions across browser reloads, Web Audio feedback integration.
-- **Stack**: React, Tailwind CSS, Web Audio API, Vite, Express.
-- **Repository**: [github.com/REP-Julian](https://github.com/REP-Julian)
+### 3. Social Media Autonomous Reporter
+Autonomous cross-platform detection and verification tool built for monitoring impersonation profiles and malicious accounts.
+- **Highlights**: Playwright automation engine, real-time activity feed, audit trail capture.
+- **Stack**: Python, Playwright, React, Vite, TypeScript.
+- **Repository**: [github.com/REP-Julian/Social-Media-Autonomous-Report-V2](https://github.com/REP-Julian/Social-Media-Autonomous-Report-V2)
 
 ---
 
