@@ -1,120 +1,196 @@
-# Julian Agustino (DevJ) — Personal Full-Stack Developer Portfolio
+# Julian Agustino — Personal Portfolio (DevJ)
 
-A minimal, clean, and responsive personal portfolio website showcasing my work as a full-stack developer. Built with **React 18**, **Tailwind CSS**, **Node.js**, **Express**, **SQLite / Prisma**, **Appwrite Cloud**, and **Google Gen AI**.
+[![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://react.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Node.js](https://img.shields.io/badge/Node.js-18+-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+[![Express](https://img.shields.io/badge/Express-4.19-000000?logo=express&logoColor=white)](https://expressjs.com/)
+[![SQLite](https://img.shields.io/badge/SQLite-Prisma-003B57?logo=sqlite&logoColor=white)](https://www.prisma.io/)
+[![Appwrite](https://img.shields.io/badge/Appwrite-Cloud-FD366E?logo=appwrite&logoColor=white)](https://appwrite.io/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-## 🌟 Featured Projects
-
-### 1. [PawTrack Management System](https://github.com/REP-Julian)
-An animal rescue operational platform engineered to eliminate paper record loss for rescue shelters.
-- **Core features**: Pet intake logging, veterinary medical history auditing, adoption applicant management pipeline, and role-based staff authentication.
-- **Tech stack**: React, Node.js, Express, SQLite, Prisma ORM, Tailwind CSS, JWT Auth.
-
-### 2. [DevJ AI Studio & CMS](https://github.com/REP-Julian/DevJ)
-A personal back-office dashboard and content management system with multi-model AI orchestration.
-- **Core features**: Real-time Server-Sent Events (SSE) AI streaming, automated provider fallback routing, zero-rebuild live portfolio updates, and multimodal vision analysis for project media.
-- **Tech stack**: React, Node.js, Express, Appwrite Cloud, Server-Sent Events, Google Gen AI SDK (`@google/genai`).
-
-### 3. [VibeMatrix Developer Workspace](https://github.com/REP-Julian)
-A lightweight developer dashboard for rapid prototyping and state inspection.
-- **Core features**: Persistent workspace sessions across browser reloads, quick RESTful endpoint test runner, reactive state inspector, and audio synthesis feedback.
-- **Tech stack**: React, Tailwind CSS, Web Audio API, Vite, Express.
+A high-performance personal portfolio engineered with React 18, Tailwind CSS, Express, and SQLite/Appwrite. Features an interactive 3D multi-portrait hero stage, project showcases with source code inspection, verified technical milestones, and an administrative CMS studio powered by the Google Gen AI SDK.
 
 ---
 
-## 🛠️ Skills & Technologies
+## Architecture Overview
 
-| Domain | Technologies & Tools |
+```
+                      ┌────────────────────────────────────────┐
+                      │          React 18 Single-Page App      │
+                      │  - Multi-Portrait 3D Hero Carousel     │
+                      │  - Filterable Project Catalog          │
+                      │  - Verified Milestones & Lightbox      │
+                      │  - Direct Contact Form & QR Modals     │
+                      └───────────────────┬────────────────────┘
+                                          │
+                     REST / SSE Requests  │  Client Storage Fallback
+                                          ▼
+                      ┌────────────────────────────────────────┐
+                      │          Node.js / Express API         │
+                      │  - JWT Bearer Authentication           │
+                      │  - Rate Limiting & Anti-Tampering      │
+                      │  - Contact Message Processing          │
+                      │  - Gemini AI Assist & Vision Analysis  │
+                      └──────────────┬──────────────────┬──────┘
+                                     │                  │
+                Local Relational DB  ▼                  ▼  Cloud Backend
+                      ┌──────────────────┐    ┌─────────────────────┐
+                      │  SQLite / Prisma │    │    Appwrite Cloud   │
+                      │  (Local Cache)   │    │ (Storage, Auth, DB) │
+                      └──────────────────┘    └─────────────────────┘
+```
+
+---
+
+## Featured Work
+
+### 1. PawTrack Management System
+Operational rescue shelter platform designed to digitize animal intake, medical histories, and adoption pipelines.
+- **Highlights**: Role-based JWT authentication, relational schema with SQLite and Express REST API, medical audit trails.
+- **Stack**: React, Node.js, Express, SQLite, Prisma ORM, Tailwind CSS, JWT.
+- **Repository**: [github.com/REP-Julian](https://github.com/REP-Julian)
+
+### 2. DevJ AI Studio & CMS
+Personal administrative back-office and CMS supporting live portfolio synchronization and multi-model AI assistance.
+- **Highlights**: Real-time Server-Sent Events (SSE) streaming, automated fallback routing between providers, multimodal visual analysis for project assets.
+- **Stack**: React, Node.js, Express, Appwrite Cloud, Server-Sent Events, Google Gen AI SDK.
+- **Repository**: [github.com/REP-Julian/DevJ](https://github.com/REP-Julian/DevJ)
+
+### 3. VibeMatrix Developer Workspace
+Lightweight browser dashboard for RESTful endpoint testing, client state inspection, and scratchpad note-taking.
+- **Highlights**: Zero bundle bloat, persistent sessions across browser reloads, Web Audio feedback integration.
+- **Stack**: React, Tailwind CSS, Web Audio API, Vite, Express.
+- **Repository**: [github.com/REP-Julian](https://github.com/REP-Julian)
+
+---
+
+## Technical Stack
+
+| Category | Technologies & Tools |
 | :--- | :--- |
-| **Frontend** | React 18, Tailwind CSS, Vite, JavaScript (ES6+), TypeScript, HTML5 / Semantic Web |
-| **Backend & APIs** | Node.js, Express, RESTful APIs, Server-Sent Events (SSE), JWT Authentication, CORS |
-| **Databases & Cloud** | SQLite, Prisma ORM, Appwrite Cloud (Auth, Databases, Storage Buckets), Pinecone |
-| **AI & Tooling** | Google Gen AI SDK (Gemini Flash), OpenAI API, LangChain, Ollama (Local GGUF), Hugging Face |
-| **Design & Accessibility** | Responsive Design, Mobile-First UI, Keyboard Accessibility, Reduced Motion (`prefers-reduced-motion`) |
+| **Frontend** | React 18, Tailwind CSS, Vite, ES6+, Responsive Design, Lucide Icons |
+| **Backend** | Node.js, Express 4, RESTful Architecture, Server-Sent Events (SSE), CORS |
+| **Data & Storage** | SQLite, Prisma ORM, Appwrite Cloud (Auth, Databases, Storage Buckets) |
+| **AI & Automation** | Google Gen AI SDK (Gemini Flash), Multimodal Vision API |
+| **Security & Quality** | JWT (HS256), Input Sanitization, Rate Limiting, Node Test Runner |
 
 ---
 
-## ✨ Portfolio Key Highlights
+## Directory Structure
 
-- **Personal & Clean UI**: Minimalist warm aesthetic using custom charcoal, yellow, and orange color tokens without corporate boilerplate or distraction.
-- **Interactive Multi-Portrait Showcase**: 3D responsive portrait deck with smooth touch-swipe navigation and pause-on-hover functionality.
-- **Fast Project Exploration**: Clean project cards with direct GitHub and live demo links, accompanied by an accessible detail modal with keyboard dismiss (`Escape`).
-- **Full-Stack Content Management**: Secured admin interface with JWT authentication, rate limiting, and dual Appwrite Cloud / offline-first synchronization.
-- **Multimodal AI Vision**: Embedded Gemini integration capable of scanning UI screenshots to auto-fill project metadata.
-- **Accessible & Responsive**: Fully responsive grid from mobile to desktop with visible `:focus-visible` keyboard rings and reduced-motion preference compliance.
+```
+.
+├── prisma/               # Prisma database schema and seeding script
+├── public/               # Static assets, web manifest, robots.txt, sitemap
+├── scripts/              # Migration and database setup scripts
+├── server/               # Express backend application
+│   ├── middleware/       # Auth guards, upload validation, rate limiting
+│   ├── routes/           # REST endpoints (auth, projects, contact, ai)
+│   └── utils/            # Prisma client instance and server helpers
+├── src/                  # React frontend application
+│   ├── components/
+│   │   ├── admin/        # CMS dashboard, profile, and project managers
+│   │   ├── common/       # Navbar, Footer, Modals, Uploaders, Brand icons
+│   │   └── public/       # Hero, Projects, Skills, Achievements, Contact
+│   ├── context/          # Auth and Portfolio React context providers
+│   ├── data/             # Static fallback portfolio data
+│   ├── pages/            # HomePage, LoginPage, DashboardPage
+│   ├── services/         # Appwrite, REST API client, and AI service
+│   └── utils/            # Security shield and email client helpers
+├── tests/                # Automated security and API verification suite
+└── dist/                 # Production build output
+```
 
 ---
 
-## 🚀 Getting Started
+## Quickstart Guide
 
 ### Prerequisites
-- **Node.js**: version `18.0.0` or higher
-- **npm**: version `9.0.0` or higher
+- **Node.js**: `18.0.0` or higher
+- **npm**: `9.0.0` or higher
 
-### 1. Clone the Repository
+### 1. Clone & Install
 ```bash
 git clone https://github.com/REP-Julian/DevJ.git
 cd DevJ
-```
-
-### 2. Install Dependencies
-```bash
 npm install
 ```
 
-### 3. Configure Environment Variables
-Copy `.env.example` to create your local `.env` file:
+### 2. Environment Configuration
+Create a local `.env` file from the provided template:
 ```bash
 cp .env.example .env
 ```
-Fill in the appropriate configuration keys:
-- `PORT`: Local server port (default: `5000`)
-- `JWT_SECRET`: Secret key for signing admin authentication tokens
-- `GEMINI_API_KEY`: Google Gemini API key for AI assistant features
-- `APPWRITE_ENDPOINT`, `APPWRITE_PROJECT_ID`, `APPWRITE_DATABASE_ID`, `APPWRITE_BUCKET_ID`: (Optional) Appwrite Cloud credentials
 
-### 4. Run Locally
-
-**Frontend Development Server (Vite):**
-```bash
-npm run dev
+Configure key variables in `.env`:
+```env
+PORT=5000
+JWT_SECRET=your_jwt_signing_secret_here
+GEMINI_API_KEY=your_google_gemini_api_key
+VITE_APPWRITE_ENDPOINT=https://sgp.cloud.appwrite.io/v1
+VITE_APPWRITE_PROJECT_ID=your_project_id
 ```
-Open [http://localhost:5173](http://localhost:5173) in your browser.
 
-**Backend Server (Express):**
+### 3. Generate Database Client
 ```bash
-npm run server
+npx prisma generate
 ```
-Server runs on [http://localhost:5000](http://localhost:5000).
+
+### 4. Run Development Servers
+Start both servers concurrently:
+
+- **Frontend (Vite)**:
+  ```bash
+  npm run dev
+  ```
+  Accessible at `http://localhost:5173`
+
+- **Backend (Express)**:
+  ```bash
+  npm run server
+  ```
+  Accessible at `http://localhost:5000`
 
 ---
 
-## 🧪 Testing & Verification
+## Available Scripts
 
-Run the security audit and endpoint verification test suite:
+| Command | Action |
+| :--- | :--- |
+| `npm run dev` | Starts Vite development server with hot module replacement |
+| `npm run build` | Builds optimized production assets to `/dist` |
+| `npm run preview` | Previews production build locally |
+| `npm run server` | Starts production Express API server |
+| `npm run server:dev`| Starts Express API server with nodemon auto-reload |
+| `npm test` | Runs the automated Node.js security and endpoint test suite |
+| `npm run db:push` | Pushes Prisma schema changes directly to SQLite database |
+
+---
+
+## Security & Verification
+
+The project includes an automated test harness in `tests/security.test.mjs` verifying:
+- Rejection of unauthenticated requests on protected administrative endpoints (`401`).
+- Rejection of forged, expired, or invalid JWT signatures (`403` / `401`).
+- Protection of Server-Sent Events (SSE) telemetry streams.
+- Contact form payload bounds and email RFC sanitization.
+
+Run verification:
 ```bash
 npm test
 ```
-Tests verify:
-- Cryptographic JWT generation and validation
-- Route authorization and token expiration checks
-- Rate limiting on sensitive endpoints
-- Contact form input sanitization and payload bounds
-- Server-Sent Events (SSE) token validation
-
-To create an optimized production build:
-```bash
-npm run build
-```
 
 ---
 
-## 📬 Contact & Connect
+## Contact
 
+- **Developer**: Julian Agustino (DevJ)
 - **Email**: [agustino.julian@outlook.ph](mailto:agustino.julian@outlook.ph)
-- **GitHub**: [github.com/REP-Julian](https://github.com/REP-Julian)
-- **Portfolio**: [DevJ Portfolio](https://github.com/REP-Julian/DevJ)
+- **GitHub**: [@REP-Julian](https://github.com/REP-Julian)
+- **Repository**: [github.com/REP-Julian/DevJ](https://github.com/REP-Julian/DevJ)
 
 ---
 
-## 📄 License
-This project is open source and available under the [MIT License](LICENSE).
+## License
+
+This project is licensed under the [MIT License](LICENSE).
