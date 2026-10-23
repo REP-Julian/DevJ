@@ -8,9 +8,100 @@ const router = express.Router();
 router.use(aiLimiter);
 
 // ✅ Anymodel API Key Configuration
-const ANYMODEL_API_KEY = process.env.ANYMODEL_API_KEY || process.env.VITE_ANYMODEL_API_KEY || '';
+const ANYMODEL_API_KEY = process.env.ANYMODEL_API_KEY || process.env.VITE_ANYMODEL_API_KEY || 'sk-dc9d4b7df36ba555-l6bynm-60c40cd4';
 
-// Helper: Execute generate with Anymodel
+// Dynamic model discovery cache
+let cachedModels = null;
+let lastModelsFetch = 0;
+const MODELS_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
+// Verified baseline vision & OCR fallback models
+const FALLBACK_VISION_MODELS = [
+    'ds/deepseek-v4-flash-vision',
+    'am/llama-3.2-11b-vision-instruct',
+    'glm/glm-4.6v',
+    'cc/claude-sonnet-5',
+    'cc/claude-opus-5',
+    'qwen/qwen3.8-27b',
+    'qwen/qwen3.7-max',
+    'ag/gemini-2.5-flash',
+    'ag/gemini-3-flash'
+];
+
+// Verified baseline text/chat fallback models
+const FALLBACK_TEXT_MODELS = [
+    'ds/deepseek-v4-flash',
+    'cx/gpt-6-astra',
+    'cc/claude-opus-5',
+    'xai/grok-4.7',
+    'cx/gpt-6.1-sol',
+    'cx/gpt-6-sol',
+    'cx/gpt-6-luna',
+    'ds/deepseek-v4-pro',
+    'cc/claude-sonnet-5',
+    'kmc/kimi-for-coding',
+    'kmc/k3',
+    'glm/glm-5.3',
+    'ag/gemini-2.5-flash'
+];
+
+// Dynamically auto-detect all available models from Anymodel API
+async function fetchDynamicModels() {
+    const now = Date.now();
+    if (cachedModels && (now - lastModelsFetch < MODELS_CACHE_TTL)) {
+        return cachedModels;
+    }
+    try {
+        const res = await fetch('https://anymodel.org/v1/models', {
+            headers: { 'Authorization': `Bearer ${ANYMODEL_API_KEY}` },
+            signal: AbortSignal.timeout(6000)
+        });
+        if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data.data) && data.data.length > 0) {
+                cachedModels = data.data.map(m => m.id);
+                lastModelsFetch = now;
+                return cachedModels;
+            }
+        }
+    } catch (e) {
+        console.warn('[AI Discovery] Dynamic fetch note, using baseline models:', e.message);
+    }
+    return cachedModels || [...FALLBACK_VISION_MODELS, ...FALLBACK_TEXT_MODELS];
+}
+
+// Categorize and prioritize models for Vision/OCR vs Reasoning/Text
+function resolveModelCascade(availableModels, hasImage) {
+    if (hasImage) {
+        // Models with Vision, OCR, and multimodal document understanding
+        const isVision = (id) => {
+            const s = id.toLowerCase();
+            return s.includes('vision') ||
+                   s.includes('4.6v') ||
+                   s.includes('claude-sonnet') ||
+                   s.includes('claude-opus') ||
+                   s.includes('gemini') ||
+                   s.includes('qwen') ||
+                   s.includes('omni') ||
+                   s.includes('flash');
+        };
+        const discovered = availableModels.filter(isVision);
+        const ordered = [
+            ...FALLBACK_VISION_MODELS.filter(m => availableModels.includes(m)),
+            ...discovered
+        ];
+        return Array.from(new Set(ordered));
+    }
+
+    // High performance reasoning & chat models
+    const orderedText = [
+        ...FALLBACK_TEXT_MODELS.filter(m => availableModels.includes(m)),
+        ...availableModels
+    ];
+    return Array.from(new Set(orderedText));
+}
+
+// Helper: Execute generate with auto-detection & seamless exhaustion failover
 async function executeGenerate(payload) {
     if (!ANYMODEL_API_KEY) throw new Error('Anymodel API key not configured.');
     let hasImage = false;
@@ -48,33 +139,12 @@ async function executeGenerate(payload) {
         }
     }
 
-    const anymodelModels = hasImage ? [
-        'ds/deepseek-v4-flash-vision',
-        'qwen/qwen3.8-max'
-    ] : [
-        "ag/gemini-3.7-flash-high", 
-        "ag/gemini-3.7-flash-medium", 
-        "cx/gpt-5.6-luna", 
-        "cx/gpt-5.6-sol", 
-        "cx/gpt-5.6-terra", 
-        "kmc/k3", 
-        "glm/glm-5.3", 
-        "cc/claude-opus-5", 
-        "cc/claude-opus-4-6", 
-        "cc/claude-opus-4-7", 
-        "cc/claude-opus-4-8", 
-        "xai/grok-4.7", 
-        "ds/deepseek-v4-pro", 
-        "ds/deepseek-v4-flash", 
-        "qwen/qwen3.8-max",
-        "ag/gemini-3.7-flash-low", 
-        "ag/gemini-3.6-flash-low", 
-        "ag/gemini-3.1-pro-low"
-    ];
+    const availableModels = await fetchDynamicModels();
+    const candidateModels = resolveModelCascade(availableModels, hasImage);
 
     let lastError = null;
     
-    for (const model of anymodelModels) {
+    for (const model of candidateModels) {
         try {
             const payloadData = {
                 model: model,
@@ -93,29 +163,63 @@ async function executeGenerate(payload) {
                     'X-Title': 'DevJ Portfolio'
                 },
                 body: JSON.stringify(payloadData),
-                signal: AbortSignal.timeout(20000)
+                signal: AbortSignal.timeout(12000)
             });
 
             if (!res.ok) {
                 const errText = await res.text();
+                console.warn(`[AI Cascade] Model "${model}" unavailable/exhausted [${res.status}], auto-switching...`);
                 lastError = new Error(`Anymodel error [${res.status}] on ${model}: ${errText}`);
-                continue; // Try next model
+                continue; // Seamless failover to next detected model
             }
             
             const d = await res.json();
             if (d.error) {
+                console.warn(`[AI Cascade] Model "${model}" error (${d.error.message || d.error.type}), auto-switching...`);
                 lastError = new Error(`Anymodel API Error on ${model}: ${d.error.message || d.error.type || 'Unknown'}`);
-                continue; // Try next model
+                continue; // Seamless failover to next detected model
+            }
+
+            const content = d.choices?.[0]?.message?.content;
+            if (!content || !content.trim()) {
+                console.warn(`[AI Cascade] Model "${model}" returned empty response, auto-switching...`);
+                lastError = new Error(`Anymodel API on ${model} returned empty content.`);
+                continue;
             }
             
-            return { text: d.choices?.[0]?.message?.content || '', provider: `anymodel (${model})` };
+            return {
+                text: content,
+                provider: `Anymodel (${model})`,
+                model: model,
+                totalDiscovered: availableModels.length
+            };
         } catch (err) {
+            console.warn(`[AI Cascade] Model "${model}" exception (${err.message}), auto-switching to next model...`);
             lastError = err;
         }
     }
     
-    throw lastError || new Error('All models in the Anymodel cascade failed.');
+    throw lastError || new Error('All auto-detected models in the Anymodel cascade were exhausted.');
 }
+
+// Endpoint: Return auto-detected available models and OCR/Vision capabilities
+router.get('/models', authenticateToken, async (req, res) => {
+    try {
+        const allModels = await fetchDynamicModels();
+        const visionModels = resolveModelCascade(allModels, true);
+        const textModels = resolveModelCascade(allModels, false);
+
+        res.json({
+            success: true,
+            totalAvailable: allModels.length,
+            visionAndOCRModels: visionModels,
+            textAndChatModels: textModels,
+            timestamp: new Date().toISOString()
+        });
+    } catch (error) {
+        res.status(500).json({ error: error.message || 'Failed to detect models' });
+    }
+});
 
 // Test API Key connection
 router.post('/test-connection', authenticateToken, async (req, res) => {

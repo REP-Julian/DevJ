@@ -109,7 +109,7 @@ async function imageToBase64(imageInput, maxDim = 800, quality = 0.8) {
 }
 
 const AI_KEYS = {
-    anymodel: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ANYMODEL_API_KEY) || ''
+    anymodel: (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ANYMODEL_API_KEY) || 'sk-dc9d4b7df36ba555-l6bynm-60c40cd4'
 };
 
 const GEMINI_API_KEY_STORAGE = 'gemini_api_key_v2';
@@ -133,37 +133,97 @@ function setActiveAIProvider(provider) {
     return 'anymodel';
 }
 
+// Client-side dynamic model discovery cache
+let clientCachedModels = null;
+let clientLastModelsFetch = 0;
+
+const CLIENT_FALLBACK_VISION = [
+    'ds/deepseek-v4-flash-vision',
+    'am/llama-3.2-11b-vision-instruct',
+    'glm/glm-4.6v',
+    'cc/claude-sonnet-5',
+    'cc/claude-opus-5',
+    'qwen/qwen3.8-27b',
+    'qwen/qwen3.7-max',
+    'ag/gemini-2.5-flash',
+    'ag/gemini-3-flash'
+];
+
+const CLIENT_FALLBACK_TEXT = [
+    'ds/deepseek-v4-flash',
+    'cx/gpt-6-astra',
+    'cc/claude-opus-5',
+    'xai/grok-4.7',
+    'cx/gpt-6.1-sol',
+    'cx/gpt-6-sol',
+    'cx/gpt-6-luna',
+    'ds/deepseek-v4-pro',
+    'cc/claude-sonnet-5',
+    'kmc/kimi-for-coding',
+    'kmc/k3',
+    'glm/glm-5.3',
+    'ag/gemini-2.5-flash'
+];
+
+async function getClientDynamicModels(activeKey) {
+    const now = Date.now();
+    if (clientCachedModels && (now - clientLastModelsFetch < 10 * 60 * 1000)) {
+        return clientCachedModels;
+    }
+    try {
+        const res = await fetch('https://anymodel.org/v1/models', {
+            headers: { 'Authorization': `Bearer ${activeKey}` },
+            signal: AbortSignal.timeout(5000)
+        });
+        if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data.data) && data.data.length > 0) {
+                clientCachedModels = data.data.map(m => m.id);
+                clientLastModelsFetch = now;
+                return clientCachedModels;
+            }
+        }
+    } catch {
+        // Fallback silently to static list
+    }
+    return clientCachedModels || [...CLIENT_FALLBACK_VISION, ...CLIENT_FALLBACK_TEXT];
+}
+
 async function runAnymodel({ prompt, system, imageBase64, mimeType, expectJson = false, customKey }) {
-    const activeKey = customKey || AI_KEYS.anymodel || (typeof localStorage !== 'undefined' ? localStorage.getItem(GEMINI_API_KEY_STORAGE) : '');
+    const activeKey = customKey || AI_KEYS.anymodel || (typeof localStorage !== 'undefined' ? localStorage.getItem(GEMINI_API_KEY_STORAGE) : '') || 'sk-dc9d4b7df36ba555-l6bynm-60c40cd4';
     if (!activeKey) {
         throw new Error('Anymodel API Key is missing. Please configure it in the UI or restart your dev server.');
     }
-    const anymodelModels = imageBase64 ? [
-        'ds/deepseek-v4-flash-vision',
-        'qwen/qwen3.8-max'
-    ] : [
-        "ag/gemini-3.7-flash-high", 
-        "ag/gemini-3.7-flash-medium", 
-        "cx/gpt-5.6-luna", 
-        "cx/gpt-5.6-sol", 
-        "cx/gpt-5.6-terra", 
-        "kmc/k3", 
-        "glm/glm-5.3", 
-        "cc/claude-opus-5", 
-        "cc/claude-opus-4-6", 
-        "cc/claude-opus-4-7", 
-        "cc/claude-opus-4-8", 
-        "xai/grok-4.7", 
-        "ds/deepseek-v4-pro", 
-        "ds/deepseek-v4-flash", 
-        "qwen/qwen3.8-max",
-        "ag/gemini-3.7-flash-low", 
-        "ag/gemini-3.6-flash-low", 
-        "ag/gemini-3.1-pro-low"
-    ];
+
+    const available = await getClientDynamicModels(activeKey);
+
+    let candidateModels = [];
+    if (imageBase64) {
+        const isVision = (id) => {
+            const s = id.toLowerCase();
+            return s.includes('vision') ||
+                   s.includes('4.6v') ||
+                   s.includes('claude-sonnet') ||
+                   s.includes('claude-opus') ||
+                   s.includes('gemini') ||
+                   s.includes('qwen') ||
+                   s.includes('omni') ||
+                   s.includes('flash');
+        };
+        const discovered = available.filter(isVision);
+        candidateModels = Array.from(new Set([
+            ...CLIENT_FALLBACK_VISION.filter(m => available.includes(m)),
+            ...discovered
+        ]));
+    } else {
+        candidateModels = Array.from(new Set([
+            ...CLIENT_FALLBACK_TEXT.filter(m => available.includes(m)),
+            ...available
+        ]));
+    }
 
     let lastError = null;
-    for (const model of anymodelModels) {
+    for (const model of candidateModels) {
         try {
             const messages = [];
             if (system) messages.push({ role: 'system', content: system });
@@ -188,7 +248,7 @@ async function runAnymodel({ prompt, system, imageBase64, mimeType, expectJson =
                 model,
                 messages,
                 temperature: 0.2,
-                max_tokens: 600
+                max_tokens: 800
             };
 
             const res = await fetch('https://anymodel.org/v1/chat/completions', {
@@ -199,24 +259,28 @@ async function runAnymodel({ prompt, system, imageBase64, mimeType, expectJson =
                     'HTTP-Referer': 'https://devj.agustino-julian.workers.dev',
                     'X-Title': 'DevJ Portfolio'
                 },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                signal: AbortSignal.timeout(12000)
             });
 
             if (res.ok) {
                 const data = await res.json();
                 if (data.error) {
+                    console.warn(`[AI Cascade] Model "${model}" error, auto-switching...`);
                     lastError = new Error(`Anymodel API Error on ${model}: ${data.error.message || data.error.type || 'Unknown'}`);
-                    continue; // Proceed to next model failover
+                    continue; // Auto-switch model
                 }
                 const text = data.choices?.[0]?.message?.content;
-                if (text) {
-                    return { provider: `Anymodel (${model})`, text };
+                if (text && text.trim()) {
+                    return { provider: `Anymodel (${model})`, text, model };
                 } else {
-                    lastError = new Error(`Anymodel API on ${model} returned empty text. Response: ${JSON.stringify(data)}`);
+                    console.warn(`[AI Cascade] Model "${model}" returned empty text, auto-switching...`);
+                    lastError = new Error(`Anymodel API on ${model} returned empty text.`);
                     continue;
                 }
             } else {
                 const errData = await res.json().catch(() => ({}));
+                console.warn(`[AI Cascade] Model "${model}" status ${res.status}, auto-switching...`);
                 const isRateLimit = res.status === 429;
                 lastError = new Error(
                     isRateLimit
@@ -225,6 +289,7 @@ async function runAnymodel({ prompt, system, imageBase64, mimeType, expectJson =
                 );
             }
         } catch (err) {
+            console.warn(`[AI Cascade] Model "${model}" failed (${err.message}), auto-switching...`);
             lastError = err;
         }
     }
