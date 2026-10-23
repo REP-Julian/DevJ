@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Github, ExternalLink, Sparkles, X, Check, ArrowUpRight } from 'lucide-react';
+import { Github, Sparkles, X, Check, ArrowUpRight } from 'lucide-react';
 
 export const ProjectsSection = ({ projects = [] }) => {
     const defaultProjects = [
@@ -17,7 +17,6 @@ export const ProjectsSection = ({ projects = [] }) => {
             technologies: 'React, Node.js, Express, SQLite, TailwindCSS, JWT',
             imageUrl: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=800&q=80',
             githubUrl: 'https://github.com/REP-Julian',
-            liveUrl: '',
             order: 1,
         },
         {
@@ -34,7 +33,6 @@ export const ProjectsSection = ({ projects = [] }) => {
             technologies: 'React, Node.js, Express, Appwrite Cloud, SSE, Google Gen AI',
             imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
             githubUrl: 'https://github.com/REP-Julian/DevJ',
-            liveUrl: '',
             order: 2,
         },
         {
@@ -51,7 +49,6 @@ export const ProjectsSection = ({ projects = [] }) => {
             technologies: 'React, TailwindCSS, Web Audio API, Vite, Express',
             imageUrl: 'https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?auto=format&fit=crop&w=800&q=80',
             githubUrl: 'https://github.com/REP-Julian',
-            liveUrl: '',
             order: 3,
         },
     ];
@@ -218,34 +215,19 @@ export const ProjectsSection = ({ projects = [] }) => {
                                             <ArrowUpRight className="w-3.5 h-3.5" />
                                         </button>
 
-                                        <div className="flex items-center gap-2">
-                                            {project.githubUrl && project.githubUrl !== '#' && (
-                                                <a
-                                                    href={project.githubUrl}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    aria-label={`GitHub source code for ${project.title}`}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-charcoal-900 hover:bg-charcoal-800 text-devyellow-400 text-xs font-bold transition-all shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
-                                                    title="View Source Code"
-                                                >
-                                                    <Github className="w-3.5 h-3.5" />
-                                                    <span>Code</span>
-                                                </a>
-                                            )}
-                                            {project.liveUrl && project.liveUrl !== '#' && (
-                                                <a
-                                                    href={project.liveUrl}
-                                                    target="_blank"
-                                                    rel="noreferrer"
-                                                    aria-label={`Live demo for ${project.title}`}
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-devorange-600 hover:bg-devorange-700 text-white text-xs font-bold transition-all shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
-                                                    title="View Live Demo"
-                                                >
-                                                    <ExternalLink className="w-3.5 h-3.5" />
-                                                    <span>Demo</span>
-                                                </a>
-                                            )}
-                                        </div>
+                                        {project.githubUrl && project.githubUrl !== '#' && (
+                                            <a
+                                                href={project.githubUrl}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                aria-label={`GitHub source code for ${project.title}`}
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-charcoal-900 hover:bg-charcoal-800 text-devyellow-400 text-xs font-bold transition-all shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
+                                                title="View Source Code"
+                                            >
+                                                <Github className="w-3.5 h-3.5" />
+                                                <span>Code</span>
+                                            </a>
+                                        )}
                                     </div>
                                 </div>
                             </article>
@@ -350,31 +332,17 @@ export const ProjectsSection = ({ projects = [] }) => {
                             </div>
 
                             {/* External Links */}
-                            {((activeModalProject.githubUrl && activeModalProject.githubUrl !== '#') ||
-                              (activeModalProject.liveUrl && activeModalProject.liveUrl !== '#')) && (
+                            {activeModalProject.githubUrl && activeModalProject.githubUrl !== '#' && (
                                 <div className="pt-4 border-t border-gray-100 flex flex-wrap items-center gap-3">
-                                    {activeModalProject.githubUrl && activeModalProject.githubUrl !== '#' && (
-                                        <a
-                                            href={activeModalProject.githubUrl}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="px-5 py-2.5 rounded-xl bg-charcoal-900 hover:bg-charcoal-800 text-devyellow-400 text-xs font-bold flex items-center gap-2 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
-                                        >
-                                            <Github className="w-4 h-4" />
-                                            <span>GitHub Repository</span>
-                                        </a>
-                                    )}
-                                    {activeModalProject.liveUrl && activeModalProject.liveUrl !== '#' && (
-                                        <a
-                                            href={activeModalProject.liveUrl}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            className="px-5 py-2.5 rounded-xl bg-devorange-600 hover:bg-devorange-700 text-white text-xs font-bold flex items-center gap-2 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
-                                        >
-                                            <ExternalLink className="w-4 h-4" />
-                                            <span>Open Live Demo</span>
-                                        </a>
-                                    )}
+                                    <a
+                                        href={activeModalProject.githubUrl}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="px-5 py-2.5 rounded-xl bg-charcoal-900 hover:bg-charcoal-800 text-devyellow-400 text-xs font-bold flex items-center gap-2 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
+                                    >
+                                        <Github className="w-4 h-4" />
+                                        <span>GitHub Repository</span>
+                                    </a>
                                 </div>
                             )}
                         </div>

@@ -38,12 +38,12 @@ export const ProjectsManager = ({ projects = [], onUpdated }) => {
         setLocalImageFile(null);
         setFormData({
             title: '',
-            category: 'AI Platform',
+            category: 'Full-Stack Web App',
             description: '',
             technologies: 'React, Node.js, TailwindCSS',
             imageUrl: '',
-            githubUrl: 'https://github.com',
-            liveUrl: 'https://example.com',
+            githubUrl: 'https://github.com/REP-Julian',
+            liveUrl: '',
             order: projects.length + 1,
         });
     };
@@ -137,7 +137,6 @@ export const ProjectsManager = ({ projects = [], onUpdated }) => {
                         <h3 className="font-extrabold text-sm text-charcoal-900">
                             {isCreating ? 'Create Project' : 'Edit Project'}
                         </h3>
-
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -170,7 +169,7 @@ export const ProjectsManager = ({ projects = [], onUpdated }) => {
                             required
                             value={formData.technologies}
                             onChange={(e) => setFormData({ ...formData, technologies: e.target.value })}
-                            placeholder="React, TypeScript, OpenAI API, Express"
+                            placeholder="React, TypeScript, SQLite, Express"
                             className="w-full px-3 py-2 border rounded-xl text-xs"
                         />
                     </div>
@@ -186,22 +185,14 @@ export const ProjectsManager = ({ projects = [], onUpdated }) => {
                         />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-xs font-semibold text-charcoal-800 mb-1">GitHub URL</label>
+                            <label className="block text-xs font-semibold text-charcoal-800 mb-1">GitHub Repository URL</label>
                             <input
                                 type="text"
                                 value={formData.githubUrl}
                                 onChange={(e) => setFormData({ ...formData, githubUrl: e.target.value })}
-                                className="w-full px-3 py-2 border rounded-xl text-xs"
-                            />
-                        </div>
-                        <div>
-                            <label className="block text-xs font-semibold text-charcoal-800 mb-1">Live Demo URL</label>
-                            <input
-                                type="text"
-                                value={formData.liveUrl}
-                                onChange={(e) => setFormData({ ...formData, liveUrl: e.target.value })}
+                                placeholder="https://github.com/..."
                                 className="w-full px-3 py-2 border rounded-xl text-xs"
                             />
                         </div>

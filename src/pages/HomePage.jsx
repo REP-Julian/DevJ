@@ -3,7 +3,6 @@ import Navbar from '../components/common/Navbar';
 import Footer from '../components/common/Footer';
 import HeroSection from '../components/public/HeroSection';
 import ProjectsSection from '../components/public/ProjectsSection';
-import AboutSection from '../components/public/AboutSection';
 import SkillsSection from '../components/public/SkillsSection';
 import AchievementsSection from '../components/public/AchievementsSection';
 import HobbiesSection from '../components/public/HobbiesSection';
@@ -46,7 +45,6 @@ export const HomePage = () => {
             <main className="flex-grow">
                 <HeroSection profile={profile} />
                 <ProjectsSection projects={projects} />
-                <AboutSection profile={profile} />
                 <SkillsSection skills={skills} />
                 <AchievementsSection achievements={achievements} />
                 <HobbiesSection hobbies={hobbies} />
