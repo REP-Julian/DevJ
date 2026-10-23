@@ -17,39 +17,30 @@ const MODELS_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 // Verified baseline vision & OCR fallback models (ordered by tested responsiveness & accuracy)
 const FALLBACK_VISION_MODELS = [
-    'ag/gemini-2.5-flash',
-    'ag/gemini-3-flash',
-    'ag/gemini-3.8-flash-low',
-    'ag/gemini-3.8-flash-medium',
-    'ag/gemini-3.8-flash-high',
     'glm/glm-5.3-flash',
     'glm/glm-4.6v',
+    'ag/gemini-2.5-flash',
+    'ag/gemini-3-flash',
+    'qwen/qwen3.7-max',
+    'ds/deepseek-v4-flash-vision',
     'am/llama-3.2-11b-vision-instruct',
     'cc/claude-sonnet-5',
-    'cc/claude-opus-5',
-    'qwen/qwen3.8-27b',
-    'ds/deepseek-v4-flash-vision'
+    'cc/claude-opus-5'
 ];
 
 // Verified baseline text/chat fallback models
 const FALLBACK_TEXT_MODELS = [
+    'ds/deepseek-v4-flash',
+    'qwen/qwen3.7-max',
+    'glm/glm-5.3',
     'ag/gemini-2.5-flash',
     'ag/gemini-3-flash',
-    'ag/gemini-3.8-flash-low',
-    'ag/gemini-3.8-flash-medium',
-    'ag/gemini-3.8-flash-high',
-    'ds/deepseek-v4-flash',
+    'glm/glm-5.3-flash',
     'cx/gpt-6-astra',
     'cc/claude-opus-5',
-    'xai/grok-4.7',
-    'cx/gpt-6.1-sol',
-    'cx/gpt-6-sol',
-    'cx/gpt-6-luna',
-    'ds/deepseek-v4-pro',
     'cc/claude-sonnet-5',
-    'kmc/kimi-for-coding',
-    'kmc/k3',
-    'glm/glm-5.3'
+    'xai/grok-4.7',
+    'ds/deepseek-v4-pro'
 ];
 
 // Dynamically auto-detect all available models from Anymodel API
@@ -174,7 +165,7 @@ async function executeGenerate(payload) {
                     'X-Title': 'DevJ Portfolio'
                 },
                 body: JSON.stringify(payloadData),
-                signal: AbortSignal.timeout(hasImage ? 15000 : 10000)
+                signal: AbortSignal.timeout(hasImage ? 6000 : 4500)
             });
 
             if (!res.ok) {

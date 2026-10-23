@@ -138,38 +138,29 @@ let clientCachedModels = null;
 let clientLastModelsFetch = 0;
 
 const CLIENT_FALLBACK_VISION = [
-    'ag/gemini-2.5-flash',
-    'ag/gemini-3-flash',
-    'ag/gemini-3.8-flash-low',
-    'ag/gemini-3.8-flash-medium',
-    'ag/gemini-3.8-flash-high',
     'glm/glm-5.3-flash',
     'glm/glm-4.6v',
+    'ag/gemini-2.5-flash',
+    'ag/gemini-3-flash',
+    'qwen/qwen3.7-max',
+    'ds/deepseek-v4-flash-vision',
     'am/llama-3.2-11b-vision-instruct',
     'cc/claude-sonnet-5',
-    'cc/claude-opus-5',
-    'qwen/qwen3.8-27b',
-    'ds/deepseek-v4-flash-vision'
+    'cc/claude-opus-5'
 ];
 
 const CLIENT_FALLBACK_TEXT = [
+    'ds/deepseek-v4-flash',
+    'qwen/qwen3.7-max',
+    'glm/glm-5.3',
     'ag/gemini-2.5-flash',
     'ag/gemini-3-flash',
-    'ag/gemini-3.8-flash-low',
-    'ag/gemini-3.8-flash-medium',
-    'ag/gemini-3.8-flash-high',
-    'ds/deepseek-v4-flash',
+    'glm/glm-5.3-flash',
     'cx/gpt-6-astra',
     'cc/claude-opus-5',
-    'xai/grok-4.7',
-    'cx/gpt-6.1-sol',
-    'cx/gpt-6-sol',
-    'cx/gpt-6-luna',
-    'ds/deepseek-v4-pro',
     'cc/claude-sonnet-5',
-    'kmc/kimi-for-coding',
-    'kmc/k3',
-    'glm/glm-5.3'
+    'xai/grok-4.7',
+    'ds/deepseek-v4-pro'
 ];
 
 async function getClientDynamicModels(activeKey) {
@@ -180,7 +171,7 @@ async function getClientDynamicModels(activeKey) {
     try {
         const res = await fetch('https://anymodel.org/v1/models', {
             headers: { 'Authorization': `Bearer ${activeKey}` },
-            signal: AbortSignal.timeout(5000)
+            signal: AbortSignal.timeout(4500)
         });
         if (res.ok) {
             const data = await res.json();
@@ -270,7 +261,7 @@ async function runAnymodel({ prompt, system, imageBase64, mimeType, expectJson =
                     'X-Title': 'DevJ Portfolio'
                 },
                 body: JSON.stringify(payload),
-                signal: AbortSignal.timeout(6500)
+                signal: AbortSignal.timeout(4500)
             });
 
             if (res.ok) {
