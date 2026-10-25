@@ -138,29 +138,25 @@ let clientCachedModels = null;
 let clientLastModelsFetch = 0;
 
 const CLIENT_FALLBACK_VISION = [
-    'glm/glm-5.3-flash',
-    'glm/glm-4.6v',
     'ag/gemini-2.5-flash',
     'ag/gemini-3-flash',
-    'qwen/qwen3.7-max',
-    'ds/deepseek-v4-flash-vision',
-    'am/llama-3.2-11b-vision-instruct',
-    'cc/claude-sonnet-5',
-    'cc/claude-opus-5'
+    'ag/gemini-3.1-flash-lite-preview',
+    'ag/gemini-2.5-flash-lite',
+    'gc/gemini-2.5-flash',
+    'cc/claude-sonnet-4-6',
+    'qwen/qwen3.7-max'
 ];
 
 const CLIENT_FALLBACK_TEXT = [
-    'ds/deepseek-v4-flash',
-    'qwen/qwen3.7-max',
-    'glm/glm-5.3',
     'ag/gemini-2.5-flash',
     'ag/gemini-3-flash',
-    'glm/glm-5.3-flash',
-    'cx/gpt-6-astra',
-    'cc/claude-opus-5',
-    'cc/claude-sonnet-5',
-    'xai/grok-4.7',
-    'ds/deepseek-v4-pro'
+    'ag/gemini-3.1-flash-lite-preview',
+    'ag/gemini-2.5-flash-lite',
+    'cc/claude-haiku-4-5-20251001',
+    'cc/claude-sonnet-4-6',
+    'gc/gemini-2.5-flash',
+    'xai/grok-4.6',
+    'qwen/qwen3.7-max'
 ];
 
 async function getClientDynamicModels(activeKey) {
@@ -171,7 +167,7 @@ async function getClientDynamicModels(activeKey) {
     try {
         const res = await fetch('https://anymodel.org/v1/models', {
             headers: { 'Authorization': `Bearer ${activeKey}` },
-            signal: AbortSignal.timeout(4500)
+            signal: AbortSignal.timeout(12000)
         });
         if (res.ok) {
             const data = await res.json();
@@ -211,15 +207,20 @@ async function runAnymodel({ prompt, system, imageBase64, mimeType, expectJson =
                    s.includes('omni') ||
                    s.includes('flash');
         };
-        const discovered = available.filter(isVision);
+                const BAD_MODELS = ['nano-banana', 'glm/glm-4.6v', 'qwen3.8-27b', 'llama-3.2-11b', 'ds/deepseek', '3.8-flash-high', '3.8-flash-low', 'am/free'];
+        const isBad = (id) => BAD_MODELS.some(b => id.toLowerCase().includes(b));
+        const discovered = available.filter(id => isVision(id) && !isBad(id));
         candidateModels = Array.from(new Set([
             ...CLIENT_FALLBACK_VISION.filter(m => available.includes(m)),
             ...discovered
         ]));
     } else {
+                const BAD_MODELS = ['nano-banana', 'glm/glm-4.6v', 'qwen3.8-27b', 'llama-3.2-11b', 'ds/deepseek', '3.8-flash-high', '3.8-flash-low', 'am/free', 'image', 'video'];
+        const isBad = (id) => BAD_MODELS.some(b => id.toLowerCase().includes(b));
+        const filteredAvailable = available.filter(id => !isBad(id));
         candidateModels = Array.from(new Set([
             ...CLIENT_FALLBACK_TEXT.filter(m => available.includes(m)),
-            ...available
+            ...filteredAvailable
         ]));
     }
 
@@ -261,7 +262,7 @@ async function runAnymodel({ prompt, system, imageBase64, mimeType, expectJson =
                     'X-Title': 'DevJ Portfolio'
                 },
                 body: JSON.stringify(payload),
-                signal: AbortSignal.timeout(4500)
+                signal: AbortSignal.timeout(12000)
             });
 
             if (res.ok) {

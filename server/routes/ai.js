@@ -17,30 +17,26 @@ const MODELS_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 // Verified baseline vision & OCR fallback models (ordered by tested responsiveness & accuracy)
 const FALLBACK_VISION_MODELS = [
-    'glm/glm-5.3-flash',
-    'glm/glm-4.6v',
     'ag/gemini-2.5-flash',
     'ag/gemini-3-flash',
-    'qwen/qwen3.7-max',
-    'ds/deepseek-v4-flash-vision',
-    'am/llama-3.2-11b-vision-instruct',
-    'cc/claude-sonnet-5',
-    'cc/claude-opus-5'
+    'ag/gemini-3.1-flash-lite-preview',
+    'ag/gemini-2.5-flash-lite',
+    'gc/gemini-2.5-flash',
+    'cc/claude-sonnet-4-6',
+    'qwen/qwen3.7-max'
 ];
 
 // Verified baseline text/chat fallback models
 const FALLBACK_TEXT_MODELS = [
-    'ds/deepseek-v4-flash',
-    'qwen/qwen3.7-max',
-    'glm/glm-5.3',
     'ag/gemini-2.5-flash',
     'ag/gemini-3-flash',
-    'glm/glm-5.3-flash',
-    'cx/gpt-6-astra',
-    'cc/claude-opus-5',
-    'cc/claude-sonnet-5',
-    'xai/grok-4.7',
-    'ds/deepseek-v4-pro'
+    'ag/gemini-3.1-flash-lite-preview',
+    'ag/gemini-2.5-flash-lite',
+    'cc/claude-haiku-4-5-20251001',
+    'cc/claude-sonnet-4-6',
+    'gc/gemini-2.5-flash',
+    'xai/grok-4.6',
+    'qwen/qwen3.7-max'
 ];
 
 // Dynamically auto-detect all available models from Anymodel API
@@ -52,7 +48,7 @@ async function fetchDynamicModels() {
     try {
         const res = await fetch('https://anymodel.org/v1/models', {
             headers: { 'Authorization': `Bearer ${ANYMODEL_API_KEY}` },
-            signal: AbortSignal.timeout(6000)
+            signal: AbortSignal.timeout(12000)
         });
         if (res.ok) {
             const data = await res.json();
@@ -86,7 +82,9 @@ function resolveModelCascade(availableModels, hasImage) {
                    s.includes('omni') ||
                    s.includes('flash');
         };
-        const discovered = availableModels.filter(isVision);
+        const BAD_MODELS = ['nano-banana', 'glm/glm-4.6v', 'qwen3.8-27b', 'llama-3.2-11b', 'ds/deepseek', '3.8-flash-high', '3.8-flash-low', 'am/free'];
+        const isBad = (id) => BAD_MODELS.some(b => id.toLowerCase().includes(b));
+        const discovered = availableModels.filter(id => isVision(id) && !isBad(id));
         const ordered = [
             ...FALLBACK_VISION_MODELS.filter(m => availableModels.includes(m)),
             ...discovered
@@ -95,9 +93,11 @@ function resolveModelCascade(availableModels, hasImage) {
     }
 
     // High performance reasoning & chat models
+    const BAD_MODELS = ['nano-banana', 'glm/glm-4.6v', 'qwen3.8-27b', 'llama-3.2-11b', 'ds/deepseek', '3.8-flash-high', '3.8-flash-low', 'am/free', 'image', 'video'];
+    const isBad = (id) => BAD_MODELS.some(b => id.toLowerCase().includes(b));
     const orderedText = [
         ...FALLBACK_TEXT_MODELS.filter(m => availableModels.includes(m)),
-        ...availableModels
+        ...availableModels.filter(id => !isBad(id))
     ];
     return Array.from(new Set(orderedText));
 }
@@ -165,7 +165,7 @@ async function executeGenerate(payload) {
                     'X-Title': 'DevJ Portfolio'
                 },
                 body: JSON.stringify(payloadData),
-                signal: AbortSignal.timeout(hasImage ? 6000 : 4500)
+                signal: AbortSignal.timeout(hasImage ? 15000 : 12000)
             });
 
             if (!res.ok) {
