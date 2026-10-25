@@ -184,7 +184,16 @@ async function getClientDynamicModels(activeKey) {
 }
 
 async function runAnymodel({ prompt, system, imageBase64, mimeType, expectJson = false, customKey }) {
-    const activeKey = customKey || AI_KEYS.anymodel || (typeof localStorage !== 'undefined' ? localStorage.getItem(GEMINI_API_KEY_STORAGE) : '') || 'sk-dc9d4b7df36ba555-l6bynm-60c40cd4';
+    let activeKey = customKey;
+    if (!activeKey && typeof localStorage !== 'undefined') {
+        const stored = localStorage.getItem(GEMINI_API_KEY_STORAGE);
+        if (stored && stored !== 'backend-configured' && !stored.includes('wv2zey')) {
+            activeKey = stored;
+        }
+    }
+    if (!activeKey) {
+        activeKey = AI_KEYS.anymodel || 'sk-dc9d4b7df36ba555-l6bynm-60c40cd4';
+    }
     if (!activeKey) {
         throw new Error('Anymodel API Key is missing. Please configure it in the UI or restart your dev server.');
     }
