@@ -57,7 +57,7 @@ export const SkillsSection = ({ skills = [] }) => {
                         Technologies I Work With
                     </h2>
                     <p className="text-sm sm:text-base text-charcoal-500 font-normal leading-relaxed">
-                        The languages, frameworks, and developer tools I use to build full-stack web applications.
+                        The tools, technologies, and AI applications I explore and use everyday.
                     </p>
                 </div>
 

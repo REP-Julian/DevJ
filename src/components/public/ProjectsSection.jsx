@@ -6,7 +6,7 @@ export const ProjectsSection = ({ projects = [] }) => {
         {
             id: '1',
             title: 'PawTrack Management System',
-            category: 'Full-Stack Web App',
+            category: 'Web Application',
             description: 'A comprehensive rescue shelter platform built to help animal rescue teams track pet intakes, veterinary health records, and adoption workflows.',
             imageUrl: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=800&q=80',
             githubUrl: 'https://github.com/REP-Julian/Pawtrack-app',

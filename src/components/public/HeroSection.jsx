@@ -115,7 +115,7 @@ export const HeroSection = ({ profile }) => {
                 <div className="lg:col-span-7 space-y-6 text-left">
                     <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-devyellow-300 shadow-warm-sm text-xs font-bold text-devorange-600 uppercase tracking-wider">
                         <Sparkles className="w-3.5 h-3.5 text-devyellow-500 fill-devyellow-400" />
-                        <span>Full-Stack Developer</span>
+                        <span>{profile?.tagline || 'AI User & Tech Explorer'}</span>
                     </div>
 
                     <div className="space-y-2">
@@ -134,12 +134,12 @@ export const HeroSection = ({ profile }) => {
                     </div>
 
                     <p className="text-xl sm:text-2xl font-bold text-charcoal-800 leading-snug">
-                        {profile?.tagline || 'Building clean, practical web applications'}
+                        {profile?.tagline || 'Everyday AI User & Tech Explorer'}
                     </p>
 
                     <p className="text-base sm:text-lg text-charcoal-500 max-w-xl font-normal leading-relaxed">
                         {profile?.description ||
-                            'I build responsive web applications and developer tools using React, Node.js, and modern APIs. Focused on clean code, good UX, and solving real problems.'}
+                            'I am an everyday AI user exploring generative tools, practical workflows, and emerging technology. Curious to learn, experiment, and see how AI can help with daily tasks.'}
                     </p>
 
                     <div className="pt-2 flex flex-wrap items-center gap-3 sm:gap-4">
@@ -251,7 +251,7 @@ export const HeroSection = ({ profile }) => {
                                     <h3 className="font-extrabold text-charcoal-900 text-sm">
                                         {profile?.name || 'Julian Agustino'}
                                     </h3>
-                                    <p className="text-xs text-charcoal-500 font-medium">Full-Stack Developer</p>
+                                    <p className="text-xs text-charcoal-500 font-medium">{profile?.tagline || 'AI User & Tech Explorer'}</p>
                                 </div>
 
                                 {/* Controls: Arrows & Dot Indicators */}

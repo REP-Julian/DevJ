@@ -23,10 +23,10 @@ export const AchievementsSection = ({ achievements = [] }) => {
         },
         {
             id: '3',
-            title: 'Full Stack Systems & Python Certification',
+            title: 'AI Literacy & Tech Basics Certification',
             category: 'Foundational Milestone',
             date: '2023',
-            description: 'Validated mastery of distributed microservices, secure cryptographic tokens, and scalable cloud databases. Backed by open-source production code and architectural breakdowns.',
+            description: 'Completed foundational coursework covering essential AI concepts, prompt fundamentals, and introductory Python.',
             imageUrl: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&w=800&q=80',
             order: 3,
         },

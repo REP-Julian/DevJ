@@ -38,13 +38,13 @@ export const Footer = ({ profile = {} }) => {
                                     <span className="text-xs text-charcoal-500 font-semibold">(DevJ)</span>
                                 </div>
                                 <p className="text-xs text-charcoal-500 font-medium">
-                                    Full-Stack Developer &bull; Quezon City, PH
+                                    {profile?.tagline || 'AI User & Tech Explorer'} &bull; Quezon City, PH
                                 </p>
                             </div>
                         </div>
 
                         <p className="text-xs text-charcoal-500 max-w-sm leading-relaxed font-normal">
-                            Building clean, practical web applications and developer tools with React, Node.js, Express, and Appwrite.
+                            {profile?.description || 'Exploring generative AI, everyday tools, and learning practical technology.'}
                         </p>
 
                         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-700">
@@ -52,7 +52,7 @@ export const Footer = ({ profile = {} }) => {
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                             </span>
-                            <span>Open for freelance &amp; full-time roles</span>
+                            <span>Open for collaboration &amp; learning</span>
                         </div>
                     </div>
 
@@ -131,7 +131,7 @@ export const Footer = ({ profile = {} }) => {
                 <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-charcoal-500 gap-4">
                     <p>© {new Date().getFullYear()} Julian Agustino (DevJ). All rights reserved.</p>
                     <p className="inline-flex items-center gap-1.5 font-medium text-charcoal-400">
-                        <span>Engineered with React 18, Node.js, Appwrite &amp; Tailwind CSS</span>
+                        <span>Created with React 18, Appwrite &amp; Tailwind CSS</span>
                     </p>
                 </div>
             </div>

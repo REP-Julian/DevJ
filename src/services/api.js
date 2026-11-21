@@ -19,7 +19,9 @@ export const getStoredPortfolio = () => {
             if (
                 parsed.profile?.tagline?.includes('Vibe Developer') ||
                 parsed.profile?.tagline?.includes('Enthusiast') ||
-                parsed.profile?.tagline?.includes('AI Systems Integrator')
+                parsed.profile?.tagline?.includes('AI Systems Integrator') ||
+                parsed.profile?.tagline?.includes('Full-Stack') ||
+                parsed.profile?.tagline?.includes('Full Stack')
             ) {
                 if (!parsed.profile) parsed.profile = {};
                 parsed.profile.tagline = initialPortfolioData.profile.tagline;
@@ -29,13 +31,15 @@ export const getStoredPortfolio = () => {
                 parsed.profile?.description?.includes('possibilities of artificial intelligence') ||
                 parsed.profile?.description?.includes('turning ideas into interactive') ||
                 parsed.profile?.description?.includes('custom REST APIs') ||
-                parsed.profile?.description?.includes('engineering clean API architectures')
+                parsed.profile?.description?.includes('engineering clean API architectures') ||
+                parsed.profile?.description?.includes('I build clean, responsive web applications') ||
+                parsed.profile?.description?.toLowerCase()?.includes('full-stack')
             ) {
                 if (!parsed.profile) parsed.profile = {};
                 parsed.profile.description = initialPortfolioData.profile.description;
                 updated = true;
             }
-            if (!parsed.profile?.about) {
+            if (!parsed.profile?.about || parsed.profile?.about?.toLowerCase()?.includes('full-stack')) {
                 if (!parsed.profile) parsed.profile = {};
                 parsed.profile.about = initialPortfolioData.profile.about;
                 updated = true;
@@ -327,16 +331,23 @@ export const api = {
             // Sanitize legacy buzzwords if saved in remote document or stale profile
             if (
                 mergedProfile.tagline?.includes('Vibe Developer') ||
-                mergedProfile.tagline?.includes('Enthusiast')
+                mergedProfile.tagline?.includes('Enthusiast') ||
+                mergedProfile.tagline?.includes('Full-Stack') ||
+                mergedProfile.tagline?.includes('Full Stack')
             ) {
                 mergedProfile.tagline = initialPortfolioData.profile.tagline;
             }
             if (
                 mergedProfile.description?.includes('possibilities of artificial intelligence') ||
                 mergedProfile.description?.includes('turning ideas into interactive') ||
-                mergedProfile.description?.includes('custom REST APIs')
+                mergedProfile.description?.includes('custom REST APIs') ||
+                mergedProfile.description?.includes('I build clean, responsive web applications') ||
+                mergedProfile.description?.toLowerCase()?.includes('full-stack')
             ) {
                 mergedProfile.description = initialPortfolioData.profile.description;
+            }
+            if (!mergedProfile.about || mergedProfile.about?.toLowerCase()?.includes('full-stack')) {
+                mergedProfile.about = initialPortfolioData.profile.about;
             }
 
             // Purge broken old project Appwrite URLs for arrays
