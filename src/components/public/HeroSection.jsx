@@ -1,147 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { ArrowRight, Sparkles, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import React from 'react';
+import { ArrowRight, Sparkles, FileText, CheckCircle2, Code2, Award } from 'lucide-react';
 
 export const HeroSection = ({ profile }) => {
-    // Array of distinct images to cycle through
-    const defaultImages = [
-        'https://sgp.cloud.appwrite.io/v1/storage/buckets/portfolio/files/6aa15e9e001617de4a5f/view?project=6aa1516d001f3ded0bc0',
-        'https://sgp.cloud.appwrite.io/v1/storage/buckets/portfolio/files/6aa15eb6001e7c787293/view?project=6aa1516d001f3ded0bc0',
-        'https://sgp.cloud.appwrite.io/v1/storage/buckets/portfolio/files/6aa15e810016d47a13ee/view?project=6aa1516d001f3ded0bc0',
-    ];
-
-    const images = [
-        profile?.avatarUrl || defaultImages[0],
-        profile?.avatarUrl2 || defaultImages[1],
-        profile?.avatarUrl3 || defaultImages[2],
-    ];
-
-    const [currentIndex, setCurrentIndex] = useState(0);
-    const [isHovered, setIsHovered] = useState(false);
-    const [tilt, setTilt] = useState({ x: 0, y: 0 });
-    const deckRef = useRef(null);
-
-    // Auto-switch image every 4.5 seconds when not hovered
-    useEffect(() => {
-        const prefersReducedMotion =
-            typeof window !== 'undefined' &&
-            window.matchMedia &&
-            window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-        if (isHovered || prefersReducedMotion) return;
-
-        const timer = setInterval(() => {
-            setCurrentIndex((prev) => (prev + 1) % images.length);
-        }, 4500);
-
-        return () => clearInterval(timer);
-    }, [images.length, isHovered]);
-
-    // Smooth 3D Mouse Parallax
-    const handleMouseMove = (e) => {
-        if (!deckRef.current) return;
-        const rect = deckRef.current.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
-        const mouseX = e.clientX;
-        const mouseY = e.clientY;
-
-        // Max tilt of ~10 degrees
-        const tiltX = ((centerY - mouseY) / (rect.height / 2)) * 10;
-        const tiltY = ((mouseX - centerX) / (rect.width / 2)) * 10;
-
-        setTilt({
-            x: Math.min(Math.max(tiltX, -10), 10),
-            y: Math.min(Math.max(tiltY, -10), 10),
-        });
-    };
-
-    const handleMouseLeave = () => {
-        setIsHovered(false);
-        setTilt({ x: 0, y: 0 });
-    };
-
-    const handleMouseEnter = () => {
-        setIsHovered(true);
-    };
-
-    // Touch swipe support for mobile
-    const [touchStartX, setTouchStartX] = useState(null);
-
-    const handleTouchStart = (e) => {
-        setTouchStartX(e.touches[0].clientX);
-    };
-
-    const handleTouchEnd = (e) => {
-        if (touchStartX === null) return;
-        const diff = touchStartX - e.changedTouches[0].clientX;
-        if (diff > 45) {
-            handleNext();
-        } else if (diff < -45) {
-            handlePrev();
-        }
-        setTouchStartX(null);
-    };
-
-    const handlePrev = () => {
-        setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
-    };
-
-    const handleNext = () => {
-        setCurrentIndex((prev) => (prev + 1) % images.length);
-    };
-
-    // Card fan geometry and styling
-    const getCardStyle = (idx) => {
-        const total = images.length;
-        const offset = (idx - currentIndex + total) % total;
-
-        // Center Active Card
-        if (offset === 0) {
-            return {
-                wrapper: 'z-30 opacity-100 scale-100 translate-x-0 rotate-0 cursor-default pointer-events-auto',
-                inner: 'p-[3px] bg-gradient-to-tr from-devyellow-400 via-devorange-400 to-devorange-500 shadow-[0_20px_50px_-10px_rgba(249,115,22,0.32),0_10px_25px_-5px_rgba(0,0,0,0.08)] ring-4 ring-white/90',
-                img: 'grayscale-0 brightness-100 contrast-[1.02]',
-                overlay: 'opacity-10',
-            };
-        }
-
-        // Right Fan Card
-        if (offset === 1) {
-            return {
-                wrapper: 'z-10 opacity-60 hover:opacity-95 scale-[0.86] translate-x-20 sm:translate-x-28 md:translate-x-32 rotate-6 hover:rotate-3 cursor-pointer pointer-events-auto',
-                inner: 'p-[2px] bg-white/95 border border-gray-200/90 shadow-xl hover:shadow-2xl hover:border-devorange-300',
-                img: 'grayscale-[50%] brightness-95 hover:grayscale-0 hover:brightness-100',
-                overlay: 'opacity-30',
-            };
-        }
-
-        // Left Fan Card
-        if (offset === total - 1) {
-            return {
-                wrapper: 'z-10 opacity-60 hover:opacity-95 scale-[0.86] -translate-x-20 sm:-translate-x-28 md:-translate-x-32 -rotate-6 hover:-rotate-3 cursor-pointer pointer-events-auto',
-                inner: 'p-[2px] bg-white/95 border border-gray-200/90 shadow-xl hover:shadow-2xl hover:border-devorange-300',
-                img: 'grayscale-[50%] brightness-95 hover:grayscale-0 hover:brightness-100',
-                overlay: 'opacity-30',
-            };
-        }
-
-        // Hidden cards for lists larger than 3
-        return {
-            wrapper: 'z-0 opacity-0 scale-75 translate-x-0 rotate-0 pointer-events-none',
-            inner: 'p-[2px] bg-white',
-            img: 'grayscale',
-            overlay: 'opacity-0',
-        };
-    };
+    // Cutout portrait with background removed, displayed flat on hero
+    const cutoutImage = profile?.cutoutUrl || '/julian-cutout.png';
 
     return (
         <section
             id="home"
-            className="relative min-h-[94vh] pt-32 pb-20 flex items-center justify-center overflow-hidden warm-mesh-bg bg-gradient-to-b from-white via-devyellow-100/15 to-white"
+            className="relative min-h-[94vh] pt-32 pb-16 lg:pb-24 flex items-center justify-center overflow-hidden warm-mesh-bg bg-gradient-to-b from-white via-devyellow-100/15 to-white"
         >
+            {/* Ambient Warm Aura */}
             <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-gradient-to-tr from-devyellow-300/25 via-devorange-300/15 to-transparent rounded-full blur-3xl pointer-events-none" />
 
-            <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-14 items-center relative z-10">
+            <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center relative z-10">
                 {/* Left Column: Typography & CTAs */}
                 <div className="lg:col-span-7 space-y-6 text-left">
                     <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-sm border border-devorange-200/80 shadow-warm-sm text-xs font-bold text-devorange-600 uppercase tracking-wider">
@@ -220,125 +92,39 @@ export const HeroSection = ({ profile }) => {
                     </div>
                 </div>
 
-                {/* Right Column: Sleek 3D Floating Tilt Deck */}
-                <div className="lg:col-span-5 flex justify-center perspective-1000">
-                    <div
-                        ref={deckRef}
-                        onMouseMove={handleMouseMove}
-                        onMouseEnter={handleMouseEnter}
-                        onMouseLeave={handleMouseLeave}
-                        style={{
-                            transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
-                            transition: isHovered ? 'transform 0.1s ease-out' : 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)',
-                        }}
-                        className="w-full max-w-md relative select-none transform-style-3d"
-                    >
-                        {/* Ambient Golden Warm Aura Behind Deck */}
-                        <div className="absolute -inset-4 bg-gradient-to-tr from-devyellow-400/30 via-devorange-400/25 to-devorange-500/30 rounded-[3rem] blur-3xl opacity-70 pointer-events-none" />
+                {/* Right Column: Flat Cutout Portrait (No Cards, Seamless Integration) */}
+                <div className="lg:col-span-5 flex justify-center items-center relative">
+                    <div className="relative w-full max-w-sm sm:max-w-md flex flex-col items-center justify-center">
+                        {/* Ambient Glow Halo Behind Subject */}
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-72 sm:w-88 h-72 sm:h-88 bg-gradient-to-tr from-devyellow-400/35 via-devorange-400/25 to-devorange-500/20 rounded-full blur-3xl pointer-events-none" />
 
-                        {/* Outer Glass Card Stage */}
-                        <div className="relative p-6 sm:p-8 bg-white/70 backdrop-blur-xl rounded-[2.5rem] border border-white/80 shadow-[0_20px_50px_-15px_rgba(234,88,12,0.12),0_10px_20px_-5px_rgba(0,0,0,0.04)] hover:shadow-[0_25px_60px_-12px_rgba(234,88,12,0.2)] transition-shadow duration-300">
-                            
-                            {/* Floating Top Badge */}
-                            <div className="absolute -top-3.5 right-6 z-40 bg-charcoal-900 text-white text-xs font-black px-4 py-1.5 rounded-full shadow-warm-md border border-devyellow-400/70 flex items-center gap-1.5 tracking-wide">
-                                <Sparkles className="w-3.5 h-3.5 text-devyellow-400 fill-devyellow-400" />
-                                <span>Developer Portfolio</span>
-                            </div>
-
-                            {/* 3D Multi-Portrait Fan Stage */}
-                            <div
-                                onTouchStart={handleTouchStart}
-                                onTouchEnd={handleTouchEnd}
-                                className="relative h-[340px] sm:h-[380px] w-full flex items-center justify-center overflow-visible rounded-2xl touch-pan-y"
-                            >
-                                {/* Inner Radial Ambient Light Beam */}
-                                <div className="absolute w-48 sm:w-60 h-68 sm:h-80 bg-gradient-to-tr from-devyellow-400/35 via-devorange-400/30 to-devorange-500/30 rounded-3xl blur-2xl transform transition-all duration-700 pointer-events-none" />
-
-                                {/* Persistent Multi-Portrait Card Fan */}
-                                {images.map((imgSrc, idx) => {
-                                    const style = getCardStyle(idx);
-                                    return (
-                                        <div
-                                            key={idx}
-                                            onClick={() => setCurrentIndex(idx)}
-                                            className={`absolute w-48 sm:w-60 h-68 sm:h-80 transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] will-change-transform rounded-3xl select-none ${style.wrapper}`}
-                                        >
-                                            <div
-                                                className={`w-full h-full rounded-3xl transition-all duration-700 ${style.inner}`}
-                                            >
-                                                <div className="w-full h-full rounded-[21px] overflow-hidden bg-charcoal-900 relative">
-                                                    <img
-                                                        src={imgSrc}
-                                                        alt={`Julian Agustino portrait ${idx + 1}`}
-                                                        width="320"
-                                                        height="420"
-                                                        loading={idx === 0 ? "eager" : "lazy"}
-                                                        fetchPriority={idx === 0 ? "high" : "low"}
-                                                        onError={(e) => {
-                                                            e.currentTarget.onerror = null;
-                                                            e.currentTarget.src = defaultImages[idx % defaultImages.length];
-                                                        }}
-                                                        className={`w-full h-full object-cover transition-all duration-700 ease-out ${style.img}`}
-                                                    />
-                                                    <div
-                                                        className={`absolute inset-0 bg-gradient-to-t from-charcoal-950/60 via-transparent to-transparent transition-opacity duration-700 pointer-events-none ${style.overlay}`}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-
-                            {/* Bottom Card Controls & Indicators */}
-                            <div className="mt-5 p-4 rounded-2xl bg-white/95 backdrop-blur-md border border-gray-100/90 shadow-warm-sm flex items-center justify-between">
-                                <div className="min-w-0 pr-2">
-                                    <div className="flex items-center gap-1.5">
-                                        <h3 className="font-extrabold text-charcoal-900 text-sm truncate">
-                                            {profile?.name || 'Julian Agustino'}
-                                        </h3>
-                                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                                    </div>
-                                    <p className="text-xs text-charcoal-500 font-medium truncate">
-                                        Full-Stack Developer
-                                    </p>
-                                </div>
-
-                                {/* Controls: Arrows & Active Indicator Pills */}
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                    <button
-                                        onClick={handlePrev}
-                                        aria-label="Previous photo"
-                                        className="w-8 h-8 rounded-xl text-charcoal-600 hover:text-devorange-600 hover:bg-devyellow-100/60 transition-all active:scale-90 flex items-center justify-center touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
-                                    >
-                                        <ChevronLeft className="w-4 h-4" />
-                                    </button>
-
-                                    <div className="flex items-center gap-1 px-1">
-                                        {images.map((_, idx) => (
-                                            <button
-                                                key={idx}
-                                                onClick={() => setCurrentIndex(idx)}
-                                                aria-label={`View photo ${idx + 1}`}
-                                                className={`h-2 rounded-full transition-all duration-500 ease-out touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 ${
-                                                    idx === currentIndex
-                                                        ? 'w-6 bg-gradient-to-r from-devyellow-400 to-devorange-500 shadow-xs'
-                                                        : 'w-2 bg-gray-200 hover:bg-gray-300'
-                                                }`}
-                                            />
-                                        ))}
-                                    </div>
-
-                                    <button
-                                        onClick={handleNext}
-                                        aria-label="Next photo"
-                                        className="w-8 h-8 rounded-xl text-charcoal-600 hover:text-devorange-600 hover:bg-devyellow-100/60 transition-all active:scale-90 flex items-center justify-center touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
-                                    >
-                                        <ChevronRight className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </div>
+                        {/* Floating Status Pill Top-Left */}
+                        <div className="absolute top-4 -left-2 sm:-left-4 z-20 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-gray-200/80 shadow-warm-sm text-charcoal-900">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                            <span className="text-xs font-black tracking-wide">ICT Graduate</span>
                         </div>
+
+                        {/* Floating Credential Pill Bottom-Right */}
+                        <div className="absolute bottom-6 -right-2 sm:-right-4 z-20 flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/95 backdrop-blur-md border border-devyellow-300/80 shadow-warm-md text-charcoal-900">
+                            <Sparkles className="w-3.5 h-3.5 text-devorange-500 fill-devyellow-400" />
+                            <span className="text-xs font-black">Full-Stack Engineer</span>
+                        </div>
+
+                        {/* Flat Cutout Portrait with Natural Depth Shadow */}
+                        <div className="relative z-10 w-full flex justify-center">
+                            <img
+                                src={cutoutImage}
+                                alt={profile?.name || 'Julian Agustino'}
+                                width="440"
+                                height="600"
+                                loading="eager"
+                                fetchPriority="high"
+                                className="w-auto h-[380px] sm:h-[460px] lg:h-[500px] object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.18)] transition-transform duration-500 hover:scale-[1.02]"
+                            />
+                        </div>
+
+                        {/* Subtle Ground Shadow Baseline */}
+                        <div className="w-48 sm:w-64 h-4 bg-charcoal-900/10 rounded-full blur-md -mt-3 z-0 pointer-events-none" />
                     </div>
                 </div>
             </div>
