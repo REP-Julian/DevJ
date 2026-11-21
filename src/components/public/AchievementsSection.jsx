@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Award, Calendar, Sparkles, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, ExternalLink, X } from 'lucide-react';
 
 export const AchievementsSection = ({ achievements = [] }) => {
@@ -34,8 +34,66 @@ export const AchievementsSection = ({ achievements = [] }) => {
 
     const items = achievements.length > 0 ? achievements : defaultAchievements;
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [direction, setDirection] = useState('next');
+    const [isHovered, setIsHovered] = useState(false);
+    const [isTouching, setIsTouching] = useState(false);
+    const [isDocVisible, setIsDocVisible] = useState(true);
     const [lightboxItem, setLightboxItem] = useState(null);
     const [lightboxZoom, setLightboxZoom] = useState(1);
+
+    // Track document visibility to pause autoplay when tab is unfocused
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            setIsDocVisible(!document.hidden);
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    }, []);
+
+    const handlePrev = useCallback(() => {
+        setDirection('prev');
+        setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
+    }, [items.length]);
+
+    const handleNext = useCallback(() => {
+        setDirection('next');
+        setCurrentIndex((prev) => (prev + 1) % items.length);
+    }, [items.length]);
+
+    const handleDotClick = (idx) => {
+        if (idx === currentIndex) return;
+        setDirection(idx > currentIndex ? 'next' : 'prev');
+        setCurrentIndex(idx);
+    };
+
+    const handleCardClick = (idx, item) => {
+        if (idx === currentIndex) {
+            setLightboxItem(item);
+            setLightboxZoom(1);
+        } else {
+            const total = items.length;
+            const diff = (idx - currentIndex + total) % total;
+            if (diff <= total / 2) {
+                setDirection('next');
+            } else {
+                setDirection('prev');
+            }
+            setCurrentIndex(idx);
+        }
+    };
+
+    // Auto-play timer: 5 seconds interval, paused on hover, touch, lightbox, or background tab
+    const isPaused = isHovered || isTouching || Boolean(lightboxItem) || !isDocVisible;
+
+    useEffect(() => {
+        if (isPaused || items.length <= 1) return;
+
+        const interval = setInterval(() => {
+            handleNext();
+        }, 5000);
+
+        return () => clearInterval(interval);
+    }, [isPaused, items.length, handleNext]);
 
     // Handle Escape and Arrow keys to close or navigate Lightbox Modal
     useEffect(() => {
@@ -47,6 +105,7 @@ export const AchievementsSection = ({ achievements = [] }) => {
                 const currentIdx = items.findIndex((it) => (it.id || it.title) === (lightboxItem.id || lightboxItem.title));
                 if (currentIdx !== -1) {
                     const nextIdx = (currentIdx + 1) % items.length;
+                    setDirection('next');
                     setLightboxItem(items[nextIdx]);
                     setCurrentIndex(nextIdx);
                     setLightboxZoom(1);
@@ -55,6 +114,7 @@ export const AchievementsSection = ({ achievements = [] }) => {
                 const currentIdx = items.findIndex((it) => (it.id || it.title) === (lightboxItem.id || lightboxItem.title));
                 if (currentIdx !== -1) {
                     const prevIdx = (currentIdx - 1 + items.length) % items.length;
+                    setDirection('prev');
                     setLightboxItem(items[prevIdx]);
                     setCurrentIndex(prevIdx);
                     setLightboxZoom(1);
@@ -77,10 +137,12 @@ export const AchievementsSection = ({ achievements = [] }) => {
     const [touchStartX, setTouchStartX] = useState(null);
 
     const handleTouchStart = (e) => {
+        setIsTouching(true);
         setTouchStartX(e.touches[0].clientX);
     };
 
     const handleTouchEnd = (e) => {
+        setIsTouching(false);
         if (touchStartX === null) return;
         const diff = touchStartX - e.changedTouches[0].clientX;
         if (diff > 45) {
@@ -91,68 +153,85 @@ export const AchievementsSection = ({ achievements = [] }) => {
         setTouchStartX(null);
     };
 
-    const handlePrev = () => {
-        setCurrentIndex((prev) => (prev - 1 + items.length) % items.length);
-    };
-
-    const handleNext = () => {
-        setCurrentIndex((prev) => (prev + 1) % items.length);
-    };
-
     const activeItem = items[currentIndex] || items[0];
 
-    // Card positioning for each card in the stage (clean, static sizing without hover resize or transitions)
+    // Card positioning for each card in the stage with smooth 3D coverflow transforms
     const getCardStyle = (idx) => {
         const total = items.length;
+        if (total === 1) {
+            return {
+                wrapper:
+                    'z-30 opacity-100 scale-100 translate-x-0 rotate-0 cursor-zoom-in pointer-events-auto',
+                inner:
+                    'p-1 bg-gradient-to-tr from-devyellow-300 via-devorange-400 to-devorange-500 border-4 border-white shadow-2xl shadow-devorange-500/25',
+                img: 'grayscale-0 brightness-100',
+                overlay: 'opacity-0',
+                isActive: true,
+            };
+        }
+
         const offset = (idx - currentIndex + total) % total;
 
         // Active Center Card
         if (offset === 0) {
             return {
                 wrapper:
-                    'z-30 opacity-100 scale-100 translate-x-0 rotate-0 cursor-pointer pointer-events-auto w-56 sm:w-80 h-64 sm:h-80',
+                    'z-30 opacity-100 scale-100 translate-x-0 rotate-0 cursor-zoom-in pointer-events-auto',
                 inner:
-                    'p-1 bg-gradient-to-tr from-devyellow-300 via-devorange-400 to-devorange-500 border-4 border-white shadow-2xl shadow-devorange-500/20',
+                    'p-1 bg-gradient-to-tr from-devyellow-300 via-devorange-400 to-devorange-500 border-4 border-white shadow-2xl shadow-devorange-500/25',
                 img: 'grayscale-0 brightness-100',
                 overlay: 'opacity-0',
-                showDetails: true,
+                isActive: true,
             };
         }
 
-        // Right Background Card
+        // Two items case: the other card is placed to the right
+        if (total === 2) {
+            return {
+                wrapper:
+                    'z-10 opacity-50 hover:opacity-85 scale-[0.84] translate-x-20 sm:translate-x-32 md:translate-x-40 rotate-6 cursor-pointer pointer-events-auto',
+                inner:
+                    'p-1 bg-white border border-gray-200 shadow-md hover:shadow-lg',
+                img: 'grayscale brightness-90',
+                overlay: 'opacity-40 hover:opacity-20',
+                isActive: false,
+            };
+        }
+
+        // Right Background Card (offset === 1)
         if (offset === 1) {
             return {
                 wrapper:
-                    'z-10 opacity-50 scale-[0.84] translate-x-20 sm:translate-x-32 md:translate-x-40 rotate-6 cursor-pointer pointer-events-auto w-56 sm:w-80 h-64 sm:h-80',
+                    'z-10 opacity-50 hover:opacity-85 scale-[0.84] translate-x-20 sm:translate-x-32 md:translate-x-40 rotate-6 cursor-pointer pointer-events-auto',
                 inner:
-                    'p-1 bg-white border border-gray-200 shadow-md',
+                    'p-1 bg-white border border-gray-200 shadow-md hover:shadow-lg',
                 img: 'grayscale brightness-90',
-                overlay: 'opacity-40',
-                showDetails: false,
+                overlay: 'opacity-40 hover:opacity-20',
+                isActive: false,
             };
         }
 
-        // Left Background Card
+        // Left Background Card (offset === total - 1)
         if (offset === total - 1) {
             return {
                 wrapper:
-                    'z-10 opacity-50 scale-[0.84] -translate-x-20 sm:-translate-x-32 md:-translate-x-40 -rotate-6 cursor-pointer pointer-events-auto w-56 sm:w-80 h-64 sm:h-80',
+                    'z-10 opacity-50 hover:opacity-85 scale-[0.84] -translate-x-20 sm:-translate-x-32 md:-translate-x-40 -rotate-6 cursor-pointer pointer-events-auto',
                 inner:
-                    'p-1 bg-white border border-gray-200 shadow-md',
+                    'p-1 bg-white border border-gray-200 shadow-md hover:shadow-lg',
                 img: 'grayscale brightness-90',
-                overlay: 'opacity-40',
-                showDetails: false,
+                overlay: 'opacity-40 hover:opacity-20',
+                isActive: false,
             };
         }
 
         // Hidden cards for lists larger than 3
         return {
             wrapper:
-                'z-0 opacity-0 scale-75 translate-x-0 rotate-0 pointer-events-none w-56 sm:w-80 h-64 sm:h-80',
+                'z-0 opacity-0 scale-75 translate-x-0 rotate-0 pointer-events-none',
             inner: 'p-1 bg-white',
             img: 'grayscale',
             overlay: 'opacity-0',
-            showDetails: false,
+            isActive: false,
         };
     };
 
@@ -172,18 +251,36 @@ export const AchievementsSection = ({ achievements = [] }) => {
                     </p>
                 </div>
 
-                <div className="bg-white rounded-3xl p-6 sm:p-10 lg:p-14 border border-gray-200/90 shadow-warm-md hover:shadow-warm-lg transition-shadow duration-300">
+                <div
+                    className="bg-white rounded-3xl p-6 sm:p-10 lg:p-14 border border-gray-200/90 shadow-warm-md hover:shadow-warm-lg transition-shadow duration-300 focus:outline-none focus:ring-2 focus:ring-devorange-400/50"
+                    onMouseEnter={() => setIsHovered(true)}
+                    onMouseLeave={() => setIsHovered(false)}
+                    tabIndex={0}
+                    role="region"
+                    aria-roledescription="carousel"
+                    aria-label="Achievements &amp; Milestones Carousel"
+                    onKeyDown={(e) => {
+                        if (e.key === 'ArrowLeft') {
+                            e.preventDefault();
+                            handlePrev();
+                        } else if (e.key === 'ArrowRight') {
+                            e.preventDefault();
+                            handleNext();
+                        }
+                    }}
+                >
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
                         {/* LEFT SIDE: Carousel Visual Stage */}
                         <div className="lg:col-span-7 relative">
                             <div
                                 onTouchStart={handleTouchStart}
                                 onTouchEnd={handleTouchEnd}
-                                className="relative min-h-[360px] sm:min-h-[420px] w-full flex items-center justify-center overflow-visible rounded-2xl touch-pan-y py-4"
+                                className="relative min-h-[360px] sm:min-h-[420px] w-full flex items-center justify-center overflow-visible rounded-2xl touch-pan-y py-4 perspective-1000"
                             >
-                                {/* Ambient Warm Backlight Glow behind active card */}
+                                {/* Ambient Warm Backlight Glow behind active card with subtle breathing animation */}
                                 <div
-                                    className="absolute w-56 sm:w-80 h-64 sm:h-80 bg-gradient-to-tr from-devyellow-400/25 via-devorange-400/20 to-devorange-500/25 rounded-3xl blur-2xl pointer-events-none opacity-70"
+                                    aria-hidden="true"
+                                    className="absolute w-56 sm:w-80 h-64 sm:h-80 bg-gradient-to-tr from-devyellow-400/30 via-devorange-400/25 to-devorange-500/30 rounded-3xl blur-2xl pointer-events-none animate-breathing-glow"
                                 />
 
                                 {/* Persistent Multi-Achievement Carousel Deck */}
@@ -192,14 +289,20 @@ export const AchievementsSection = ({ achievements = [] }) => {
                                     return (
                                         <div
                                             key={item.id || idx}
-                                            onClick={() => {
-                                                setCurrentIndex(idx);
-                                                setLightboxItem(item);
+                                            onClick={() => handleCardClick(idx, item)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' || e.key === ' ') {
+                                                    e.preventDefault();
+                                                    handleCardClick(idx, item);
+                                                }
                                             }}
-                                            className={`absolute rounded-2xl select-none ${style.wrapper}`}
+                                            role="button"
+                                            tabIndex={style.isActive ? 0 : -1}
+                                            aria-label={`${item.title}${style.isActive ? ' (Active certificate, click to view full size)' : ' (Click to view)'}`}
+                                            className={`group absolute rounded-2xl select-none w-56 sm:w-80 h-64 sm:h-80 transition-all duration-500 ease-out transform will-change-transform ${style.wrapper}`}
                                         >
                                             <div
-                                                className={`w-full h-full rounded-2xl overflow-hidden ${style.inner}`}
+                                                className={`w-full h-full rounded-2xl overflow-hidden transition-all duration-500 ease-out ${style.inner}`}
                                             >
                                                 <div className="w-full h-full rounded-xl overflow-hidden relative flex items-center justify-center bg-charcoal-950">
                                                     <img
@@ -209,24 +312,37 @@ export const AchievementsSection = ({ achievements = [] }) => {
                                                             e.currentTarget.onerror = null;
                                                             e.currentTarget.src = 'https://images.unsplash.com/photo-1567427017947-545c5f8d16ad?auto=format&fit=crop&w=800&q=80';
                                                         }}
-                                                        className={`w-full h-full object-cover ${style.img}`}
+                                                        className={`w-full h-full object-cover transition-all duration-500 ease-out ${style.img}`}
                                                     />
                                                     <div
-                                                        className={`absolute inset-0 bg-charcoal-900/50 pointer-events-none ${style.overlay}`}
+                                                        className={`absolute inset-0 bg-charcoal-900/50 pointer-events-none transition-opacity duration-500 ease-out ${style.overlay}`}
                                                     />
                                                     <div
                                                         className="absolute inset-0 bg-gradient-to-t from-charcoal-900/70 via-transparent to-transparent pointer-events-none"
                                                     />
 
-                                                    {style.showDetails && (
-                                                        <div
-                                                            className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white"
-                                                        >
-                                                            <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-charcoal-900/80 backdrop-blur-md">
-                                                                {item.category}
-                                                            </span>
-                                                            <span className="text-xs font-extrabold px-2 py-1 rounded-lg bg-devyellow-400 text-charcoal-900">
-                                                                {item.date}
+                                                    {/* Category & Date badge on card with smooth fade & subtle translate */}
+                                                    <div
+                                                        className={`absolute bottom-3 left-3 right-3 flex items-center justify-between text-white transition-all duration-300 ease-out ${
+                                                            style.isActive
+                                                                ? 'opacity-100 translate-y-0'
+                                                                : 'opacity-0 translate-y-2 pointer-events-none'
+                                                        }`}
+                                                    >
+                                                        <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-charcoal-900/80 backdrop-blur-md shadow">
+                                                            {item.category}
+                                                        </span>
+                                                        <span className="text-xs font-extrabold px-2 py-1 rounded-lg bg-devyellow-400 text-charcoal-900 shadow">
+                                                            {item.date}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Hover zoom affordance on active card */}
+                                                    {style.isActive && (
+                                                        <div className="absolute inset-0 bg-charcoal-950/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center pointer-events-none">
+                                                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-charcoal-900/85 backdrop-blur-md text-white text-xs font-bold shadow-lg transform translate-y-1 group-hover:translate-y-0 transition-transform duration-200">
+                                                                <ZoomIn className="w-3.5 h-3.5 text-devyellow-400" />
+                                                                <span>Click to enlarge</span>
                                                             </span>
                                                         </div>
                                                     )}
@@ -238,31 +354,36 @@ export const AchievementsSection = ({ achievements = [] }) => {
                             </div>
 
                             {/* Arrow Controls & Indicators */}
-                            <div className="flex items-center justify-center gap-4 mt-5">
+                            <div className="flex items-center justify-center gap-4 mt-6">
                                 <button
+                                    type="button"
                                     onClick={handlePrev}
-                                    className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-charcoal-800 hover:bg-devyellow-100 hover:text-devorange-600"
+                                    className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-charcoal-800 hover:bg-devyellow-100 hover:text-devorange-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-devorange-400"
                                     aria-label="Previous achievement"
                                 >
                                     <ChevronLeft className="w-5 h-5" />
                                 </button>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2" role="tablist" aria-label="Achievements navigation">
                                     {items.map((_, idx) => (
                                         <button
+                                            type="button"
                                             key={idx}
-                                            onClick={() => setCurrentIndex(idx)}
-                                            className={`h-2.5 rounded-full ${
+                                            role="tab"
+                                            aria-selected={currentIndex === idx}
+                                            onClick={() => handleDotClick(idx)}
+                                            className={`h-2.5 rounded-full transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-devorange-400 focus:ring-offset-1 ${
                                                 currentIndex === idx
-                                                    ? 'w-8 bg-gradient-to-r from-devyellow-400 to-devorange-500 shadow-sm'
-                                                    : 'w-2.5 bg-gray-200'
+                                                    ? 'w-8 bg-gradient-to-r from-devyellow-400 to-devorange-500 shadow-sm shadow-devorange-500/30'
+                                                    : 'w-2.5 bg-gray-200 hover:bg-gray-300'
                                             }`}
-                                            aria-label={`Slide ${idx + 1}`}
+                                            aria-label={`Go to slide ${idx + 1}`}
                                         />
                                     ))}
                                 </div>
                                 <button
+                                    type="button"
                                     onClick={handleNext}
-                                    className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-charcoal-800 hover:bg-devyellow-100 hover:text-devorange-600"
+                                    className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-charcoal-800 hover:bg-devyellow-100 hover:text-devorange-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-devorange-400"
                                     aria-label="Next achievement"
                                 >
                                     <ChevronRight className="w-5 h-5" />
@@ -270,10 +391,18 @@ export const AchievementsSection = ({ achievements = [] }) => {
                             </div>
                         </div>
 
-                        {/* RIGHT SIDE: Title, Category, Date, Description */}
-                        <div className="lg:col-span-5 space-y-6">
-                            <div className="flex items-center gap-3">
-                                <span className="px-3 py-1 rounded-full bg-devorange-50 text-devorange-600 border border-devorange-200 text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5">
+                        {/* RIGHT SIDE: Title, Category, Date, Description with directional slide & fade */}
+                        <div
+                            key={currentIndex}
+                            className="lg:col-span-5 space-y-6"
+                        >
+                            <div
+                                className={`flex items-center gap-3 ${
+                                    direction === 'next' ? 'animate-slide-in-right' : 'animate-slide-in-left'
+                                }`}
+                                style={{ animationDelay: '0ms' }}
+                            >
+                                <span className="px-3 py-1 rounded-full bg-devorange-50 text-devorange-600 border border-devorange-200 text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5 shadow-warm-sm">
                                     <Award className="w-3.5 h-3.5" />
                                     {activeItem?.category || 'Achievement'}
                                 </span>
@@ -283,7 +412,12 @@ export const AchievementsSection = ({ achievements = [] }) => {
                                 </span>
                             </div>
 
-                            <div className="space-y-3">
+                            <div
+                                className={`space-y-3 ${
+                                    direction === 'next' ? 'animate-slide-in-right' : 'animate-slide-in-left'
+                                }`}
+                                style={{ animationDelay: '60ms' }}
+                            >
                                 <h3 className="text-2xl sm:text-4xl font-black text-charcoal-900 leading-tight">
                                     {activeItem?.title}
                                 </h3>
@@ -292,11 +426,18 @@ export const AchievementsSection = ({ achievements = [] }) => {
                                 </p>
                             </div>
 
-                            <div className="pt-4 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-charcoal-500">
+                            <div
+                                className={`pt-4 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-charcoal-500 ${
+                                    direction === 'next' ? 'animate-slide-in-right' : 'animate-slide-in-left'
+                                }`}
+                                style={{ animationDelay: '120ms' }}
+                            >
                                 <span className="flex items-center gap-1 text-devorange-600">
                                     <Sparkles className="w-4 h-4" /> Milestone Recognition
                                 </span>
-                                <span>{currentIndex + 1} of {items.length}</span>
+                                <span className="tabular-nums">
+                                    {currentIndex + 1} of {items.length}
+                                </span>
                             </div>
                         </div>
                     </div>

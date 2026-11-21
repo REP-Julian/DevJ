@@ -132,6 +132,52 @@
     animation: ripplePulse 1.2s ease-out infinite;
 }
 
+/* Achievements Carousel & Coverflow Keyframes */
+@keyframes slideInRight {
+    0% {
+        opacity: 0;
+        transform: translate3d(28px, 0, 0);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes slideInLeft {
+    0% {
+        opacity: 0;
+        transform: translate3d(-28px, 0, 0);
+    }
+    100% {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+}
+
+@keyframes breathingGlow {
+    0%, 100% {
+        transform: scale(0.96);
+        opacity: 0.45;
+    }
+    50% {
+        transform: scale(1.08);
+        opacity: 0.8;
+    }
+}
+
+.animate-slide-in-right {
+    animation: slideInRight 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-slide-in-left {
+    animation: slideInLeft 0.45s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.animate-breathing-glow {
+    animation: breathingGlow 4s ease-in-out infinite;
+}
+
 /* Warm Modern Tech & Neo-Editorial Micro-interactions */
 .warm-mesh-bg {
     background-image: 
