@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Sparkles, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { ArrowRight, Sparkles, ChevronLeft, ChevronRight, FileText, CheckCircle2, Terminal, Code2 } from 'lucide-react';
 
 export const HeroSection = ({ profile }) => {
     // Array of distinct images to cycle through
@@ -15,10 +15,16 @@ export const HeroSection = ({ profile }) => {
         profile?.avatarUrl3 || defaultImages[2],
     ];
 
+    const imageLabels = [
+        'ICT Graduate',
+        'Developer & AI',
+        'Studio Portrait'
+    ];
+
     const [currentIndex, setCurrentIndex] = useState(0);
     const [isHovered, setIsHovered] = useState(false);
 
-    // Auto-switch image every 4 seconds with pause on hover & reduced-motion check
+    // Auto-switch image every 4.5 seconds with pause on hover & reduced-motion check
     useEffect(() => {
         const prefersReducedMotion =
             typeof window !== 'undefined' &&
@@ -29,7 +35,7 @@ export const HeroSection = ({ profile }) => {
 
         const timer = setInterval(() => {
             setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
-        }, 4000);
+        }, 4500);
 
         return () => clearInterval(timer);
     }, [images.length, isHovered]);
@@ -59,58 +65,14 @@ export const HeroSection = ({ profile }) => {
         setCurrentIndex((prev) => (prev + 1) % images.length);
     };
 
-    // Calculate fluid positioning for each card in the 3D stage
-    const getCardStyle = (idx) => {
-        const total = images.length;
-        const offset = (idx - currentIndex + total) % total;
-
-        // Active Center Card
-        if (offset === 0) {
-            return {
-                wrapper: 'z-30 opacity-100 scale-100 translate-x-0 rotate-0 cursor-default pointer-events-auto',
-                inner: 'p-[3px] bg-gradient-to-tr from-devyellow-400 via-devorange-400 to-devorange-500 shadow-2xl shadow-devorange-500/20 ring-4 ring-white/80',
-                img: 'grayscale-0 brightness-100 contrast-100',
-                overlay: 'opacity-20',
-            };
-        }
-
-        // Right Background Card
-        if (offset === 1) {
-            return {
-                wrapper: 'z-10 opacity-45 hover:opacity-90 scale-[0.84] translate-x-20 sm:translate-x-28 md:translate-x-32 rotate-6 hover:rotate-3 cursor-pointer pointer-events-auto',
-                inner: 'p-[2px] bg-white/95 border border-gray-200/90 shadow-lg hover:shadow-xl hover:border-devorange-300',
-                img: 'grayscale brightness-90 hover:grayscale-0 hover:brightness-100',
-                overlay: 'opacity-40',
-            };
-        }
-
-        // Left Background Card
-        if (offset === total - 1) {
-            return {
-                wrapper: 'z-10 opacity-45 hover:opacity-90 scale-[0.84] -translate-x-20 sm:-translate-x-28 md:-translate-x-32 -rotate-6 hover:-rotate-3 cursor-pointer pointer-events-auto',
-                inner: 'p-[2px] bg-white/95 border border-gray-200/90 shadow-lg hover:shadow-xl hover:border-devorange-300',
-                img: 'grayscale brightness-90 hover:grayscale-0 hover:brightness-100',
-                overlay: 'opacity-40',
-            };
-        }
-
-        // Hidden cards for lists larger than 3
-        return {
-            wrapper: 'z-0 opacity-0 scale-75 translate-x-0 rotate-0 pointer-events-none',
-            inner: 'p-[2px] bg-white',
-            img: 'grayscale',
-            overlay: 'opacity-0',
-        };
-    };
-
     return (
         <section
             id="home"
-            className="relative min-h-[92vh] pt-32 pb-20 flex items-center justify-center overflow-hidden warm-mesh-bg bg-gradient-to-b from-white via-devyellow-100/15 to-white"
+            className="relative min-h-[94vh] pt-32 pb-20 flex items-center justify-center overflow-hidden warm-mesh-bg bg-gradient-to-b from-white via-devyellow-100/15 to-white"
         >
-            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-devyellow-300/25 via-devorange-300/15 to-transparent rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-gradient-to-tr from-devyellow-300/25 via-devorange-300/15 to-transparent rounded-full blur-3xl pointer-events-none" />
 
-            <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
+            <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-14 items-center relative z-10">
                 {/* Left Column: Typography & CTAs */}
                 <div className="lg:col-span-7 space-y-6 text-left">
                     <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/90 backdrop-blur-sm border border-devorange-200/80 shadow-warm-sm text-xs font-bold text-devorange-600 uppercase tracking-wider">
@@ -118,7 +80,7 @@ export const HeroSection = ({ profile }) => {
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                             <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                         </span>
-                        <span>Full-Stack Developer &bull; Available</span>
+                        <span>Full-Stack Developer &bull; Available for Roles</span>
                     </div>
 
                     <div className="space-y-2">
@@ -189,106 +151,155 @@ export const HeroSection = ({ profile }) => {
                     </div>
                 </div>
 
-                {/* Right Column: Smooth 3D Multi-Portrait Visual Showcase */}
+                {/* Right Column: 100x Better Studio Pro Developer Showcase */}
                 <div className="lg:col-span-5 flex justify-center">
                     <div
-                        className="w-full max-w-md"
+                        className="w-full max-w-md relative"
                         onMouseEnter={() => setIsHovered(true)}
                         onMouseLeave={() => setIsHovered(false)}
                     >
-                        <div className="relative p-6 sm:p-8 bg-gradient-to-br from-white via-devyellow-100/30 to-devorange-100/20 rounded-3xl border border-gray-100 shadow-warm-md hover:shadow-warm-lg transition-shadow duration-300">
-                            {/* Top Badge */}
-                            <div className="absolute -top-3 -right-3 z-40 bg-charcoal-900 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-warm-md border border-devyellow-400 flex items-center gap-1.5">
-                                <Sparkles className="w-3.5 h-3.5 text-devyellow-400" />
-                                <span>Developer Portfolio</span>
+                        {/* Ambient Aura Radiance Behind Chassis */}
+                        <div className="absolute -inset-2 bg-gradient-to-tr from-devorange-500/30 via-devyellow-400/25 to-devorange-600/30 rounded-[2.8rem] blur-2xl opacity-75 transform -rotate-1 pointer-events-none" />
+
+                        {/* Studio Card Chassis */}
+                        <div className="relative rounded-[2.5rem] bg-gradient-to-b from-charcoal-900 via-[#18191E] to-[#121316] p-4 sm:p-5 border border-charcoal-800/80 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.45),0_0_35px_rgba(249,115,22,0.12)] ring-1 ring-white/10">
+                            
+                            {/* HUD Top Bar */}
+                            <div className="flex items-center justify-between pb-3.5 border-b border-white/10 text-xs">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                                    <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+                                    <span className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
+                                    <span className="ml-2 px-2 py-0.5 rounded-md bg-white/5 border border-white/5 font-mono text-[10px] text-gray-400 tracking-tight">
+                                        devj.julian / portfolio
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-bold">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                    <span>Live Portfolio</span>
+                                </div>
                             </div>
 
-                            {/* Gallery 3D Stage with touch swipe support */}
+                            {/* Main Portrait Display Stage */}
                             <div
                                 onTouchStart={handleTouchStart}
                                 onTouchEnd={handleTouchEnd}
-                                className="relative h-[340px] sm:h-96 w-full flex items-center justify-center rounded-2xl bg-white/40 p-4 overflow-hidden touch-pan-y"
+                                className="relative mt-4 aspect-[4/5] w-full rounded-2xl overflow-hidden bg-charcoal-950/80 border border-white/10 shadow-inner group touch-pan-y"
                             >
-                                {/* Ambient Warm Backlight Glow behind active portrait */}
-                                <div className="absolute w-44 sm:w-56 h-64 sm:h-76 bg-gradient-to-tr from-devyellow-400/30 via-devorange-400/25 to-devorange-500/30 rounded-3xl blur-2xl transform transition-all duration-700 pointer-events-none" />
-
-                                {/* Persistent Multi-Portrait Carousel Deck */}
-                                {images.map((imgSrc, idx) => {
-                                    const style = getCardStyle(idx);
-                                    return (
-                                        <div
-                                            key={idx}
-                                            onClick={() => setCurrentIndex(idx)}
-                                            className={`absolute w-44 sm:w-56 h-64 sm:h-76 transition-all duration-700 ease-[cubic-bezier(0.25,1,0.5,1)] will-change-transform rounded-2xl select-none ${style.wrapper}`}
-                                        >
-                                            <div
-                                                className={`w-full h-full rounded-2xl transition-all duration-700 ${style.inner}`}
-                                            >
-                                                <div className="w-full h-full rounded-[14px] overflow-hidden bg-white relative">
-                                                    <img
-                                                        src={imgSrc}
-                                                        alt={`Julian Agustino portrait ${idx + 1}`}
-                                                        width="320"
-                                                        height="420"
-                                                        loading={idx === 0 ? "eager" : "lazy"}
-                                                        fetchPriority={idx === 0 ? "high" : "low"}
-                                                        onError={(e) => {
-                                                             e.currentTarget.onerror = null;
-                                                             e.currentTarget.src = defaultImages[idx % defaultImages.length];
-                                                        }}
-                                                        className={`w-full h-full object-cover transition-all duration-700 ease-out ${style.img}`}
-                                                    />
-                                                    <div
-                                                        className={`absolute inset-0 bg-gradient-to-t from-charcoal-900/40 via-transparent to-transparent transition-opacity duration-700 pointer-events-none ${style.overlay}`}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-
-                            {/* Bottom Card Controls & Indicators */}
-                            <div className="mt-5 p-4 rounded-xl bg-white/95 backdrop-blur-md border border-gray-100 shadow-warm-sm flex items-center justify-between">
-                                <div>
-                                    <h3 className="font-extrabold text-charcoal-900 text-sm">
-                                        {profile?.name || 'Julian Agustino'}
-                                    </h3>
-                                    <p className="text-xs text-charcoal-500 font-medium">Full-Stack Developer</p>
+                                {/* Floating Badge Top-Left: Engineering Credentials */}
+                                <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-charcoal-900/90 backdrop-blur-md border border-white/15 text-white shadow-xl">
+                                    <div className="w-5 h-5 rounded-lg bg-devorange-500/20 border border-devorange-400/40 flex items-center justify-center">
+                                        <Code2 className="w-3 h-3 text-devorange-400" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-devyellow-400">
+                                            {imageLabels[currentIndex] || 'Full-Stack'}
+                                        </span>
+                                        <span className="text-[9px] text-gray-300 font-medium leading-none">
+                                            Software Engineer
+                                        </span>
+                                    </div>
                                 </div>
 
-                                {/* Controls: Arrows & Dot Indicators */}
-                                <div className="flex items-center gap-1 sm:gap-2">
-                                    <button
-                                        onClick={handlePrev}
-                                        aria-label="Previous photo"
-                                        className="w-8 h-8 rounded-lg text-charcoal-500 hover:text-devorange-600 hover:bg-devyellow-100/50 transition-all active:scale-90 flex items-center justify-center touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
-                                    >
-                                        <ChevronLeft className="w-4 h-4" />
-                                    </button>
+                                {/* Floating Badge Bottom-Right: Verified Status */}
+                                <div className="absolute bottom-3 right-3 z-20 flex items-center gap-2 px-3 py-1.5 rounded-xl bg-charcoal-900/90 backdrop-blur-md border border-white/15 text-white shadow-xl">
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                                    <span className="text-[10px] font-bold text-gray-200">
+                                        Verified Developer
+                                    </span>
+                                </div>
 
-                                    <div className="flex items-center gap-1.5 px-1">
-                                        {images.map((_, idx) => (
+                                {/* Active Image Crossfade Showcase */}
+                                {images.map((imgSrc, idx) => (
+                                    <div
+                                        key={idx}
+                                        className={`absolute inset-0 transition-all duration-700 ease-out ${
+                                            idx === currentIndex
+                                                ? 'opacity-100 scale-100 pointer-events-auto'
+                                                : 'opacity-0 scale-105 pointer-events-none'
+                                        }`}
+                                    >
+                                        <img
+                                            src={imgSrc}
+                                            alt={`Julian Agustino - ${imageLabels[idx] || 'Portrait'}`}
+                                            width="400"
+                                            height="500"
+                                            loading={idx === 0 ? "eager" : "lazy"}
+                                            fetchPriority={idx === 0 ? "high" : "low"}
+                                            onError={(e) => {
+                                                e.currentTarget.onerror = null;
+                                                e.currentTarget.src = defaultImages[idx % defaultImages.length];
+                                            }}
+                                            className="w-full h-full object-cover object-top transition-transform duration-700 group-hover:scale-[1.03]"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/80 via-transparent to-transparent opacity-60" />
+                                    </div>
+                                ))}
+
+                                {/* Overlay Navigation Arrows on Image */}
+                                <button
+                                    onClick={handlePrev}
+                                    aria-label="Previous photo"
+                                    className="absolute left-2.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/40 hover:bg-black/75 text-white/80 hover:text-white backdrop-blur-md border border-white/10 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 active:scale-90"
+                                >
+                                    <ChevronLeft className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={handleNext}
+                                    aria-label="Next photo"
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 z-20 w-8 h-8 rounded-full bg-black/40 hover:bg-black/75 text-white/80 hover:text-white backdrop-blur-md border border-white/10 flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 active:scale-90"
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </button>
+                            </div>
+
+                            {/* Bottom Interactive Thumbnail Selector & Details */}
+                            <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between gap-3">
+                                {/* Profile Info */}
+                                <div className="min-w-0">
+                                    <div className="flex items-center gap-1.5">
+                                        <h3 className="font-extrabold text-white text-sm truncate">
+                                            {profile?.name || 'Julian Agustino'}
+                                        </h3>
+                                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-devyellow-400 text-charcoal-950 font-black">
+                                            DV
+                                        </span>
+                                    </div>
+                                    <p className="text-[11px] text-gray-400 font-medium truncate">
+                                        Full-Stack Developer &bull; Quezon City, PH
+                                    </p>
+                                </div>
+
+                                {/* Interactive Thumbnail Selector Strip */}
+                                <div className="flex items-center gap-2 shrink-0">
+                                    {images.map((imgSrc, idx) => {
+                                        const isActive = idx === currentIndex;
+                                        return (
                                             <button
                                                 key={idx}
                                                 onClick={() => setCurrentIndex(idx)}
-                                                aria-label={`View photo ${idx + 1}`}
-                                                className={`h-2 rounded-full transition-all duration-500 ease-out touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 ${
-                                                    idx === currentIndex
-                                                        ? 'w-6 bg-gradient-to-r from-devyellow-400 to-devorange-500 shadow-sm'
-                                                        : 'w-2 bg-gray-200 hover:bg-gray-300'
+                                                aria-label={`Switch to photo ${idx + 1}`}
+                                                className={`relative w-9 h-11 rounded-lg overflow-hidden transition-all duration-300 ${
+                                                    isActive
+                                                        ? 'ring-2 ring-devorange-500 scale-105 shadow-md shadow-devorange-500/25 brightness-105'
+                                                        : 'opacity-40 hover:opacity-80 ring-1 ring-white/10 grayscale hover:grayscale-0'
                                                 }`}
-                                            />
-                                        ))}
-                                    </div>
-
-                                    <button
-                                        onClick={handleNext}
-                                        aria-label="Next photo"
-                                        className="w-8 h-8 rounded-lg text-charcoal-500 hover:text-devorange-600 hover:bg-devyellow-100/50 transition-all active:scale-90 flex items-center justify-center touch-manipulation focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
-                                    >
-                                        <ChevronRight className="w-4 h-4" />
-                                    </button>
+                                            >
+                                                <img
+                                                    src={imgSrc}
+                                                    alt={`Thumb ${idx + 1}`}
+                                                    className="w-full h-full object-cover object-top"
+                                                    onError={(e) => {
+                                                        e.currentTarget.onerror = null;
+                                                        e.currentTarget.src = defaultImages[idx % defaultImages.length];
+                                                    }}
+                                                />
+                                                {isActive && (
+                                                    <span className="absolute bottom-0 inset-x-0 h-1 bg-gradient-to-r from-devyellow-400 to-devorange-500" />
+                                                )}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         </div>
