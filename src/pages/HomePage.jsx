@@ -4,6 +4,7 @@ import Footer from '../components/common/Footer';
 import HeroSection from '../components/public/HeroSection';
 import ProjectsSection from '../components/public/ProjectsSection';
 import SkillsSection from '../components/public/SkillsSection';
+import EducationSection from '../components/public/EducationSection';
 import AchievementsSection from '../components/public/AchievementsSection';
 import HobbiesSection from '../components/public/HobbiesSection';
 import ContactSection from '../components/public/ContactSection';
@@ -37,7 +38,7 @@ export const HomePage = () => {
         );
     }
 
-    const { profile, skills, achievements, projects, hobbies } = portfolio;
+    const { profile, skills, achievements, projects, hobbies, education } = portfolio;
 
     return (
         <div className="min-h-screen bg-[#FAFAFA] flex flex-col">
@@ -46,6 +47,7 @@ export const HomePage = () => {
                 <HeroSection profile={profile} />
                 <ProjectsSection projects={projects} />
                 <SkillsSection skills={skills} />
+                <EducationSection education={education} />
                 <AchievementsSection achievements={achievements} />
                 <HobbiesSection hobbies={hobbies} />
                 <ContactSection profile={profile} />

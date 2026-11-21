@@ -3,6 +3,7 @@ import AdminLayout from '../components/admin/AdminLayout';
 import AIAssistantStudio from '../components/admin/AIAssistantStudio';
 import ProfileManager from '../components/admin/ProfileManager';
 import SkillsManager from '../components/admin/SkillsManager';
+import EducationManager from '../components/admin/EducationManager';
 import AchievementsManager from '../components/admin/AchievementsManager';
 import ProjectsManager from '../components/admin/ProjectsManager';
 import HobbiesManager from '../components/admin/HobbiesManager';
@@ -24,6 +25,9 @@ export const DashboardPage = () => {
             )}
             {activeTab === 'skills' && (
                 <SkillsManager skills={portfolio.skills} onUpdated={refreshPortfolio} />
+            )}
+            {activeTab === 'education' && (
+                <EducationManager education={portfolio.education} onUpdated={refreshPortfolio} />
             )}
             {activeTab === 'achievements' && (
                 <AchievementsManager achievements={portfolio.achievements} onUpdated={refreshPortfolio} />

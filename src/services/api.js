@@ -73,6 +73,7 @@ export const getStoredPortfolio = () => {
                 ...initialPortfolioData,
                 ...parsed,
                 profile: { ...initialPortfolioData.profile, ...(parsed.profile || {}) },
+                education: (Array.isArray(parsed.education) && parsed.education.length > 0) ? parsed.education : initialPortfolioData.education,
             };
         }
     } catch (e) {
@@ -680,7 +681,40 @@ export const api = {
         return true;
     },
 
-    // 8. Messages Management (Direct Appwrite Cloud Storage Primary Sync)
+    // 8. Education & Academic Growth Management
+    createEducation: async (data) => {
+        const current = getStoredPortfolio();
+        if (!Array.isArray(current.education)) current.education = [];
+        const newEdu = {
+            ...data,
+            id: String(Date.now()),
+            order: Number(data.order) || current.education.length + 1,
+        };
+        current.education.push(newEdu);
+        saveStoredPortfolio(current);
+        await syncPortfolioToAppwrite(current);
+        return newEdu;
+    },
+
+    updateEducation: async (id, data) => {
+        const current = getStoredPortfolio();
+        if (!Array.isArray(current.education)) current.education = [];
+        current.education = current.education.map((e) => (e.id === id ? { ...e, ...data } : e));
+        saveStoredPortfolio(current);
+        await syncPortfolioToAppwrite(current);
+        return data;
+    },
+
+    deleteEducation: async (id) => {
+        const current = getStoredPortfolio();
+        if (!Array.isArray(current.education)) current.education = [];
+        current.education = current.education.filter((e) => e.id !== id);
+        saveStoredPortfolio(current);
+        await syncPortfolioToAppwrite(current);
+        return true;
+    },
+
+    // 9. Messages Management (Direct Appwrite Cloud Storage Primary Sync)
     sendMessage: async (msg) => {
         const newMsg = {
             ...msg,
