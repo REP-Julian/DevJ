@@ -27,24 +27,33 @@ export const Footer = ({ profile = {} }) => {
                     {/* Brand & Availability Status (Col 1-5) */}
                     <div className="md:col-span-5 space-y-4">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-charcoal-900 flex items-center justify-center text-devyellow-400 font-extrabold text-lg shadow-sm">
+                            <div className="w-10 h-10 rounded-xl bg-charcoal-900 flex items-center justify-center text-devyellow-400 font-extrabold text-lg shadow-sm ring-1 ring-black/5">
                                 DV
                             </div>
                             <div>
-                                <span className="font-extrabold text-xl tracking-tight text-charcoal-900">
-                                    Julian Agustino
-                                </span>
-                                <span className="text-xs text-charcoal-500 font-semibold ml-1.5">(DevJ)</span>
-                                <p className="text-xs text-charcoal-500">
-                                    Full-Stack Developer
+                                <div className="flex items-center gap-2">
+                                    <span className="font-extrabold text-xl tracking-tight text-charcoal-900">
+                                        Julian Agustino
+                                    </span>
+                                    <span className="text-xs text-charcoal-500 font-semibold">(DevJ)</span>
+                                </div>
+                                <p className="text-xs text-charcoal-500 font-medium">
+                                    Full-Stack Developer &bull; Quezon City, PH
                                 </p>
                             </div>
                         </div>
 
-                        <p className="text-xs text-charcoal-500 max-w-sm leading-relaxed">
+                        <p className="text-xs text-charcoal-500 max-w-sm leading-relaxed font-normal">
                             Building clean, practical web applications and developer tools with React, Node.js, Express, and Appwrite.
                         </p>
 
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-700">
+                            <span className="flex h-2 w-2 relative">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                            </span>
+                            <span>Open for freelance &amp; full-time roles</span>
+                        </div>
                     </div>
 
                     {/* Quick Navigation Links (Col 6-8) */}

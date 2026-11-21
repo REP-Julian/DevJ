@@ -93,20 +93,23 @@ export const ProjectsSection = ({ projects = [] }) => {
                 {/* Category Filter Tabs */}
                 {categories.length > 2 && (
                     <div className="flex flex-wrap items-center justify-center gap-2 mb-10 sm:mb-12">
-                        {categories.map((cat) => (
-                            <button
-                                key={cat}
-                                type="button"
-                                onClick={() => setSelectedCategory(cat)}
-                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 ${
-                                    selectedCategory === cat
-                                        ? 'bg-charcoal-900 text-devyellow-400 shadow-sm'
-                                        : 'bg-gray-100 hover:bg-gray-200 text-charcoal-600'
-                                }`}
-                            >
-                                {cat}
-                            </button>
-                        ))}
+                        {categories.map((cat) => {
+                            const isSelected = selectedCategory === cat;
+                            return (
+                                <button
+                                    key={cat}
+                                    type="button"
+                                    onClick={() => setSelectedCategory(cat)}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 active:scale-95 ${
+                                        isSelected
+                                            ? 'bg-charcoal-900 text-devyellow-400 shadow-md ring-1 ring-devorange-500/20'
+                                            : 'bg-white hover:bg-gray-100/80 text-charcoal-700 border border-gray-200/80 shadow-xs'
+                                    }`}
+                                >
+                                    {cat}
+                                </button>
+                            );
+                        })}
                     </div>
                 )}
 
@@ -115,7 +118,7 @@ export const ProjectsSection = ({ projects = [] }) => {
                     {filteredProjects.map((project, idx) => (
                         <article
                             key={project.id || idx}
-                            className="flex flex-col bg-white rounded-2xl border border-gray-200/90 shadow-warm-sm hover:shadow-warm-md hover:border-devorange-300 transition-all duration-300 overflow-hidden group"
+                            className="glow-card flex flex-col bg-white rounded-2xl border border-gray-200/90 shadow-warm-sm hover:shadow-warm-md hover:border-devorange-300 transition-all duration-300 overflow-hidden group hover:-translate-y-1"
                         >
                             {/* Project Screenshot / Preview */}
                             <div
@@ -141,10 +144,10 @@ export const ProjectsSection = ({ projects = [] }) => {
                                         e.currentTarget.onerror = null;
                                         e.currentTarget.src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80';
                                     }}
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/70 via-transparent to-transparent opacity-80 group-hover:opacity-60 transition-opacity" />
-                                <span className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-charcoal-900/90 backdrop-blur-md border border-charcoal-700 text-devyellow-400 text-[11px] font-bold uppercase tracking-wider">
+                                <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/80 via-transparent to-transparent opacity-85 group-hover:opacity-60 transition-opacity" />
+                                <span className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-charcoal-900/90 backdrop-blur-md border border-charcoal-700 text-devyellow-400 text-[11px] font-bold uppercase tracking-wider shadow-sm">
                                     {project.category}
                                 </span>
                             </div>
@@ -153,12 +156,12 @@ export const ProjectsSection = ({ projects = [] }) => {
                             <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
                                 <div className="space-y-2.5">
                                     <h3
-                                        className="text-lg sm:text-xl font-black text-charcoal-900 group-hover:text-devorange-600 transition-colors cursor-pointer"
+                                        className="text-lg sm:text-xl font-black text-charcoal-900 group-hover:text-devorange-600 transition-colors cursor-pointer leading-snug"
                                         onClick={() => setActiveModalProject(project)}
                                     >
                                         {project.title}
                                     </h3>
-                                    <p className="text-xs sm:text-sm text-charcoal-600 leading-relaxed font-normal">
+                                    <p className="text-xs sm:text-sm text-charcoal-600 leading-relaxed font-normal line-clamp-3">
                                         {project.description}
                                     </p>
                                 </div>
@@ -168,7 +171,7 @@ export const ProjectsSection = ({ projects = [] }) => {
                                     <button
                                         type="button"
                                         onClick={() => setActiveModalProject(project)}
-                                        className="text-xs font-bold text-devorange-600 hover:text-devorange-700 inline-flex items-center gap-1 transition-colors py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 rounded"
+                                        className="text-xs font-bold text-devorange-600 hover:text-devorange-700 inline-flex items-center gap-1 transition-colors py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 rounded group-hover:translate-x-0.5 duration-200"
                                     >
                                         <span>Details</span>
                                         <ArrowUpRight className="w-3.5 h-3.5" />
@@ -180,7 +183,7 @@ export const ProjectsSection = ({ projects = [] }) => {
                                             target="_blank"
                                             rel="noreferrer"
                                             aria-label={`GitHub source code for ${project.title}`}
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-charcoal-900 hover:bg-charcoal-800 text-devyellow-400 text-xs font-bold transition-all shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-charcoal-900 hover:bg-charcoal-800 text-devyellow-400 text-xs font-bold transition-all shadow-xs hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 active:scale-95"
                                             title="View Source Code"
                                         >
                                             <Github className="w-3.5 h-3.5" />
@@ -194,7 +197,7 @@ export const ProjectsSection = ({ projects = [] }) => {
                 </div>
             </div>
 
-            {/* Simple, Compact Project Details Modal */}
+            {/* Project Details Modal */}
             {activeModalProject && (
                 <div
                     className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-charcoal-950/80 backdrop-blur-sm select-none"
@@ -204,13 +207,13 @@ export const ProjectsSection = ({ projects = [] }) => {
                     aria-labelledby="project-modal-title"
                 >
                     <div
-                        className="relative max-w-2xl w-full max-h-[90vh] bg-white rounded-3xl border border-gray-200 shadow-2xl overflow-y-auto flex flex-col select-text"
+                        className="animate-popup-zoom relative max-w-2xl w-full max-h-[90vh] bg-white rounded-3xl border border-gray-200 shadow-2xl overflow-y-auto flex flex-col select-text"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Modal Header */}
                         <div className="sticky top-0 bg-white/95 backdrop-blur-md px-6 py-4 border-b border-gray-100 flex items-center justify-between z-10">
                             <div className="flex items-center gap-2.5 min-w-0 pr-3">
-                                <span className="px-2.5 py-0.5 rounded-full bg-devyellow-100 text-devorange-600 text-xs font-bold uppercase tracking-wider shrink-0">
+                                <span className="px-2.5 py-0.5 rounded-full bg-devyellow-100 text-devorange-600 text-xs font-bold uppercase tracking-wider shrink-0 border border-devyellow-200">
                                     {activeModalProject.category}
                                 </span>
                                 <h3 id="project-modal-title" className="text-base sm:text-lg font-black text-charcoal-900 truncate">
@@ -242,7 +245,7 @@ export const ProjectsSection = ({ projects = [] }) => {
                                 />
                             </div>
 
-                            {/* Project Natural Description */}
+                            {/* Project Description */}
                             <div className="space-y-2">
                                 <h4 className="text-xs font-bold uppercase tracking-wider text-charcoal-400">
                                     About the Project
@@ -259,10 +262,10 @@ export const ProjectsSection = ({ projects = [] }) => {
                                         href={activeModalProject.githubUrl}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="px-5 py-2.5 rounded-xl bg-charcoal-900 hover:bg-charcoal-800 text-devyellow-400 text-xs font-bold flex items-center gap-2 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
+                                        className="px-5 py-2.5 rounded-xl bg-charcoal-900 hover:bg-charcoal-800 text-devyellow-400 text-xs font-bold flex items-center gap-2 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 active:scale-95"
                                     >
                                         <Github className="w-4 h-4" />
-                                        <span>GitHub Repository</span>
+                                        <span>View on GitHub</span>
                                     </a>
                                 </div>
                             )}

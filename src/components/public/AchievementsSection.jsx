@@ -160,8 +160,9 @@ export const AchievementsSection = ({ achievements = [] }) => {
         <section id="achievements" className="py-20 sm:py-24 bg-charcoal-50/50 relative overflow-hidden scroll-mt-16">
             <div className="max-w-7xl mx-auto px-6">
                 <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-14 space-y-3">
-                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-devyellow-100 text-devorange-600 text-xs font-bold uppercase tracking-wider">
-                        Milestones
+                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-devyellow-100 border border-devyellow-200 text-devorange-600 text-xs font-bold uppercase tracking-wider">
+                        <Sparkles className="w-3.5 h-3.5 text-devorange-500" />
+                        <span>Milestones &amp; Honors</span>
                     </div>
                     <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-charcoal-900 tracking-tight">
                         Achievements &amp; Milestones
@@ -171,7 +172,7 @@ export const AchievementsSection = ({ achievements = [] }) => {
                     </p>
                 </div>
 
-                <div className="bg-white rounded-3xl p-6 sm:p-10 lg:p-14 border border-gray-200/80 shadow-warm-md">
+                <div className="bg-white rounded-3xl p-6 sm:p-10 lg:p-14 border border-gray-200/90 shadow-warm-md hover:shadow-warm-lg transition-shadow duration-300">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
                         {/* LEFT SIDE: Carousel Visual Stage */}
                         <div className="lg:col-span-7 relative">

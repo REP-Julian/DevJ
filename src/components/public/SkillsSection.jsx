@@ -67,28 +67,31 @@ export const SkillsSection = ({ skills = [] }) => {
                         <button
                             type="button"
                             onClick={() => setActiveFilter('All')}
-                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 ${
+                            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 active:scale-95 ${
                                 activeFilter === 'All'
-                                    ? 'bg-charcoal-900 text-devyellow-400 shadow-sm'
-                                    : 'bg-gray-100 hover:bg-gray-200 text-charcoal-600'
+                                    ? 'bg-charcoal-900 text-devyellow-400 shadow-md ring-1 ring-devorange-500/20'
+                                    : 'bg-white hover:bg-gray-100/80 text-charcoal-700 border border-gray-200/80 shadow-xs'
                             }`}
                         >
                             All ({skills.length})
                         </button>
-                        {domains.map((dom) => (
-                            <button
-                                key={dom}
-                                type="button"
-                                onClick={() => setActiveFilter(dom)}
-                                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 ${
-                                    activeFilter === dom
-                                        ? 'bg-charcoal-900 text-devyellow-400 shadow-sm'
-                                        : 'bg-gray-100 hover:bg-gray-200 text-charcoal-600'
-                                }`}
-                            >
-                                {dom} ({grouped[dom].length})
-                            </button>
-                        ))}
+                        {domains.map((dom) => {
+                            const isSelected = activeFilter === dom;
+                            return (
+                                <button
+                                    key={dom}
+                                    type="button"
+                                    onClick={() => setActiveFilter(dom)}
+                                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 active:scale-95 ${
+                                        isSelected
+                                            ? 'bg-charcoal-900 text-devyellow-400 shadow-md ring-1 ring-devorange-500/20'
+                                            : 'bg-white hover:bg-gray-100/80 text-charcoal-700 border border-gray-200/80 shadow-xs'
+                                    }`}
+                                >
+                                    {dom} ({grouped[dom].length})
+                                </button>
+                            );
+                        })}
                     </div>
                 )}
 
@@ -100,12 +103,12 @@ export const SkillsSection = ({ skills = [] }) => {
                         return (
                             <div key={domain} className="space-y-4">
                                 <div className="flex items-center gap-3">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-devorange-500" />
+                                    <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-tr from-devorange-500 to-devyellow-400 shadow-xs" />
                                     <h3 className="text-lg sm:text-xl font-black text-charcoal-900 tracking-tight">
                                         {domain}
                                     </h3>
-                                    <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-gray-100 text-charcoal-500">
-                                        {domainSkills.length} tools
+                                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-devyellow-100/70 border border-devyellow-200/70 text-devorange-700">
+                                        {domainSkills.length} {domainSkills.length === 1 ? 'skill' : 'skills'}
                                     </span>
                                 </div>
 
@@ -115,9 +118,9 @@ export const SkillsSection = ({ skills = [] }) => {
                                         return (
                                             <div
                                                 key={skill.id || skill.name}
-                                                className="p-4 bg-white rounded-2xl border border-gray-200/80 shadow-warm-xs hover:shadow-warm-sm hover:border-devorange-300 transition-all duration-200 flex items-start gap-3.5 group"
+                                                className="glow-card p-4 bg-white rounded-2xl border border-gray-200/90 shadow-warm-xs hover:shadow-warm-sm hover:border-devorange-300 transition-all duration-300 flex items-start gap-3.5 group hover:-translate-y-0.5"
                                             >
-                                                <div className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center p-2 group-hover:scale-105 group-hover:bg-white transition-all shrink-0">
+                                                <div className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center p-2 group-hover:scale-105 group-hover:bg-devyellow-50/50 group-hover:border-devyellow-200 transition-all shrink-0">
                                                     <BrandIcon name={skill.iconName || skill.name} className="w-5 h-5 sm:w-6 sm:h-6" />
                                                 </div>
                                                 <div className="min-w-0 flex-1 space-y-1">
@@ -126,13 +129,14 @@ export const SkillsSection = ({ skills = [] }) => {
                                                             {skill.name}
                                                         </h4>
                                                         {inProject && (
-                                                            <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-devyellow-100 text-charcoal-800 border border-devyellow-300">
-                                                                Used in Projects
+                                                            <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
+                                                                <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
+                                                                <span>In Projects</span>
                                                             </span>
                                                         )}
                                                     </div>
                                                     {skill.description && (
-                                                        <p className="text-xs text-charcoal-500 leading-relaxed font-normal">
+                                                        <p className="text-xs text-charcoal-500 leading-relaxed font-normal line-clamp-2">
                                                             {skill.description}
                                                         </p>
                                                     )}

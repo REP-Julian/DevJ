@@ -198,7 +198,7 @@ export const ContactSection = ({ profile = {} }) => {
                                     aria-hidden="true"
                                 />
                                 <div>
-                                    <label htmlFor="contact-name" className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 mb-1">
+                                    <label htmlFor="contact-name" className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 mb-1.5">
                                         Your Name
                                     </label>
                                     <input
@@ -208,12 +208,12 @@ export const ContactSection = ({ profile = {} }) => {
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                         placeholder="Enter your name"
-                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-devorange-500 focus:ring-2 focus:ring-devyellow-300 text-sm"
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-devorange-500 focus:ring-4 focus:ring-devorange-500/10 text-sm shadow-xs transition-all duration-200"
                                     />
                                 </div>
 
                                 <div>
-                                    <label htmlFor="contact-email" className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 mb-1">
+                                    <label htmlFor="contact-email" className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 mb-1.5">
                                         Email Address
                                     </label>
                                     <input
@@ -223,12 +223,12 @@ export const ContactSection = ({ profile = {} }) => {
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                         placeholder="you@example.com"
-                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-devorange-500 focus:ring-2 focus:ring-devyellow-300 text-sm"
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-devorange-500 focus:ring-4 focus:ring-devorange-500/10 text-sm shadow-xs transition-all duration-200"
                                     />
                                 </div>
 
                                 <div>
-                                    <label htmlFor="contact-message" className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 mb-1">
+                                    <label htmlFor="contact-message" className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 mb-1.5">
                                         Message
                                     </label>
                                     <textarea
@@ -238,28 +238,28 @@ export const ContactSection = ({ profile = {} }) => {
                                         value={formData.message}
                                         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                                         placeholder="What would you like to build or discuss?"
-                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-devorange-500 focus:ring-2 focus:ring-devyellow-300 text-sm"
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-devorange-500 focus:ring-4 focus:ring-devorange-500/10 text-sm shadow-xs transition-all duration-200 resize-y"
                                     />
                                 </div>
 
                                 {status.success && (
-                                    <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-green-800 text-xs flex items-center gap-2">
-                                        <CheckCircle2 className="w-4 h-4 text-green-600 flex-shrink-0" />
-                                        <span>Thank you! Your message has been sent.</span>
+                                    <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs flex items-center gap-2.5 animate-in fade-in duration-200">
+                                        <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                                        <span className="font-semibold">Thank you! Your message has been sent directly to Julian.</span>
                                     </div>
                                 )}
 
                                 {status.error && (
-                                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-red-800 text-xs flex items-center gap-2">
+                                    <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-red-800 text-xs flex items-center gap-2.5 animate-in fade-in duration-200">
                                         <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
-                                        <span>{status.error}</span>
+                                        <span className="font-semibold">{status.error}</span>
                                     </div>
                                 )}
 
                                 <button
                                     type="submit"
                                     disabled={status.loading}
-                                    className="w-full py-3 px-6 rounded-xl font-bold text-sm uppercase tracking-wider bg-gradient-to-r from-devyellow-400 via-devorange-400 to-devorange-500 text-charcoal-900 shadow-warm-sm hover:shadow-warm-md hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
+                                    className="w-full py-3.5 px-6 rounded-xl font-bold text-sm uppercase tracking-wider bg-gradient-to-r from-devyellow-400 via-devorange-400 to-devorange-500 text-charcoal-900 shadow-warm-sm hover:shadow-warm-md hover:scale-[1.01] active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 ring-1 ring-devorange-400/30"
                                 >
                                     {status.loading ? (
                                         <>
