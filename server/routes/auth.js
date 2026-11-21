@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import prisma from '../utils/prisma.js';
 import { authLimiter } from '../middleware/rateLimiter.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { securityShield } from '../middleware/securityShield.js';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -16,6 +17,8 @@ if (!JWT_SECRET) {
 }
 
 router.post('/login', authLimiter, async (req, res) => {
+    const clientIP = securityShield.getClientIP(req);
+
     try {
         const { email, password } = req.body || {};
         if (!email || !password || typeof email !== 'string' || typeof password !== 'string') {
@@ -25,13 +28,38 @@ router.post('/login', authLimiter, async (req, res) => {
         const normalizedEmail = email.trim().toLowerCase();
         const admin = await prisma.admin.findUnique({ where: { email: normalizedEmail } });
         if (!admin) {
-            return res.status(401).json({ message: 'Invalid email or password' });
+            const failResult = securityShield.recordFailedLogin(clientIP);
+            if (failResult.isBanned) {
+                return res.status(403).json({
+                    error: 'Account / IP Locked',
+                    message: 'Maximum login attempts exceeded. Access has been restricted for 24 hours.',
+                    lockoutSeconds: failResult.lockoutSeconds,
+                });
+            }
+            return res.status(401).json({
+                message: 'Invalid email or password',
+                remainingAttempts: failResult.remainingAttempts,
+            });
         }
 
         const isMatch = await bcrypt.compare(password, admin.password);
         if (!isMatch) {
-            return res.status(401).json({ message: 'Invalid email or password' });
+            const failResult = securityShield.recordFailedLogin(clientIP);
+            if (failResult.isBanned) {
+                return res.status(403).json({
+                    error: 'Account / IP Locked',
+                    message: 'Maximum login attempts exceeded. Access has been restricted for 24 hours.',
+                    lockoutSeconds: failResult.lockoutSeconds,
+                });
+            }
+            return res.status(401).json({
+                message: 'Invalid email or password',
+                remainingAttempts: failResult.remainingAttempts,
+            });
         }
+
+        // Reset failed attempts on valid login
+        securityShield.recordSuccessfulLogin(clientIP);
 
         const token = jwt.sign(
             { id: admin.id, email: admin.email, role: 'admin' },

@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import path from 'path';
 import { globalLimiter } from './middleware/rateLimiter.js';
+import { securityShield } from './middleware/securityShield.js';
 import authRoutes from './routes/auth.js';
 import portfolioRoutes from './routes/portfolio.js';
 import profileRoutes from './routes/profile.js';
@@ -16,6 +17,12 @@ import aiRoutes from './routes/ai.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+// Security: HTTP Security Headers, IP Gatekeeper, Scanner Defense, and Honeypot Traps
+app.use(securityShield.securityHeaders());
+app.use(securityShield.ipGatekeeper());
+app.use(securityShield.botScannerFilter());
+app.use(securityShield.honeypotTrap());
 
 // Security: Restrict CORS to configured production and development origins
 const rawOrigins = process.env.ALLOWED_ORIGINS || '';

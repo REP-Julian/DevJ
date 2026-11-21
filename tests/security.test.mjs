@@ -176,3 +176,69 @@ test('Security Audit: Authenticated request with cryptographically signed JWT su
     const messages = await res.json();
     assert.ok(Array.isArray(messages), 'Expected messages to be an array');
 });
+
+test('Security Audit: Security headers are present on responses', async () => {
+    const res = await fetch(`${baseUrl}/api/health`);
+    assert.strictEqual(res.headers.get('x-content-type-options'), 'nosniff');
+    assert.strictEqual(res.headers.get('x-frame-options'), 'DENY');
+    assert.strictEqual(res.headers.get('x-xss-protection'), '1; mode=block');
+    assert.ok(res.headers.get('strict-transport-security')?.includes('max-age=31536000'));
+});
+
+test('Security Audit: Honeypot traps block malicious reconnaissance probing (403)', async () => {
+    const res = await fetch(`${baseUrl}/.env`, {
+        headers: { 'X-Forwarded-For': '198.51.100.42' }
+    });
+    assert.strictEqual(res.status, 403, 'Expected 403 for honeypot probe');
+
+    // Subsequent request from same IP should be blocked by IP Gatekeeper
+    const resSubsequent = await fetch(`${baseUrl}/api/health`, {
+        headers: { 'X-Forwarded-For': '198.51.100.42' }
+    });
+    assert.strictEqual(resSubsequent.status, 403, 'Expected 403 due to 24h IP lockout');
+});
+
+test('Security Audit: Malicious scanner user-agents are rejected (403)', async () => {
+    const res = await fetch(`${baseUrl}/api/health`, {
+        headers: {
+            'User-Agent': 'sqlmap/1.6#stable (https://sqlmap.org)',
+            'X-Forwarded-For': '198.51.100.77',
+        }
+    });
+    assert.strictEqual(res.status, 403, 'Expected 403 for sqlmap user agent');
+});
+
+test('Security Audit: 5 failed login attempts trigger 24-hour lockout (403)', async () => {
+    const testIP = '198.51.100.99';
+
+    for (let i = 1; i <= 4; i++) {
+        const res = await fetch(`${baseUrl}/api/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Forwarded-For': testIP,
+            },
+            body: JSON.stringify({ email: 'admin@devj.com', password: `wrong_${i}` }),
+        });
+        assert.strictEqual(res.status, 401, `Attempt ${i} should return 401`);
+        const data = await res.json();
+        assert.strictEqual(data.remainingAttempts, 5 - i);
+    }
+
+    // 5th failed attempt should trigger 24h lockout (403)
+    const resFifth = await fetch(`${baseUrl}/api/auth/login`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-Forwarded-For': testIP,
+        },
+        body: JSON.stringify({ email: 'admin@devj.com', password: 'wrong_5' }),
+    });
+    assert.strictEqual(resFifth.status, 403, '5th attempt must return 403 Lockout');
+
+    // Subsequent requests from locked IP should be blocked
+    const resLocked = await fetch(`${baseUrl}/api/health`, {
+        headers: { 'X-Forwarded-For': testIP }
+    });
+    assert.strictEqual(resLocked.status, 403, 'Locked IP must be rejected with 403 on all endpoints');
+});

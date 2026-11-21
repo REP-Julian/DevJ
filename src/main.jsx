@@ -4,7 +4,11 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { AuthProvider } from './context/AuthContext';
 import { PortfolioProvider } from './context/PortfolioContext';
+import { initAntiDebugShield } from './utils/antiDebug';
 import './index.css';
+
+// Initialize client-side anti-debugging & inspection deterrent
+initAntiDebugShield();
 
 ReactDOM.createRoot(document.getElementById('root')).render(
     <React.StrictMode>
