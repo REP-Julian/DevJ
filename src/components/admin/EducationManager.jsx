@@ -59,6 +59,7 @@ export const EducationManager = ({
         subtitle: '',
         period: '',
         description: '',
+        highlights: '',
         tags: '',
         order: 0,
     });
@@ -100,6 +101,7 @@ export const EducationManager = ({
             subtitle: '',
             period: '',
             description: '',
+            highlights: '',
             tags: '',
             order: 0,
         });
@@ -263,6 +265,7 @@ export const EducationManager = ({
         setIsCreating(false);
         setResearchForm({
             ...item,
+            highlights: Array.isArray(item.highlights) ? item.highlights.join(', ') : (item.highlights || ''),
             tags: Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags || ''),
         });
     };
@@ -273,8 +276,9 @@ export const EducationManager = ({
         setResearchForm({
             title: '',
             subtitle: '',
-            period: '2025 - Present',
+            period: '2025',
             description: '',
+            highlights: '',
             tags: 'Applied AI, Research, Web Performance',
             order: research.length + 1,
         });
@@ -293,6 +297,9 @@ export const EducationManager = ({
             subtitle: researchForm.subtitle.trim() || 'Academic Projects & Independent Inquiries',
             period: researchForm.period.trim() || 'Present',
             description: researchForm.description.trim(),
+            highlights: typeof researchForm.highlights === 'string'
+                ? researchForm.highlights.split(',').map(h => h.trim()).filter(Boolean)
+                : researchForm.highlights,
             tags: typeof researchForm.tags === 'string'
                 ? researchForm.tags.split(',').map(t => t.trim()).filter(Boolean)
                 : researchForm.tags,
@@ -917,7 +924,7 @@ export const EducationManager = ({
                                             type="text"
                                             value={researchForm.period}
                                             onChange={(e) => setResearchForm({ ...researchForm, period: e.target.value })}
-                                            placeholder="e.g. 2025 - Present"
+                                            placeholder="e.g. 2025"
                                             className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-devorange-500 focus:ring-2 focus:ring-devorange-400/20 text-sm font-medium outline-none"
                                         />
                                     </div>
@@ -930,7 +937,7 @@ export const EducationManager = ({
                                             type="text"
                                             value={researchForm.tags}
                                             onChange={(e) => setResearchForm({ ...researchForm, tags: e.target.value })}
-                                            placeholder="e.g. Applied AI, Agent Workflows, Web Performance"
+                                            placeholder="e.g. Sustainable Materials, Urban Engineering, Cost Efficiency"
                                             className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-devorange-500 focus:ring-2 focus:ring-devorange-400/20 text-sm font-medium outline-none"
                                         />
                                     </div>
@@ -938,14 +945,30 @@ export const EducationManager = ({
 
                                 <div>
                                     <label className="block text-xs font-bold text-charcoal-700 uppercase tracking-wider mb-1.5">
-                                        Research Summary &amp; Findings
+                                        Key Metrics &amp; Empirical Findings (comma-separated)
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={researchForm.highlights}
+                                        onChange={(e) => setResearchForm({ ...researchForm, highlights: e.target.value })}
+                                        placeholder="e.g. 20% Cost Efficiency, 4h 56m Water Resistance, r = -0.3785 Correlation"
+                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-devorange-500 focus:ring-2 focus:ring-devorange-400/20 text-sm font-medium outline-none"
+                                    />
+                                    <p className="text-[11px] text-charcoal-400 mt-1">
+                                        Displays as metric cards in the paper details modal and highlight pills on the card.
+                                    </p>
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold text-charcoal-700 uppercase tracking-wider mb-1.5">
+                                        Research Summary &amp; Findings (Full Abstract)
                                     </label>
                                     <textarea
-                                        rows={3}
+                                        rows={5}
                                         value={researchForm.description}
                                         onChange={(e) => setResearchForm({ ...researchForm, description: e.target.value })}
                                         placeholder="Describe research methodologies, explorations, or system architectures investigated..."
-                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-devorange-500 focus:ring-2 focus:ring-devorange-400/20 text-sm font-medium outline-none resize-none"
+                                        className="w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:border-devorange-500 focus:ring-2 focus:ring-devorange-400/20 text-sm font-medium outline-none resize-y"
                                     />
                                 </div>
 
@@ -1004,9 +1027,22 @@ export const EducationManager = ({
                                         )}
 
                                         {item.description && (
-                                            <p className="text-xs text-charcoal-600 leading-relaxed pt-1">
+                                            <p className="text-xs text-charcoal-600 leading-relaxed pt-1 line-clamp-2">
                                                 {item.description}
                                             </p>
+                                        )}
+
+                                        {Array.isArray(item.highlights) && item.highlights.length > 0 && (
+                                            <div className="flex flex-wrap gap-1.5 pt-1">
+                                                {item.highlights.map((h, hIdx) => (
+                                                    <span
+                                                        key={hIdx}
+                                                        className="px-2 py-0.5 rounded-md bg-devyellow-50 text-devorange-700 border border-devyellow-200 text-[10px] font-bold"
+                                                    >
+                                                        {h}
+                                                    </span>
+                                                ))}
+                                            </div>
                                         )}
 
                                         {Array.isArray(item.tags) && item.tags.length > 0 && (
