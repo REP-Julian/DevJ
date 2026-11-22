@@ -198,95 +198,89 @@ export const EducationSection = ({ education = [], roles = [], research = [] }) 
                     </div>
                 </div>
 
-                {/* Content: Education Timeline */}
+                {/* Content: Education Timeline (Left-Aligned Linear Track) */}
                 {activeTab === 'education' && (
-                    <div className="max-w-4xl mx-auto relative pt-4">
-                        {/* Vertical Spine Line */}
-                        <div
-                            aria-hidden="true"
-                            className="absolute left-6 sm:left-1/2 top-4 bottom-8 -translate-x-1/2 w-1 bg-gradient-to-b from-devorange-400 via-devyellow-400 to-gray-200 dark:to-charcoal-800 rounded-full"
-                        />
-
-                        <div className="space-y-8 sm:space-y-12">
+                    <div className="max-w-3xl mx-auto pt-4">
+                        <div className="space-y-6 sm:space-y-8">
                             {educationData.map((item, index) => {
-                                const isEven = index % 2 === 0;
+                                const isLast = index === educationData.length - 1;
                                 return (
                                     <div
                                         key={item.id}
-                                        className="relative flex flex-col sm:flex-row items-start sm:items-center group"
+                                        className="relative flex items-start gap-4 sm:gap-6 group"
                                     >
-                                        {/* Center Icon Node */}
-                                        <div className="absolute left-6 sm:left-1/2 -translate-x-1/2 z-10 flex items-center justify-center">
+                                        {/* Spine & Node Column */}
+                                        <div className="flex flex-col items-center self-stretch shrink-0 pt-1">
+                                            {/* Node */}
                                             <div
-                                                className={`w-11 h-11 rounded-2xl flex items-center justify-center border-4 border-white dark:border-charcoal-950 shadow-warm-md transition-transform duration-300 group-hover:scale-110 ${
+                                                className={`w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center border-2 sm:border-4 border-white dark:border-charcoal-950 shadow-warm-md transition-all duration-300 group-hover:scale-110 z-10 shrink-0 ${
                                                     item.isCurrent
                                                         ? 'bg-gradient-to-tr from-devyellow-400 to-devorange-500 text-charcoal-900 shadow-devorange-500/30 ring-4 ring-devorange-200/50 dark:ring-amber-500/20'
                                                         : 'bg-charcoal-900 text-devyellow-400 border-charcoal-800'
                                                 }`}
                                             >
-                                                <GraduationCap className={`w-5 h-5 ${item.isCurrent ? 'text-charcoal-900' : 'text-devyellow-400'}`} />
+                                                <GraduationCap className={`w-5 h-5 sm:w-6 sm:h-6 ${item.isCurrent ? 'text-charcoal-900' : 'text-devyellow-400'}`} />
                                             </div>
+
+                                            {/* Continuous Connecting Line to next item */}
+                                            {!isLast && (
+                                                <div
+                                                    aria-hidden="true"
+                                                    className="w-0.5 flex-1 my-2 bg-gradient-to-b from-devorange-400 via-devyellow-400/80 to-gray-200 dark:to-charcoal-800 rounded-full"
+                                                />
+                                            )}
                                         </div>
 
                                         {/* Content Card Container */}
-                                        <div
-                                            className={`w-full sm:w-1/2 pl-16 sm:pl-0 ${
-                                                isEven ? 'sm:pr-12 sm:text-right' : 'sm:pl-12 sm:ml-auto'
-                                            }`}
-                                        >
+                                        <div className="flex-1 pb-2">
                                             <div
                                                 className={`p-6 sm:p-7 rounded-2xl border transition-all duration-300 hover:shadow-warm-lg ${
                                                     item.isCurrent
-                                                        ? 'bg-gradient-to-br from-white via-orange-50/20 to-devyellow-50/30 dark:from-charcoal-900 dark:via-charcoal-900 dark:to-amber-950/20 border-devorange-300 dark:border-amber-500/40 shadow-warm-md'
+                                                        ? 'bg-gradient-to-br from-white via-orange-50/20 to-devyellow-50/30 dark:from-charcoal-900 dark:via-charcoal-900 dark:to-amber-950/20 border-devorange-400 dark:border-amber-500/50 shadow-warm-md ring-1 ring-devorange-400/20 dark:ring-amber-500/20'
                                                         : 'bg-white dark:bg-charcoal-900 border-gray-200/90 dark:border-charcoal-800 hover:border-devorange-200 dark:hover:border-amber-400/50'
                                                 }`}
                                             >
-                                                {/* Header Badges */}
-                                                <div
-                                                    className={`flex flex-wrap items-center gap-2 mb-3 ${
-                                                        isEven ? 'sm:justify-end' : 'sm:justify-start'
-                                                    }`}
-                                                >
-                                                    <span className="px-2.5 py-0.5 rounded-full bg-devyellow-100 dark:bg-amber-950/50 border border-devyellow-200 dark:border-amber-800/60 text-devorange-700 dark:text-amber-300 text-xs font-black uppercase tracking-wider">
-                                                        {item.level}
-                                                    </span>
-                                                    <span
-                                                        className={`px-2.5 py-0.5 rounded-full text-xs font-bold flex items-center gap-1 ${
-                                                            item.isCurrent
-                                                                ? 'bg-devorange-500 dark:bg-amber-500 text-white dark:text-charcoal-950 shadow-sm'
-                                                                : 'bg-gray-100 dark:bg-charcoal-800 text-charcoal-600 dark:text-gray-300'
-                                                        }`}
-                                                    >
-                                                        {item.isCurrent ? (
-                                                            <Clock className="w-3 h-3 animate-pulse" />
-                                                        ) : (
-                                                            <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                                                        )}
-                                                        <span>{item.status}</span>
-                                                    </span>
+                                                {/* Header Badges & Period */}
+                                                <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                                                    <div className="flex flex-wrap items-center gap-2">
+                                                        <span className="px-2.5 py-0.5 rounded-full bg-devyellow-100 dark:bg-amber-950/50 border border-devyellow-200 dark:border-amber-800/60 text-devorange-700 dark:text-amber-300 text-xs font-black uppercase tracking-wider">
+                                                            {item.level}
+                                                        </span>
+                                                        <span
+                                                            className={`px-2.5 py-0.5 rounded-full text-xs font-bold flex items-center gap-1 ${
+                                                                item.isCurrent
+                                                                    ? 'bg-devorange-500 dark:bg-amber-500 text-white dark:text-charcoal-950 shadow-sm'
+                                                                    : 'bg-gray-100 dark:bg-charcoal-800 text-charcoal-600 dark:text-gray-300'
+                                                            }`}
+                                                        >
+                                                            {item.isCurrent ? (
+                                                                <Clock className="w-3 h-3 animate-pulse" />
+                                                            ) : (
+                                                                <CheckCircle2 className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                                                            )}
+                                                            <span>{item.isCurrent ? 'Ongoing' : 'Completed'}</span>
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-1.5 text-xs font-bold text-charcoal-600 dark:text-gray-300">
+                                                        <Calendar className="w-3.5 h-3.5 text-devorange-500 dark:text-amber-400" />
+                                                        <span>{item.period}</span>
+                                                    </div>
                                                 </div>
 
                                                 {/* Institution Name & Degree */}
                                                 <h3 className="text-xl sm:text-2xl font-black text-charcoal-900 dark:text-white group-hover:text-devorange-600 dark:group-hover:text-amber-400 transition-colors">
                                                     {item.institution}
                                                 </h3>
-                                                <p className="text-xs sm:text-sm font-semibold text-devorange-600 dark:text-amber-400 mt-1 flex items-center gap-1.5 sm:inline-flex">
-                                                    <Building2 className="w-3.5 h-3.5 shrink-0" />
-                                                    <span>{item.degree}</span>
-                                                </p>
 
-                                                {/* Year and Location */}
-                                                <div
-                                                    className={`flex items-center gap-3 text-xs font-medium text-charcoal-500 dark:text-gray-400 my-3 ${
-                                                        isEven ? 'sm:justify-end' : 'sm:justify-start'
-                                                    }`}
-                                                >
-                                                    <span className="flex items-center gap-1 font-bold text-charcoal-700 dark:text-gray-300">
-                                                        <Calendar className="w-3.5 h-3.5 text-devorange-500 dark:text-amber-400" />
-                                                        {item.period}
+                                                {/* Degree and Location */}
+                                                <div className="flex flex-wrap items-center gap-2 text-xs sm:text-sm font-semibold text-devorange-600 dark:text-amber-400 mt-1 mb-3">
+                                                    <span className="inline-flex items-center gap-1.5">
+                                                        <Building2 className="w-3.5 h-3.5 shrink-0" />
+                                                        <span>{item.degree}</span>
                                                     </span>
-                                                    <span aria-hidden="true" className="text-charcoal-400 dark:text-charcoal-600">&bull;</span>
-                                                    <span>{item.location}</span>
+                                                    <span aria-hidden="true" className="text-charcoal-300 dark:text-charcoal-700">&bull;</span>
+                                                    <span className="text-charcoal-500 dark:text-gray-400 font-medium">{item.location}</span>
                                                 </div>
 
                                                 {/* Description */}
@@ -295,15 +289,11 @@ export const EducationSection = ({ education = [], roles = [], research = [] }) 
                                                 </p>
 
                                                 {/* Highlights */}
-                                                <div
-                                                    className={`flex flex-wrap gap-1.5 ${
-                                                        isEven ? 'sm:justify-end' : 'sm:justify-start'
-                                                    }`}
-                                                >
+                                                <div className="flex flex-wrap gap-1.5">
                                                     {(item.highlights || []).map((h, i) => (
                                                         <span
                                                             key={i}
-                                                            className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-charcoal-800 text-charcoal-600 dark:text-gray-300 text-[11px] font-semibold border border-transparent dark:border-charcoal-700"
+                                                            className="px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-charcoal-800 text-charcoal-600 dark:text-gray-300 text-xs font-medium border border-transparent dark:border-charcoal-700"
                                                         >
                                                             {h}
                                                         </span>
