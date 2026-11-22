@@ -20,45 +20,45 @@ export const Footer = ({ profile = {} }) => {
     const linkedinUrl = profile.linkedinUrl && profile.linkedinUrl !== '#' ? profile.linkedinUrl : 'https://linkedin.com';
 
     return (
-        <footer className="bg-white border-t border-gray-100 pt-14 pb-10">
+        <footer className="bg-white dark:bg-charcoal-950 border-t border-gray-100 dark:border-charcoal-800/80 pt-14 pb-10 transition-colors duration-300">
             <div className="max-w-7xl mx-auto px-6">
                 {/* Main Footer Content */}
-                <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-12 border-b border-gray-100 items-start">
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pb-12 border-b border-gray-100 dark:border-charcoal-800 items-start">
                     {/* Brand & Availability Status (Col 1-5) */}
                     <div className="md:col-span-5 space-y-4">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-charcoal-900 flex items-center justify-center text-devyellow-400 font-extrabold text-lg shadow-sm ring-1 ring-black/5">
+                            <div className="w-10 h-10 rounded-xl bg-charcoal-900 border border-charcoal-800 flex items-center justify-center text-devyellow-400 font-extrabold text-lg shadow-sm ring-1 ring-black/5">
                                 DV
                             </div>
                             <div>
                                 <div className="flex items-center gap-2">
-                                    <span className="font-extrabold text-xl tracking-tight text-charcoal-900">
+                                    <span className="font-extrabold text-xl tracking-tight text-charcoal-900 dark:text-white">
                                         Julian Agustino
                                     </span>
-                                    <span className="text-xs text-charcoal-500 font-semibold">(DevJ)</span>
+                                    <span className="text-xs text-charcoal-500 dark:text-charcoal-400 font-semibold">(DevJ)</span>
                                 </div>
-                                <p className="text-xs text-charcoal-500 font-medium">
-                                    {profile?.tagline || 'AI User & Tech Explorer'} &bull; Quezon City, PH
+                                <p className="text-xs text-charcoal-500 dark:text-charcoal-400 font-medium">
+                                    {profile?.tagline || 'Student & Developer'} &bull; Quezon City, PH
                                 </p>
                             </div>
                         </div>
 
-                        <p className="text-xs text-charcoal-500 max-w-sm leading-relaxed font-normal">
-                            {profile?.description || 'Exploring generative AI, everyday tools, and learning practical technology.'}
+                        <p className="text-xs text-charcoal-500 dark:text-gray-400 max-w-sm leading-relaxed font-normal">
+                            {profile?.description || 'Building practical web platforms, campus tools, and exploring modern AI integrations.'}
                         </p>
 
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-emerald-700">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-[11px] font-bold text-emerald-700 dark:text-emerald-400">
                             <span className="flex h-2 w-2 relative">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                             </span>
-                            <span>Open for collaboration &amp; learning</span>
+                            <span>Open for collaboration &amp; projects</span>
                         </div>
                     </div>
 
                     {/* Quick Navigation Links (Col 6-8) */}
                     <div className="md:col-span-4 space-y-3">
-                        <div className="text-xs font-bold uppercase tracking-wider text-charcoal-400">
+                        <div className="text-xs font-bold uppercase tracking-wider text-charcoal-400 dark:text-charcoal-500">
                             Navigation
                         </div>
                         <nav className="grid grid-cols-2 gap-2 text-xs font-medium">
@@ -66,7 +66,7 @@ export const Footer = ({ profile = {} }) => {
                                 <a
                                     key={link.name}
                                     href={link.href}
-                                    className="text-charcoal-600 hover:text-devorange-600 transition-colors py-1 inline-flex items-center gap-1"
+                                    className="text-charcoal-600 dark:text-gray-300 hover:text-devorange-600 dark:hover:text-devyellow-400 transition-colors py-1 inline-flex items-center gap-1"
                                 >
                                     <span>{link.name}</span>
                                 </a>
@@ -76,7 +76,7 @@ export const Footer = ({ profile = {} }) => {
 
                     {/* Direct Social Shortcuts & Back-to-Top (Col 9-12) */}
                     <div className="md:col-span-3 space-y-4 md:text-right flex flex-col md:items-end">
-                        <div className="text-xs font-bold uppercase tracking-wider text-charcoal-400">
+                        <div className="text-xs font-bold uppercase tracking-wider text-charcoal-400 dark:text-charcoal-500">
                             Connect &amp; Social
                         </div>
                         <div className="flex items-center gap-2">
@@ -84,7 +84,7 @@ export const Footer = ({ profile = {} }) => {
                                 href={githubUrl}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="w-9 h-9 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center text-charcoal-700 hover:text-devorange-600 hover:border-devorange-400 hover:bg-white transition-all shadow-xs"
+                                className="w-9 h-9 rounded-xl bg-gray-50 dark:bg-charcoal-900 border border-gray-200 dark:border-charcoal-800 flex items-center justify-center text-charcoal-700 dark:text-gray-300 hover:text-devorange-600 dark:hover:text-devyellow-400 hover:border-devorange-400 dark:hover:border-charcoal-700 hover:bg-white dark:hover:bg-charcoal-850 transition-all shadow-xs"
                                 title="GitHub"
                                 aria-label="Julian Agustino GitHub"
                             >
@@ -94,7 +94,7 @@ export const Footer = ({ profile = {} }) => {
                                 href={linkedinUrl}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="w-9 h-9 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center text-charcoal-700 hover:text-devorange-600 hover:border-devorange-400 hover:bg-white transition-all shadow-xs"
+                                className="w-9 h-9 rounded-xl bg-gray-50 dark:bg-charcoal-900 border border-gray-200 dark:border-charcoal-800 flex items-center justify-center text-charcoal-700 dark:text-gray-300 hover:text-devorange-600 dark:hover:text-devyellow-400 hover:border-devorange-400 dark:hover:border-charcoal-700 hover:bg-white dark:hover:bg-charcoal-850 transition-all shadow-xs"
                                 title="LinkedIn"
                                 aria-label="Julian Agustino LinkedIn"
                             >
@@ -103,7 +103,7 @@ export const Footer = ({ profile = {} }) => {
                             {email && (
                                 <a
                                     href={`mailto:${email}`}
-                                    className="w-9 h-9 rounded-xl bg-gray-50 border border-gray-200 flex items-center justify-center text-charcoal-700 hover:text-devorange-600 hover:border-devorange-400 hover:bg-white transition-all shadow-xs"
+                                    className="w-9 h-9 rounded-xl bg-gray-50 dark:bg-charcoal-900 border border-gray-200 dark:border-charcoal-800 flex items-center justify-center text-charcoal-700 dark:text-gray-300 hover:text-devorange-600 dark:hover:text-devyellow-400 hover:border-devorange-400 dark:hover:border-charcoal-700 hover:bg-white dark:hover:bg-charcoal-850 transition-all shadow-xs"
                                     title={`Email: ${email}`}
                                     aria-label="Send email"
                                 >
@@ -112,15 +112,15 @@ export const Footer = ({ profile = {} }) => {
                             )}
                             <button
                                 onClick={scrollToTop}
-                                className="w-9 h-9 rounded-xl bg-devyellow-100/80 border border-devyellow-300 text-charcoal-900 flex items-center justify-center hover:bg-devyellow-400 hover:scale-105 active:scale-95 transition-all shadow-xs ml-1"
+                                className="w-9 h-9 rounded-xl bg-devyellow-100/80 dark:bg-charcoal-800 border border-devyellow-300 dark:border-charcoal-700 text-charcoal-900 dark:text-devyellow-400 flex items-center justify-center hover:bg-devyellow-400 dark:hover:bg-charcoal-700 hover:scale-105 active:scale-95 transition-all shadow-xs ml-1"
                                 aria-label="Back to top"
                                 title="Back to top"
                             >
-                                <ArrowUp className="w-4 h-4 text-devorange-600 font-bold" />
+                                <ArrowUp className="w-4 h-4 text-devorange-600 dark:text-devyellow-400 font-bold" />
                             </button>
                         </div>
                         {email && (
-                            <span className="text-[11px] text-charcoal-400 font-medium">
+                            <span className="text-[11px] text-charcoal-400 dark:text-charcoal-500 font-medium">
                                 {email}
                             </span>
                         )}
@@ -128,9 +128,9 @@ export const Footer = ({ profile = {} }) => {
                 </div>
 
                 {/* Bottom Bar */}
-                <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-charcoal-500 gap-4">
+                <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-charcoal-500 dark:text-gray-400 gap-4">
                     <p>© {new Date().getFullYear()} Julian Agustino (DevJ). All rights reserved.</p>
-                    <p className="inline-flex items-center gap-1.5 font-medium text-charcoal-400">
+                    <p className="inline-flex items-center gap-1.5 font-medium text-charcoal-400 dark:text-charcoal-500">
                         <span>Created with React 18, Appwrite &amp; Tailwind CSS</span>
                     </p>
                 </div>

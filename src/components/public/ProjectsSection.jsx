@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Github, Sparkles, X, ArrowUpRight } from 'lucide-react';
+import { Github, FolderGit2, X, ArrowUpRight, ExternalLink } from 'lucide-react';
 
 export const ProjectsSection = ({ projects = [] }) => {
     const defaultProjects = [
@@ -74,18 +74,18 @@ export const ProjectsSection = ({ projects = [] }) => {
         : items.filter((p) => p.category === selectedCategory);
 
     return (
-        <section id="projects" className="py-20 sm:py-24 bg-white relative scroll-mt-16">
+        <section id="projects" className="py-20 sm:py-24 bg-white dark:bg-charcoal-950 relative scroll-mt-16 transition-colors duration-300">
             <div className="max-w-7xl mx-auto px-6">
                 {/* Section Header */}
                 <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-14 space-y-3">
-                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-devyellow-100 border border-devyellow-200 text-devorange-600 text-xs font-bold uppercase tracking-wider">
-                        <Sparkles className="w-3.5 h-3.5 text-devorange-500" />
+                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-devyellow-100 dark:bg-amber-950/40 border border-devyellow-200 dark:border-amber-800/60 text-devorange-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
+                        <FolderGit2 className="w-3.5 h-3.5 text-devorange-600 dark:text-amber-400" />
                         <span>Featured Work</span>
                     </div>
-                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-charcoal-900 tracking-tight">
+                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-charcoal-900 dark:text-white tracking-tight">
                         Projects I've Built
                     </h2>
-                    <p className="text-sm sm:text-base text-charcoal-500 font-normal leading-relaxed">
+                    <p className="text-sm sm:text-base text-charcoal-500 dark:text-gray-400 font-normal leading-relaxed">
                         A collection of web applications, tools, and platforms I've developed. Focused on clean user interfaces, reliable backends, and practical problem-solving.
                     </p>
                 </div>
@@ -102,8 +102,8 @@ export const ProjectsSection = ({ projects = [] }) => {
                                     onClick={() => setSelectedCategory(cat)}
                                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 active:scale-95 ${
                                         isSelected
-                                            ? 'bg-charcoal-900 text-devyellow-400 shadow-md ring-1 ring-devorange-500/20'
-                                            : 'bg-white hover:bg-gray-100/80 text-charcoal-700 border border-gray-200/80 shadow-xs'
+                                            ? 'bg-charcoal-900 dark:bg-amber-400 text-devyellow-400 dark:text-charcoal-950 shadow-md ring-1 ring-devorange-500/20'
+                                            : 'bg-white dark:bg-charcoal-900 hover:bg-gray-100/80 dark:hover:bg-charcoal-800 text-charcoal-700 dark:text-gray-300 border border-gray-200/80 dark:border-charcoal-800 shadow-xs'
                                     }`}
                                 >
                                     {cat}
@@ -118,8 +118,23 @@ export const ProjectsSection = ({ projects = [] }) => {
                     {filteredProjects.map((project, idx) => (
                         <article
                             key={project.id || idx}
-                            className="glow-card flex flex-col bg-white rounded-2xl border border-gray-200/90 shadow-warm-sm hover:shadow-warm-md hover:border-devorange-300 transition-all duration-300 overflow-hidden group hover:-translate-y-1"
+                            className="glow-card flex flex-col bg-white dark:bg-charcoal-900 rounded-2xl border border-gray-200/90 dark:border-charcoal-800 shadow-warm-sm hover:shadow-warm-md hover:border-devorange-300 dark:hover:border-amber-400/50 transition-all duration-300 overflow-hidden group hover:-translate-y-1"
                         >
+                            {/* Browser App-Frame Top Bar */}
+                            <div className="bg-charcoal-900 px-3.5 py-2.5 flex items-center justify-between border-b border-charcoal-800">
+                                <div className="flex items-center gap-1.5">
+                                    <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500/80" />
+                                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/80" />
+                                </div>
+                                <span className="text-[10px] font-mono font-medium text-charcoal-400 truncate max-w-[170px]">
+                                    {project.githubUrl ? project.githubUrl.replace('https://github.com/REP-Julian/', 'devj://') : 'app.local'}
+                                </span>
+                                <span className="text-[9px] font-bold text-devyellow-400 bg-charcoal-800 px-2 py-0.5 rounded">
+                                    {project.category}
+                                </span>
+                            </div>
+
                             {/* Project Screenshot / Preview */}
                             <div
                                 className="relative aspect-[16/10] overflow-hidden bg-charcoal-950 cursor-pointer"
@@ -146,32 +161,29 @@ export const ProjectsSection = ({ projects = [] }) => {
                                     }}
                                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 ease-out"
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/80 via-transparent to-transparent opacity-85 group-hover:opacity-60 transition-opacity" />
-                                <span className="absolute top-3 left-3 px-2.5 py-1 rounded-lg bg-charcoal-900/90 backdrop-blur-md border border-charcoal-700 text-devyellow-400 text-[11px] font-bold uppercase tracking-wider shadow-sm">
-                                    {project.category}
-                                </span>
+                                <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/75 via-transparent to-transparent opacity-70 group-hover:opacity-40 transition-opacity" />
                             </div>
 
                             {/* Content Body */}
                             <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
                                 <div className="space-y-2.5">
                                     <h3
-                                        className="text-lg sm:text-xl font-black text-charcoal-900 group-hover:text-devorange-600 transition-colors cursor-pointer leading-snug"
+                                        className="text-lg sm:text-xl font-black text-charcoal-900 dark:text-white group-hover:text-devorange-600 dark:group-hover:text-amber-400 transition-colors cursor-pointer leading-snug"
                                         onClick={() => setActiveModalProject(project)}
                                     >
                                         {project.title}
                                     </h3>
-                                    <p className="text-xs sm:text-sm text-charcoal-600 leading-relaxed font-normal line-clamp-3">
+                                    <p className="text-xs sm:text-sm text-charcoal-600 dark:text-gray-300 leading-relaxed font-normal line-clamp-3">
                                         {project.description}
                                     </p>
                                 </div>
 
                                 {/* Action Links */}
-                                <div className="pt-3 border-t border-gray-100 flex items-center justify-between gap-2">
+                                <div className="pt-3 border-t border-gray-100 dark:border-charcoal-800 flex items-center justify-between gap-2">
                                     <button
                                         type="button"
                                         onClick={() => setActiveModalProject(project)}
-                                        className="text-xs font-bold text-devorange-600 hover:text-devorange-700 inline-flex items-center gap-1 transition-colors py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 rounded group-hover:translate-x-0.5 duration-200"
+                                        className="text-xs font-bold text-devorange-600 dark:text-amber-400 hover:text-devorange-700 dark:hover:text-amber-300 inline-flex items-center gap-1 transition-colors py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 rounded group-hover:translate-x-0.5 duration-200"
                                     >
                                         <span>Details</span>
                                         <ArrowUpRight className="w-3.5 h-3.5" />
@@ -183,7 +195,7 @@ export const ProjectsSection = ({ projects = [] }) => {
                                             target="_blank"
                                             rel="noreferrer"
                                             aria-label={`GitHub source code for ${project.title}`}
-                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-charcoal-900 hover:bg-charcoal-800 text-devyellow-400 text-xs font-bold transition-all shadow-xs hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 active:scale-95"
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-charcoal-900 dark:bg-charcoal-800 hover:bg-charcoal-800 dark:hover:bg-charcoal-700 text-devyellow-400 text-xs font-bold transition-all shadow-xs hover:shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 active:scale-95 border border-transparent dark:border-charcoal-700"
                                             title="View Source Code"
                                         >
                                             <Github className="w-3.5 h-3.5" />

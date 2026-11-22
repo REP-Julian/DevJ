@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Sparkles, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { ArrowRight, Terminal, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
 
 export const HeroSection = ({ profile }) => {
     // Array of distinct images to cycle through
@@ -106,53 +106,41 @@ export const HeroSection = ({ profile }) => {
     return (
         <section
             id="home"
-            className="relative min-h-[92vh] pt-32 pb-20 flex items-center justify-center overflow-hidden bg-gradient-to-b from-white via-devyellow-100/20 to-white"
+            className="relative min-h-[90vh] pt-32 pb-20 flex items-center justify-center overflow-hidden bg-gradient-to-b from-white via-charcoal-50/40 to-white dark:from-charcoal-950 dark:via-charcoal-900/40 dark:to-charcoal-950 transition-colors duration-300"
         >
-            <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-tr from-devyellow-300/30 via-devorange-300/20 to-transparent rounded-full blur-3xl pointer-events-none" />
-
             <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
                 {/* Left Column: Typography & CTAs */}
                 <div className="lg:col-span-7 space-y-6 text-left">
-                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white border border-devyellow-300 shadow-warm-sm text-xs font-bold text-devorange-600 uppercase tracking-wider">
-                        <Sparkles className="w-3.5 h-3.5 text-devyellow-500 fill-devyellow-400" />
-                        <span>{profile?.tagline || 'AI User & Tech Explorer'}</span>
+                    <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white dark:bg-charcoal-900 border border-gray-200/90 dark:border-charcoal-800 shadow-warm-xs text-xs font-bold text-charcoal-800 dark:text-gray-200 uppercase tracking-wider">
+                        <Terminal className="w-3.5 h-3.5 text-devorange-600 dark:text-amber-400" />
+                        <span>Computer Science &amp; Web Development</span>
                     </div>
 
                     <div className="space-y-2">
-                        <div className="flex items-center gap-3">
-                            <span className="font-extrabold text-2xl text-devorange-600">DV</span>
-                            <span className="text-sm font-semibold tracking-widest uppercase text-charcoal-500">
-                                / {profile?.name || 'Julian Agustino'}
-                            </span>
-                        </div>
-                        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-charcoal-900 tracking-tight leading-[1.1]">
-                            Hi, I'm{' '}
-                            <span className="bg-gradient-to-r from-charcoal-900 via-devorange-600 to-devyellow-500 bg-clip-text text-transparent">
-                                {profile?.name || 'Julian Agustino'}
-                            </span>
+                        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-charcoal-900 dark:text-white tracking-tight leading-[1.08]">
+                            Julian Agustino
                         </h1>
+                        <p className="text-xl sm:text-2xl font-bold text-devorange-600 dark:text-amber-400 leading-snug">
+                            {profile?.tagline || 'Student & Developer at Quezon City University'}
+                        </p>
                     </div>
 
-                    <p className="text-xl sm:text-2xl font-bold text-charcoal-800 leading-snug">
-                        {profile?.tagline || 'Everyday AI User & Tech Explorer'}
-                    </p>
-
-                    <p className="text-base sm:text-lg text-charcoal-500 max-w-xl font-normal leading-relaxed">
+                    <p className="text-base sm:text-lg text-charcoal-600 dark:text-gray-300 max-w-xl font-normal leading-relaxed">
                         {profile?.description ||
-                            'I am an everyday AI user exploring generative tools, practical workflows, and emerging technology. Curious to learn, experiment, and see how AI can help with daily tasks.'}
+                            'Building practical web platforms, campus tools, and exploring modern AI integrations. Focused on clean user interfaces and resilient backend logic.'}
                     </p>
 
                     <div className="pt-2 flex flex-wrap items-center gap-3 sm:gap-4">
                         <a
                             href="#projects"
-                            className="px-6 sm:px-7 py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider bg-gradient-to-r from-devyellow-400 via-devorange-400 to-devorange-500 text-charcoal-900 shadow-warm-md hover:shadow-warm-lg hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
+                            className="px-6 sm:px-7 py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider bg-charcoal-900 dark:bg-amber-400 text-devyellow-400 dark:text-charcoal-950 hover:bg-charcoal-800 dark:hover:bg-amber-300 shadow-warm-md hover:shadow-warm-lg hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
                         >
                             <span>View Projects</span>
                             <ArrowRight className="w-4 h-4" />
                         </a>
                         <a
                             href="#contact"
-                            className="px-6 sm:px-7 py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider bg-white border border-gray-200 text-charcoal-800 hover:border-devorange-400 hover:text-devorange-600 hover:bg-devyellow-100/30 transition-all shadow-sm hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
+                            className="px-6 sm:px-7 py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider bg-white dark:bg-charcoal-900 border border-gray-200 dark:border-charcoal-700 text-charcoal-800 dark:text-gray-200 hover:border-devorange-400 hover:text-devorange-600 dark:hover:border-amber-400 dark:hover:text-amber-400 hover:bg-devyellow-100/30 dark:hover:bg-charcoal-800 transition-all shadow-sm hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
                         >
                             Contact Me
                         </a>
@@ -160,24 +148,24 @@ export const HeroSection = ({ profile }) => {
                             href={profile?.resumeUrl || (profile?.email ? `mailto:${profile.email}?subject=Resume%20Request%20-%20${encodeURIComponent(profile?.name || 'Developer')}` : '#contact')}
                             target={profile?.resumeUrl ? "_blank" : undefined}
                             rel="noreferrer"
-                            className="px-5 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider bg-white border border-gray-200 text-charcoal-700 hover:border-charcoal-400 hover:text-charcoal-900 transition-all shadow-xs flex items-center gap-2 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
+                            className="px-5 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider bg-white dark:bg-charcoal-900 border border-gray-200 dark:border-charcoal-700 text-charcoal-700 dark:text-gray-300 hover:border-charcoal-400 hover:text-charcoal-900 dark:hover:text-white transition-all shadow-xs flex items-center gap-2 hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
                             title="Download or Request Resume / CV"
                         >
-                            <FileText className="w-4 h-4 text-devorange-600" />
+                            <FileText className="w-4 h-4 text-devorange-600 dark:text-amber-400" />
                             <span>Resume / CV</span>
                         </a>
                     </div>
 
                     {/* Compact Core Technology Stack Badge Strip */}
-                    <div className="pt-3 border-t border-gray-100 flex flex-col gap-2">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-charcoal-400">
+                    <div className="pt-3 border-t border-gray-100 dark:border-charcoal-800 flex flex-col gap-2">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-charcoal-400 dark:text-charcoal-500">
                             Technologies I Work With
                         </span>
                         <div className="flex flex-wrap items-center gap-2">
                             {['React', 'Node.js & Express', 'SQLite / Prisma', 'Appwrite Cloud', 'Tailwind CSS', 'Google Gen AI'].map((tech) => (
                                 <span
                                     key={tech}
-                                    className="px-2.5 py-1 rounded-md bg-white border border-gray-200/90 text-[11px] font-semibold text-charcoal-700 shadow-xs"
+                                    className="px-2.5 py-1 rounded-md bg-white dark:bg-charcoal-900 border border-gray-200/90 dark:border-charcoal-800 text-[11px] font-semibold text-charcoal-700 dark:text-gray-300 shadow-xs"
                                 >
                                     {tech}
                                 </span>
@@ -193,11 +181,11 @@ export const HeroSection = ({ profile }) => {
                         onMouseEnter={() => setIsHovered(true)}
                         onMouseLeave={() => setIsHovered(false)}
                     >
-                        <div className="relative p-6 sm:p-8 bg-gradient-to-br from-white via-devyellow-100/30 to-devorange-100/20 rounded-3xl border border-gray-100 shadow-warm-md hover:shadow-warm-lg transition-shadow duration-300">
+                        <div className="relative p-6 sm:p-8 bg-white dark:bg-charcoal-900 rounded-3xl border border-gray-200 dark:border-charcoal-800 shadow-warm-md hover:shadow-warm-lg transition-shadow duration-300">
                             {/* Top Badge */}
-                            <div className="absolute -top-3 -right-3 z-40 bg-charcoal-900 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-warm-md border border-devyellow-400 flex items-center gap-1.5">
-                                <Sparkles className="w-3.5 h-3.5 text-devyellow-400" />
-                                <span>Developer Portfolio</span>
+                            <div className="absolute -top-3 -right-3 z-40 bg-charcoal-900 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl shadow-warm-md border border-charcoal-700 flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                                <span className="text-xs font-bold text-gray-200">Active Developer</span>
                             </div>
 
                             {/* Gallery 3D Stage with touch swipe support */}

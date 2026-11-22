@@ -77,7 +77,7 @@ export const NotificationModal = () => {
         >
             {/* Modal Card */}
             <div 
-                className="bg-white rounded-3xl p-6 sm:p-8 max-w-sm sm:max-w-md w-full shadow-2xl border border-gray-100 text-center relative overflow-hidden animate-popup-zoom"
+                className="bg-white dark:bg-charcoal-900 rounded-3xl p-6 sm:p-8 max-w-sm sm:max-w-md w-full shadow-2xl border border-gray-100 dark:border-charcoal-800 text-center relative overflow-hidden animate-popup-zoom"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Visual Glow Layer */}
@@ -129,13 +129,13 @@ export const NotificationModal = () => {
                 {/* Title */}
                 <h3 
                     id="notification-modal-title"
-                    className="text-xl sm:text-2xl font-black text-charcoal-900 tracking-tight"
+                    className="text-xl sm:text-2xl font-black text-charcoal-900 dark:text-white tracking-tight"
                 >
                     {dialog.title}
                 </h3>
 
                 {/* Message Body */}
-                <p className="text-sm sm:text-base font-medium text-charcoal-600 mt-2.5 leading-relaxed px-2 break-words">
+                <p className="text-sm sm:text-base font-medium text-charcoal-600 dark:text-charcoal-300 mt-2.5 leading-relaxed px-2 break-words">
                     {dialog.message}
                 </p>
 
@@ -145,7 +145,7 @@ export const NotificationModal = () => {
                         <button
                             type="button"
                             onClick={handleCancel}
-                            className="flex-1 py-3 px-4 rounded-2xl font-bold text-sm text-charcoal-700 bg-gray-100 hover:bg-gray-200 active:scale-95 transition-all"
+                            className="flex-1 py-3 px-4 rounded-2xl font-bold text-sm text-charcoal-700 dark:text-charcoal-200 bg-gray-100 dark:bg-charcoal-800 hover:bg-gray-200 dark:hover:bg-charcoal-750 active:scale-95 transition-all"
                         >
                             {dialog.cancelText || 'Cancel'}
                         </button>
@@ -156,7 +156,7 @@ export const NotificationModal = () => {
                             className={`flex-1 py-3 px-4 rounded-2xl font-bold text-sm text-white transition-all shadow-md active:scale-95 ${
                                 dialog.isDestructive 
                                     ? 'bg-rose-600 hover:bg-rose-700 shadow-rose-600/25' 
-                                    : 'bg-charcoal-900 hover:bg-charcoal-800 shadow-charcoal-900/25'
+                                    : 'bg-charcoal-900 dark:bg-charcoal-800 hover:bg-charcoal-800 dark:hover:bg-charcoal-700 shadow-charcoal-900/25'
                             }`}
                         >
                             {dialog.confirmText || 'Confirm'}
@@ -168,7 +168,7 @@ export const NotificationModal = () => {
                             ref={actionButtonRef}
                             type="button"
                             onClick={handleDone}
-                            className="w-full py-3.5 px-6 rounded-2xl font-bold text-sm sm:text-base text-white bg-charcoal-900 hover:bg-charcoal-800 active:scale-[0.98] transition-all shadow-lg shadow-charcoal-900/20 flex items-center justify-center gap-2 group"
+                            className="w-full py-3.5 px-6 rounded-2xl font-bold text-sm sm:text-base text-white bg-charcoal-900 dark:bg-charcoal-800 hover:bg-charcoal-800 dark:hover:bg-charcoal-700 active:scale-[0.98] transition-all shadow-lg shadow-charcoal-900/20 flex items-center justify-center gap-2 group border border-transparent dark:border-charcoal-700"
                         >
                             <span>{dialog.doneText || 'Done'}</span>
                             <ArrowRight className="w-4 h-4 text-devyellow-400 group-hover:translate-x-1 transition-transform" />

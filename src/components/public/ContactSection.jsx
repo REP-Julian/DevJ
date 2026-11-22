@@ -68,12 +68,9 @@ export const ContactSection = ({ profile = {} }) => {
     };
 
     return (
-        <section id="contact" className="py-20 sm:py-24 bg-white relative scroll-mt-16">
+        <section id="contact" className="py-20 sm:py-24 bg-white dark:bg-charcoal-950 relative scroll-mt-16 transition-colors duration-300">
             <div className="max-w-7xl mx-auto px-6">
-                <div className="max-w-5xl mx-auto bg-gradient-to-br from-charcoal-900 to-charcoal-800 rounded-3xl p-8 sm:p-12 text-white shadow-warm-lg overflow-hidden relative">
-                    {/* Subtle Decorative Yellow/Orange Glow */}
-                    <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-devorange-500/20 via-devyellow-400/10 to-transparent rounded-full blur-3xl pointer-events-none" />
-
+                <div className="max-w-5xl mx-auto bg-gradient-to-br from-charcoal-900 to-charcoal-800 dark:from-charcoal-900 dark:to-charcoal-950 rounded-3xl p-8 sm:p-12 text-white shadow-warm-lg dark:border dark:border-charcoal-800 overflow-hidden relative">
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 relative z-10">
                         {/* Left Col: Contact Info */}
                         <div className="lg:col-span-5 space-y-6">
@@ -184,7 +181,7 @@ export const ContactSection = ({ profile = {} }) => {
                         </div>
 
                         {/* Right Col: Contact Form */}
-                        <div className="lg:col-span-7 bg-white text-charcoal-900 p-6 sm:p-8 rounded-2xl shadow-sm">
+                        <div className="lg:col-span-7 bg-white dark:bg-charcoal-900 text-charcoal-900 dark:text-white p-6 sm:p-8 rounded-2xl shadow-sm border border-transparent dark:border-charcoal-800 transition-colors duration-300">
                             <form onSubmit={handleSubmit} className="space-y-4">
                                 {/* Honeypot anti-spam field */}
                                 <input
@@ -198,7 +195,7 @@ export const ContactSection = ({ profile = {} }) => {
                                     aria-hidden="true"
                                 />
                                 <div>
-                                    <label htmlFor="contact-name" className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 mb-1.5">
+                                    <label htmlFor="contact-name" className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 dark:text-charcoal-200 mb-1.5">
                                         Your Name
                                     </label>
                                     <input
@@ -208,12 +205,12 @@ export const ContactSection = ({ profile = {} }) => {
                                         value={formData.name}
                                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                                         placeholder="Enter your name"
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-devorange-500 focus:ring-4 focus:ring-devorange-500/10 text-sm shadow-xs transition-all duration-200"
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-charcoal-700 bg-white dark:bg-charcoal-850 text-charcoal-900 dark:text-white placeholder-charcoal-400 dark:placeholder-charcoal-500 focus:outline-none focus:border-devorange-500 focus:ring-4 focus:ring-devorange-500/10 text-sm shadow-xs transition-all duration-200"
                                     />
                                 </div>
 
                                 <div>
-                                    <label htmlFor="contact-email" className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 mb-1.5">
+                                    <label htmlFor="contact-email" className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 dark:text-charcoal-200 mb-1.5">
                                         Email Address
                                     </label>
                                     <input
@@ -223,12 +220,12 @@ export const ContactSection = ({ profile = {} }) => {
                                         value={formData.email}
                                         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                                         placeholder="you@example.com"
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-devorange-500 focus:ring-4 focus:ring-devorange-500/10 text-sm shadow-xs transition-all duration-200"
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-charcoal-700 bg-white dark:bg-charcoal-850 text-charcoal-900 dark:text-white placeholder-charcoal-400 dark:placeholder-charcoal-500 focus:outline-none focus:border-devorange-500 focus:ring-4 focus:ring-devorange-500/10 text-sm shadow-xs transition-all duration-200"
                                     />
                                 </div>
 
                                 <div>
-                                    <label htmlFor="contact-message" className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 mb-1.5">
+                                    <label htmlFor="contact-message" className="block text-xs font-bold uppercase tracking-wider text-charcoal-800 dark:text-charcoal-200 mb-1.5">
                                         Message
                                     </label>
                                     <textarea
@@ -238,7 +235,7 @@ export const ContactSection = ({ profile = {} }) => {
                                         value={formData.message}
                                         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                                         placeholder="What would you like to build or discuss?"
-                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:border-devorange-500 focus:ring-4 focus:ring-devorange-500/10 text-sm shadow-xs transition-all duration-200 resize-y"
+                                        className="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-charcoal-700 bg-white dark:bg-charcoal-850 text-charcoal-900 dark:text-white placeholder-charcoal-400 dark:placeholder-charcoal-500 focus:outline-none focus:border-devorange-500 focus:ring-4 focus:ring-devorange-500/10 text-sm shadow-xs transition-all duration-200 resize-y"
                                     />
                                 </div>
 

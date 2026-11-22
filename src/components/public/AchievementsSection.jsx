@@ -178,7 +178,7 @@ export const AchievementsSection = ({ achievements = [] }) => {
                 wrapper:
                     'z-30 opacity-100 scale-100 translate-x-0 rotate-0 cursor-zoom-in pointer-events-auto',
                 inner:
-                    'p-1 bg-gradient-to-tr from-devyellow-300 via-devorange-400 to-devorange-500 border-4 border-white shadow-2xl shadow-devorange-500/25',
+                    'p-1 bg-gradient-to-tr from-devyellow-300 via-devorange-400 to-devorange-500 border-4 border-white dark:border-charcoal-800 shadow-2xl shadow-devorange-500/25',
                 img: 'grayscale-0 brightness-100',
                 overlay: 'opacity-0',
                 isActive: true,
@@ -191,7 +191,7 @@ export const AchievementsSection = ({ achievements = [] }) => {
                 wrapper:
                     'z-10 opacity-50 hover:opacity-85 scale-[0.84] translate-x-20 sm:translate-x-32 md:translate-x-40 rotate-6 cursor-pointer pointer-events-auto',
                 inner:
-                    'p-1 bg-white border border-gray-200 shadow-md hover:shadow-lg',
+                    'p-1 bg-white dark:bg-charcoal-850 border border-gray-200 dark:border-charcoal-700 shadow-md hover:shadow-lg',
                 img: 'grayscale brightness-90',
                 overlay: 'opacity-40 hover:opacity-20',
                 isActive: false,
@@ -204,7 +204,7 @@ export const AchievementsSection = ({ achievements = [] }) => {
                 wrapper:
                     'z-10 opacity-50 hover:opacity-85 scale-[0.84] translate-x-20 sm:translate-x-32 md:translate-x-40 rotate-6 cursor-pointer pointer-events-auto',
                 inner:
-                    'p-1 bg-white border border-gray-200 shadow-md hover:shadow-lg',
+                    'p-1 bg-white dark:bg-charcoal-850 border border-gray-200 dark:border-charcoal-700 shadow-md hover:shadow-lg',
                 img: 'grayscale brightness-90',
                 overlay: 'opacity-40 hover:opacity-20',
                 isActive: false,
@@ -217,7 +217,7 @@ export const AchievementsSection = ({ achievements = [] }) => {
                 wrapper:
                     'z-10 opacity-50 hover:opacity-85 scale-[0.84] -translate-x-20 sm:-translate-x-32 md:-translate-x-40 -rotate-6 cursor-pointer pointer-events-auto',
                 inner:
-                    'p-1 bg-white border border-gray-200 shadow-md hover:shadow-lg',
+                    'p-1 bg-white dark:bg-charcoal-850 border border-gray-200 dark:border-charcoal-700 shadow-md hover:shadow-lg',
                 img: 'grayscale brightness-90',
                 overlay: 'opacity-40 hover:opacity-20',
                 isActive: false,
@@ -228,7 +228,7 @@ export const AchievementsSection = ({ achievements = [] }) => {
         return {
             wrapper:
                 'z-0 opacity-0 scale-75 translate-x-0 rotate-0 pointer-events-none',
-            inner: 'p-1 bg-white',
+            inner: 'p-1 bg-white dark:bg-charcoal-850',
             img: 'grayscale',
             overlay: 'opacity-0',
             isActive: false,
@@ -236,23 +236,23 @@ export const AchievementsSection = ({ achievements = [] }) => {
     };
 
     return (
-        <section id="achievements" className="py-20 sm:py-24 bg-charcoal-50/50 relative overflow-hidden scroll-mt-16">
+        <section id="achievements" className="py-20 sm:py-24 bg-charcoal-50/50 dark:bg-charcoal-950 relative overflow-hidden scroll-mt-16 transition-colors duration-300">
             <div className="max-w-7xl mx-auto px-6">
                 <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-14 space-y-3">
-                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-devyellow-100 border border-devyellow-200 text-devorange-600 text-xs font-bold uppercase tracking-wider">
-                        <Sparkles className="w-3.5 h-3.5 text-devorange-500" />
-                        <span>Milestones &amp; Honors</span>
+                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-devyellow-100 border border-devyellow-200 text-devorange-600 dark:bg-charcoal-850 dark:border-devorange-500/30 dark:text-devorange-400 text-xs font-bold uppercase tracking-wider">
+                        <Award className="w-3.5 h-3.5 text-devorange-600 dark:text-devorange-400" />
+                        <span>Certifications &amp; Honors</span>
                     </div>
-                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-charcoal-900 tracking-tight">
+                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-charcoal-900 dark:text-white tracking-tight">
                         Achievements &amp; Milestones
                     </h2>
-                    <p className="text-sm sm:text-base text-charcoal-500 font-normal leading-relaxed">
+                    <p className="text-sm sm:text-base text-charcoal-500 dark:text-charcoal-400 font-normal leading-relaxed">
                         Hackathons, awards, and certifications earned throughout my development journey.
                     </p>
                 </div>
 
                 <div
-                    className="bg-white rounded-3xl p-6 sm:p-10 lg:p-14 border border-gray-200/90 shadow-warm-md hover:shadow-warm-lg transition-shadow duration-300 focus:outline-none focus:ring-2 focus:ring-devorange-400/50"
+                    className="bg-white dark:bg-charcoal-900 rounded-3xl p-6 sm:p-10 lg:p-14 border border-gray-200/90 dark:border-charcoal-800 shadow-warm-md hover:shadow-warm-lg transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-devorange-400/50"
                     onMouseEnter={() => setIsHovered(true)}
                     onMouseLeave={() => setIsHovered(false)}
                     tabIndex={0}
@@ -277,10 +277,10 @@ export const AchievementsSection = ({ achievements = [] }) => {
                                 onTouchEnd={handleTouchEnd}
                                 className="relative min-h-[360px] sm:min-h-[420px] w-full flex items-center justify-center overflow-visible rounded-2xl touch-pan-y py-4 perspective-1000"
                             >
-                                {/* Ambient Warm Backlight Glow behind active card with subtle breathing animation */}
+                                {/* Ambient Backlight Glow behind active card with subtle breathing animation */}
                                 <div
                                     aria-hidden="true"
-                                    className="absolute w-56 sm:w-80 h-64 sm:h-80 bg-gradient-to-tr from-devyellow-400/30 via-devorange-400/25 to-devorange-500/30 rounded-3xl blur-2xl pointer-events-none animate-breathing-glow"
+                                    className="absolute w-56 sm:w-80 h-64 sm:h-80 bg-gradient-to-tr from-devyellow-400/15 via-devorange-400/15 to-devorange-500/15 rounded-3xl blur-xl pointer-events-none animate-breathing-glow"
                                 />
 
                                 {/* Persistent Multi-Achievement Carousel Deck */}
@@ -358,7 +358,7 @@ export const AchievementsSection = ({ achievements = [] }) => {
                                 <button
                                     type="button"
                                     onClick={handlePrev}
-                                    className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-charcoal-800 hover:bg-devyellow-100 hover:text-devorange-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-devorange-400"
+                                    className="w-10 h-10 rounded-full bg-white dark:bg-charcoal-800 border border-gray-200 dark:border-charcoal-700 shadow-sm flex items-center justify-center text-charcoal-800 dark:text-gray-200 hover:bg-devyellow-100 dark:hover:bg-charcoal-700 hover:text-devorange-600 dark:hover:text-devyellow-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-devorange-400"
                                     aria-label="Previous achievement"
                                 >
                                     <ChevronLeft className="w-5 h-5" />
@@ -374,7 +374,7 @@ export const AchievementsSection = ({ achievements = [] }) => {
                                             className={`h-2.5 rounded-full transition-all duration-300 ease-out focus:outline-none focus:ring-2 focus:ring-devorange-400 focus:ring-offset-1 ${
                                                 currentIndex === idx
                                                     ? 'w-8 bg-gradient-to-r from-devyellow-400 to-devorange-500 shadow-sm shadow-devorange-500/30'
-                                                    : 'w-2.5 bg-gray-200 hover:bg-gray-300'
+                                                    : 'w-2.5 bg-gray-200 dark:bg-charcoal-700 hover:bg-gray-300 dark:hover:bg-charcoal-600'
                                             }`}
                                             aria-label={`Go to slide ${idx + 1}`}
                                         />
@@ -383,7 +383,7 @@ export const AchievementsSection = ({ achievements = [] }) => {
                                 <button
                                     type="button"
                                     onClick={handleNext}
-                                    className="w-10 h-10 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center text-charcoal-800 hover:bg-devyellow-100 hover:text-devorange-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-devorange-400"
+                                    className="w-10 h-10 rounded-full bg-white dark:bg-charcoal-800 border border-gray-200 dark:border-charcoal-700 shadow-sm flex items-center justify-center text-charcoal-800 dark:text-gray-200 hover:bg-devyellow-100 dark:hover:bg-charcoal-700 hover:text-devorange-600 dark:hover:text-devyellow-400 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-devorange-400"
                                     aria-label="Next achievement"
                                 >
                                     <ChevronRight className="w-5 h-5" />
@@ -402,11 +402,11 @@ export const AchievementsSection = ({ achievements = [] }) => {
                                 }`}
                                 style={{ animationDelay: '0ms' }}
                             >
-                                <span className="px-3 py-1 rounded-full bg-devorange-50 text-devorange-600 border border-devorange-200 text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5 shadow-warm-sm">
+                                <span className="px-3 py-1 rounded-full bg-devorange-50 dark:bg-devorange-950/40 text-devorange-600 dark:text-devorange-400 border border-devorange-200 dark:border-devorange-500/30 text-xs font-extrabold uppercase tracking-wider flex items-center gap-1.5 shadow-warm-sm">
                                     <Award className="w-3.5 h-3.5" />
                                     {activeItem?.category || 'Achievement'}
                                 </span>
-                                <span className="px-3 py-1 rounded-full bg-gray-100 text-charcoal-700 text-xs font-bold flex items-center gap-1.5">
+                                <span className="px-3 py-1 rounded-full bg-gray-100 dark:bg-charcoal-800 text-charcoal-700 dark:text-charcoal-300 text-xs font-bold flex items-center gap-1.5">
                                     <Calendar className="w-3.5 h-3.5 text-devorange-500" />
                                     {activeItem?.date || '2025'}
                                 </span>
@@ -418,22 +418,22 @@ export const AchievementsSection = ({ achievements = [] }) => {
                                 }`}
                                 style={{ animationDelay: '60ms' }}
                             >
-                                <h3 className="text-2xl sm:text-4xl font-black text-charcoal-900 leading-tight">
+                                <h3 className="text-2xl sm:text-4xl font-black text-charcoal-900 dark:text-white leading-tight">
                                     {activeItem?.title}
                                 </h3>
-                                <p className="text-charcoal-600 text-sm sm:text-base leading-relaxed">
+                                <p className="text-charcoal-600 dark:text-charcoal-300 text-sm sm:text-base leading-relaxed">
                                     {activeItem?.description}
                                 </p>
                             </div>
 
                             <div
-                                className={`pt-4 border-t border-gray-100 flex items-center justify-between text-xs font-bold text-charcoal-500 ${
+                                className={`pt-4 border-t border-gray-100 dark:border-charcoal-800 flex items-center justify-between text-xs font-bold text-charcoal-500 dark:text-charcoal-400 ${
                                     direction === 'next' ? 'animate-slide-in-right' : 'animate-slide-in-left'
                                 }`}
                                 style={{ animationDelay: '120ms' }}
                             >
-                                <span className="flex items-center gap-1 text-devorange-600">
-                                    <Sparkles className="w-4 h-4" /> Milestone Recognition
+                                <span className="flex items-center gap-1.5 text-devorange-600 dark:text-devorange-400">
+                                    <Award className="w-4 h-4" /> Verified Certification
                                 </span>
                                 <span className="tabular-nums">
                                     {currentIndex + 1} of {items.length}

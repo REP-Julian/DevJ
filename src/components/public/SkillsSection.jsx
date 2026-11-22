@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import BrandIcon from '../common/BrandIcon';
-import { Sparkles, CheckCircle2 } from 'lucide-react';
+import { Code2, CheckCircle2 } from 'lucide-react';
 
 export const SkillsSection = ({ skills = [] }) => {
     // Standard domain normalization for straightforward grouping
@@ -45,18 +45,18 @@ export const SkillsSection = ({ skills = [] }) => {
     const displayedDomains = activeFilter === 'All' ? domains : [activeFilter];
 
     return (
-        <section id="skills" className="py-20 sm:py-24 bg-white relative scroll-mt-16">
+        <section id="skills" className="py-20 sm:py-24 bg-white dark:bg-charcoal-950 relative scroll-mt-16 transition-colors duration-300">
             <div className="max-w-7xl mx-auto px-6">
                 {/* Section Header */}
                 <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-14 space-y-3">
-                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-devyellow-100 border border-devyellow-200 text-devorange-600 text-xs font-bold uppercase tracking-wider">
-                        <Sparkles className="w-3.5 h-3.5 text-devorange-500" />
-                        <span>Skills &amp; Tech</span>
+                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-devyellow-100 dark:bg-amber-950/40 border border-devyellow-200 dark:border-amber-800/60 text-devorange-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider">
+                        <Code2 className="w-3.5 h-3.5 text-devorange-600 dark:text-amber-400" />
+                        <span>Technical Capabilities</span>
                     </div>
-                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-charcoal-900 tracking-tight">
+                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-charcoal-900 dark:text-white tracking-tight">
                         Technologies I Work With
                     </h2>
-                    <p className="text-sm sm:text-base text-charcoal-500 font-normal leading-relaxed">
+                    <p className="text-sm sm:text-base text-charcoal-500 dark:text-gray-400 font-normal leading-relaxed">
                         The tools, technologies, and AI applications I explore and use everyday.
                     </p>
                 </div>
@@ -69,8 +69,8 @@ export const SkillsSection = ({ skills = [] }) => {
                             onClick={() => setActiveFilter('All')}
                             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 active:scale-95 ${
                                 activeFilter === 'All'
-                                    ? 'bg-charcoal-900 text-devyellow-400 shadow-md ring-1 ring-devorange-500/20'
-                                    : 'bg-white hover:bg-gray-100/80 text-charcoal-700 border border-gray-200/80 shadow-xs'
+                                    ? 'bg-charcoal-900 dark:bg-amber-400 text-devyellow-400 dark:text-charcoal-950 shadow-md ring-1 ring-devorange-500/20'
+                                    : 'bg-white dark:bg-charcoal-900 hover:bg-gray-100/80 dark:hover:bg-charcoal-800 text-charcoal-700 dark:text-gray-300 border border-gray-200/80 dark:border-charcoal-800 shadow-xs'
                             }`}
                         >
                             All ({skills.length})
@@ -84,8 +84,8 @@ export const SkillsSection = ({ skills = [] }) => {
                                     onClick={() => setActiveFilter(dom)}
                                     className={`px-4 py-2 rounded-xl text-xs font-bold transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 active:scale-95 ${
                                         isSelected
-                                            ? 'bg-charcoal-900 text-devyellow-400 shadow-md ring-1 ring-devorange-500/20'
-                                            : 'bg-white hover:bg-gray-100/80 text-charcoal-700 border border-gray-200/80 shadow-xs'
+                                            ? 'bg-charcoal-900 dark:bg-amber-400 text-devyellow-400 dark:text-charcoal-950 shadow-md ring-1 ring-devorange-500/20'
+                                            : 'bg-white dark:bg-charcoal-900 hover:bg-gray-100/80 dark:hover:bg-charcoal-800 text-charcoal-700 dark:text-gray-300 border border-gray-200/80 dark:border-charcoal-800 shadow-xs'
                                     }`}
                                 >
                                     {dom} ({grouped[dom].length})
@@ -104,10 +104,10 @@ export const SkillsSection = ({ skills = [] }) => {
                             <div key={domain} className="space-y-4">
                                 <div className="flex items-center gap-3">
                                     <span className="w-2.5 h-2.5 rounded-full bg-gradient-to-tr from-devorange-500 to-devyellow-400 shadow-xs" />
-                                    <h3 className="text-lg sm:text-xl font-black text-charcoal-900 tracking-tight">
+                                    <h3 className="text-lg sm:text-xl font-black text-charcoal-900 dark:text-white tracking-tight">
                                         {domain}
                                     </h3>
-                                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-devyellow-100/70 border border-devyellow-200/70 text-devorange-700">
+                                    <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-devyellow-100/70 dark:bg-charcoal-800 border border-devyellow-200/70 dark:border-charcoal-700 text-devorange-700 dark:text-amber-300">
                                         {domainSkills.length} {domainSkills.length === 1 ? 'skill' : 'skills'}
                                     </span>
                                 </div>
@@ -118,25 +118,25 @@ export const SkillsSection = ({ skills = [] }) => {
                                         return (
                                             <div
                                                 key={skill.id || skill.name}
-                                                className="glow-card p-4 bg-white rounded-2xl border border-gray-200/90 shadow-warm-xs hover:shadow-warm-sm hover:border-devorange-300 transition-all duration-300 flex items-start gap-3.5 group hover:-translate-y-0.5"
+                                                className="glow-card p-4 bg-white dark:bg-charcoal-900 rounded-2xl border border-gray-200/90 dark:border-charcoal-800 shadow-warm-xs hover:shadow-warm-sm hover:border-devorange-300 dark:hover:border-amber-400/50 transition-all duration-300 flex items-start gap-3.5 group hover:-translate-y-0.5"
                                             >
-                                                <div className="w-10 h-10 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center p-2 group-hover:scale-105 group-hover:bg-devyellow-50/50 group-hover:border-devyellow-200 transition-all shrink-0">
+                                                <div className="w-10 h-10 rounded-xl bg-gray-50 dark:bg-charcoal-800 border border-gray-100 dark:border-charcoal-700 flex items-center justify-center p-2 group-hover:scale-105 group-hover:bg-devyellow-50/50 dark:group-hover:bg-charcoal-700 transition-all shrink-0">
                                                     <BrandIcon name={skill.iconName || skill.name} className="w-5 h-5 sm:w-6 sm:h-6" />
                                                 </div>
                                                 <div className="min-w-0 flex-1 space-y-1">
                                                     <div className="flex items-center justify-between gap-2">
-                                                        <h4 className="text-sm font-extrabold text-charcoal-900 group-hover:text-devorange-600 transition-colors truncate">
+                                                        <h4 className="text-sm font-extrabold text-charcoal-900 dark:text-white group-hover:text-devorange-600 dark:group-hover:text-amber-400 transition-colors truncate">
                                                             {skill.name}
                                                         </h4>
                                                         {inProject && (
-                                                            <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-                                                                <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600" />
+                                                            <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 flex items-center gap-1">
+                                                                <CheckCircle2 className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
                                                                 <span>In Projects</span>
                                                             </span>
                                                         )}
                                                     </div>
                                                     {skill.description && (
-                                                        <p className="text-xs text-charcoal-500 leading-relaxed font-normal line-clamp-2">
+                                                        <p className="text-xs text-charcoal-500 dark:text-gray-400 leading-relaxed font-normal line-clamp-2">
                                                             {skill.description}
                                                         </p>
                                                     )}

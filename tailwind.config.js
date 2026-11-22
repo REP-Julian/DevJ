@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+    darkMode: 'class',
     content: [
         "./index.html",
         "./src/**/*.{js,ts,jsx,tsx}",
@@ -11,9 +12,15 @@ export default {
                     50: '#F8F9FA',
                     100: '#E9ECEF',
                     500: '#6C757D',
+                    700: '#495057',
                     800: '#2B2D42',
+                    850: '#24242B',
                     900: '#1E1E24',
+                    950: '#0F0F12',
                 },
+                darkcanvas: '#0F0F12',
+                darksurface: '#18181C',
+                darkborder: '#2C2C35',
                 devyellow: {
                     100: '#FEF9C3',
                     300: '#FDE047',

@@ -41,7 +41,7 @@ export const HomePage = () => {
     const { profile, skills, achievements, projects, hobbies, education } = portfolio;
 
     return (
-        <div className="min-h-screen bg-[#FAFAFA] flex flex-col">
+        <div className="min-h-screen bg-[#FAFAFA] dark:bg-charcoal-950 text-charcoal-900 dark:text-gray-100 flex flex-col transition-colors duration-300">
             <Navbar />
             <main className="flex-grow">
                 <HeroSection profile={profile} />

@@ -116,7 +116,7 @@ export const SocialQrModal = ({
             />
 
             {/* Modal Card */}
-            <div className="relative z-10 w-full max-w-sm sm:max-w-md bg-white rounded-3xl overflow-hidden shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-200 flex flex-col">
+            <div className="relative z-10 w-full max-w-sm sm:max-w-md bg-white dark:bg-charcoal-900 rounded-3xl overflow-hidden shadow-2xl border border-gray-100 dark:border-charcoal-800 animate-in fade-in zoom-in-95 duration-200 flex flex-col">
                 {/* Header with Platform Branding Gradient */}
                 <div className={`p-6 bg-gradient-to-r ${config.color} text-white relative`}>
                     <button
@@ -152,7 +152,7 @@ export const SocialQrModal = ({
                 {/* Body Content */}
                 <div className="p-6 flex flex-col items-center text-center space-y-4">
                     {/* QR Code Frame with Scanner Corners */}
-                    <div className="relative p-4 bg-white rounded-3xl border-2 border-gray-100 shadow-warm-md">
+                    <div className="relative p-4 bg-white dark:bg-charcoal-950 rounded-3xl border-2 border-gray-100 dark:border-charcoal-800 shadow-warm-md">
                         {/* Scanner Corner Guides */}
                         <div className="absolute top-2 left-2 w-4 h-4 border-t-2 border-l-2 border-devorange-500 rounded-tl-lg pointer-events-none" />
                         <div className="absolute top-2 right-2 w-4 h-4 border-t-2 border-r-2 border-devorange-500 rounded-tr-lg pointer-events-none" />
@@ -175,23 +175,23 @@ export const SocialQrModal = ({
 
                     {/* Instructions */}
                     <div className="space-y-1">
-                        <p className="text-xs font-bold text-charcoal-900 flex items-center justify-center gap-1.5">
+                        <p className="text-xs font-bold text-charcoal-900 dark:text-white flex items-center justify-center gap-1.5">
                             <Sparkles className="w-3.5 h-3.5 text-devyellow-500 fill-devyellow-400" />
                             Scan with your smartphone camera
                         </p>
-                        <p className="text-[11px] text-charcoal-500">{config.subtitle}</p>
+                        <p className="text-[11px] text-charcoal-500 dark:text-charcoal-400">{config.subtitle}</p>
                     </div>
 
                     {/* URL Snippet Box */}
                     {url && (
-                        <div className="w-full p-2.5 bg-gray-50 rounded-2xl border border-gray-200 flex items-center justify-between gap-2 text-xs">
-                            <span className="text-charcoal-700 font-mono truncate text-[11px] max-w-[220px]">
+                        <div className="w-full p-2.5 bg-gray-50 dark:bg-charcoal-850 rounded-2xl border border-gray-200 dark:border-charcoal-700 flex items-center justify-between gap-2 text-xs">
+                            <span className="text-charcoal-700 dark:text-charcoal-300 font-mono truncate text-[11px] max-w-[220px]">
                                 {url}
                             </span>
                             <button
                                 type="button"
                                 onClick={handleCopy}
-                                className="px-2.5 py-1 rounded-xl bg-white border border-gray-200 hover:border-devorange-400 text-charcoal-700 text-[11px] font-bold shrink-0 flex items-center gap-1 shadow-2xs transition-all"
+                                className="px-2.5 py-1 rounded-xl bg-white dark:bg-charcoal-800 border border-gray-200 dark:border-charcoal-700 hover:border-devorange-400 dark:hover:border-devorange-400 text-charcoal-700 dark:text-charcoal-200 text-[11px] font-bold shrink-0 flex items-center gap-1 shadow-2xs transition-all"
                             >
                                 {copied ? <Check className="w-3 h-3 text-emerald-600" /> : <Copy className="w-3 h-3" />}
                                 <span>{copied ? 'Copied' : 'Copy'}</span>
@@ -206,7 +206,7 @@ export const SocialQrModal = ({
                                 href={url}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="py-2.5 px-3 rounded-2xl bg-charcoal-900 hover:bg-black text-devyellow-400 text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-warm-sm"
+                                className="py-2.5 px-3 rounded-2xl bg-charcoal-900 hover:bg-black text-devyellow-400 text-xs font-black flex items-center justify-center gap-1.5 transition-all shadow-warm-sm border border-transparent dark:border-charcoal-700"
                             >
                                 <ExternalLink className="w-3.5 h-3.5" />
                                 <span>Open Link</span>
@@ -219,7 +219,7 @@ export const SocialQrModal = ({
                                 download={`${platform}-qr-code.png`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className={`py-2.5 px-3 rounded-2xl text-xs font-black flex items-center justify-center gap-1.5 border border-gray-200 hover:border-devorange-400 bg-gray-50 hover:bg-white text-charcoal-800 transition-all ${
+                                className={`py-2.5 px-3 rounded-2xl text-xs font-black flex items-center justify-center gap-1.5 border border-gray-200 dark:border-charcoal-700 hover:border-devorange-400 dark:hover:border-devorange-400 bg-gray-50 dark:bg-charcoal-800 hover:bg-white dark:hover:bg-charcoal-700 text-charcoal-800 dark:text-gray-200 transition-all ${
                                     !url ? 'col-span-2' : ''
                                 }`}
                             >

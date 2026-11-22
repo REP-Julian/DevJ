@@ -1,10 +1,10 @@
 import React from 'react';
-import { Camera, Music, Sparkles, Heart, Gamepad2, BookOpen, Coffee, Terminal } from 'lucide-react';
+import { Camera, Music, Compass, Heart, Gamepad2, BookOpen, Coffee, Terminal } from 'lucide-react';
 
 const iconMap = {
     Camera: Camera,
     Music: Music,
-    Sparkles: Sparkles,
+    Compass: Compass,
     Heart: Heart,
     Gamepad2: Gamepad2,
     BookOpen: BookOpen,
@@ -14,23 +14,23 @@ const iconMap = {
 
 export const HobbiesSection = ({ hobbies = [] }) => {
     return (
-        <section id="hobbies" className="py-20 sm:py-24 bg-white relative scroll-mt-16">
+        <section id="hobbies" className="py-20 sm:py-24 bg-white dark:bg-charcoal-950 relative scroll-mt-16 transition-colors duration-300">
             <div className="max-w-7xl mx-auto px-6">
                 <div className="text-center max-w-2xl mx-auto mb-12 sm:mb-14 space-y-3">
-                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-devyellow-100 border border-devyellow-200 text-devorange-600 text-xs font-bold uppercase tracking-wider">
-                        <Sparkles className="w-3.5 h-3.5 text-devorange-500" />
+                    <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-devyellow-100 border border-devyellow-200 text-devorange-600 dark:bg-charcoal-850 dark:border-devorange-500/30 dark:text-devorange-400 text-xs font-bold uppercase tracking-wider">
+                        <Compass className="w-3.5 h-3.5 text-devorange-600 dark:text-devorange-400" />
                         <span>Personal Pursuits</span>
                     </div>
-                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-charcoal-900 tracking-tight">
+                    <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-charcoal-900 dark:text-white tracking-tight">
                         Interests &amp; Pursuits
                     </h2>
-                    <p className="text-charcoal-500 text-sm sm:text-base font-normal leading-relaxed">
+                    <p className="text-charcoal-500 dark:text-charcoal-400 text-sm sm:text-base font-normal leading-relaxed">
                         Creative exploration outside of software development—from photography to music production and tinkering.
                     </p>
                 </div>
 
                 {hobbies.length === 0 ? (
-                    <div className="text-center py-12 text-charcoal-500 text-sm">No hobbies listed yet.</div>
+                    <div className="text-center py-12 text-charcoal-500 dark:text-charcoal-400 text-sm">No hobbies listed yet.</div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
                         {hobbies.map((hobby) => {
@@ -38,10 +38,10 @@ export const HobbiesSection = ({ hobbies = [] }) => {
                             return (
                                 <article
                                     key={hobby.id}
-                                    className="glow-card h-full bg-white rounded-2xl overflow-hidden flex flex-col justify-between border border-gray-200/90 shadow-warm-xs hover:shadow-warm-md hover:border-devorange-300 hover:-translate-y-1 transition-all duration-300 group"
+                                    className="glow-card h-full bg-white dark:bg-charcoal-900 rounded-2xl overflow-hidden flex flex-col justify-between border border-gray-200/90 dark:border-charcoal-800 shadow-warm-xs hover:shadow-warm-md hover:border-devorange-300 dark:hover:border-devorange-500/40 hover:-translate-y-1 transition-all duration-300 group"
                                 >
                                     <div>
-                                        <div className="relative h-48 w-full overflow-hidden bg-gray-100">
+                                        <div className="relative h-48 w-full overflow-hidden bg-gray-100 dark:bg-charcoal-850">
                                             <img
                                                 src={hobby.imageUrl}
                                                 alt={`${hobby.name}`}
@@ -52,17 +52,17 @@ export const HobbiesSection = ({ hobbies = [] }) => {
                                                 }}
                                                 className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
                                             />
-                                            <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/60 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
-                                            <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-md text-devorange-600 p-2.5 rounded-xl shadow-xs border border-gray-100 ring-1 ring-black/5 group-hover:scale-105 transition-transform">
+                                            <div className="absolute inset-0 bg-gradient-to-t from-charcoal-950/70 via-transparent to-transparent opacity-60 group-hover:opacity-40 transition-opacity" />
+                                            <div className="absolute bottom-3 left-3 bg-white/95 dark:bg-charcoal-900/95 backdrop-blur-md text-devorange-600 dark:text-devorange-400 p-2.5 rounded-xl shadow-xs border border-gray-100 dark:border-charcoal-700 ring-1 ring-black/5 group-hover:scale-105 transition-transform">
                                                 <IconComp className="w-4 h-4" />
                                             </div>
                                         </div>
 
                                         <div className="p-6 space-y-1.5">
-                                            <h3 className="text-base sm:text-lg font-bold text-charcoal-900 group-hover:text-devorange-600 transition-colors">
+                                            <h3 className="text-base sm:text-lg font-bold text-charcoal-900 dark:text-white group-hover:text-devorange-600 dark:group-hover:text-devorange-400 transition-colors">
                                                 {hobby.name}
                                             </h3>
-                                            <p className="text-xs sm:text-sm text-charcoal-500 leading-relaxed font-normal">
+                                            <p className="text-xs sm:text-sm text-charcoal-500 dark:text-charcoal-400 leading-relaxed font-normal">
                                                 {hobby.description}
                                             </p>
                                         </div>
