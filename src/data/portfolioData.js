@@ -243,4 +243,26 @@ export const initialPortfolioData = {
             order: 4,
         },
     ],
+    roles: [
+        {
+            id: 'role-1',
+            title: 'Technical Projects & Team Roles',
+            subtitle: 'Leadership & Collaborative Experience',
+            period: '2024 - Present',
+            description: 'Collaborative development across hackathons, team coding initiatives, and student technical projects.',
+            tags: ['Team Collaboration', 'Web Development', 'Problem Solving'],
+            order: 1,
+        },
+    ],
+    research: [
+        {
+            id: 'res-1',
+            title: 'AI & Systems Exploration',
+            subtitle: 'Academic Projects & Independent Inquiries',
+            period: '2025 - Present',
+            description: 'Researching applied artificial intelligence, multimodal agent workflows, and responsive full-stack web architectures.',
+            tags: ['Applied AI', 'Agent Workflows', 'Web Performance'],
+            order: 1,
+        },
+    ],
 };

@@ -234,12 +234,12 @@ export const HeroSection = ({ profile }) => {
                             </div>
 
                             {/* Bottom Card Controls & Indicators */}
-                            <div className="mt-5 p-4 rounded-xl bg-white/95 backdrop-blur-md border border-gray-100 shadow-warm-sm flex items-center justify-between">
+                            <div className="mt-5 p-4 rounded-xl bg-white/95 dark:bg-charcoal-800/95 backdrop-blur-md border border-gray-100 dark:border-charcoal-700 shadow-warm-sm flex items-center justify-between transition-colors">
                                 <div>
-                                    <h3 className="font-extrabold text-charcoal-900 text-sm">
+                                    <h3 className="font-extrabold text-charcoal-900 dark:text-white text-sm">
                                         {profile?.name || 'Julian Agustino'}
                                     </h3>
-                                    <p className="text-xs text-charcoal-500 font-medium">{profile?.tagline || 'AI User & Tech Explorer'}</p>
+                                    <p className="text-xs text-charcoal-500 dark:text-charcoal-400 font-medium">{profile?.tagline || 'Student & Developer at Quezon City University'}</p>
                                 </div>
 
                                 {/* Controls: Arrows & Dot Indicators */}

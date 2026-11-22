@@ -129,7 +129,7 @@ export const Footer = ({ profile = {} }) => {
 
                 {/* Bottom Bar */}
                 <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-charcoal-500 dark:text-gray-400 gap-4">
-                    <p>© {new Date().getFullYear()} Julian Agustino (DevJ). All rights reserved.</p>
+                    <p>&copy; {new Date().getFullYear()} Julian Agustino (DevJ). All rights reserved.</p>
                     <p className="inline-flex items-center gap-1.5 font-medium text-charcoal-400 dark:text-charcoal-500">
                         <span>Created with React 18, Appwrite &amp; Tailwind CSS</span>
                     </p>

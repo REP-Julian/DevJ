@@ -11,7 +11,7 @@ import {
     Award
 } from 'lucide-react';
 
-export const EducationSection = ({ education = [] }) => {
+export const EducationSection = ({ education = [], roles = [], research = [] }) => {
     const [activeTab, setActiveTab] = useState('education');
 
     const defaultEducation = [
@@ -67,18 +67,20 @@ export const EducationSection = ({ education = [] }) => {
 
     const educationData = Array.isArray(education) && education.length > 0 ? education : defaultEducation;
 
-    const rolesData = [
+    const defaultRoles = [
         {
+            id: 'role-1',
             title: 'Technical Projects & Team Roles',
             subtitle: 'Leadership & Collaborative Experience',
             period: '2024 - Present',
             description: 'Collaborative development across hackathons, team coding initiatives, and student technical projects.',
-            tags: ['Team Collaboration', 'Full-Stack Development', 'Problem Solving'],
+            tags: ['Team Collaboration', 'Web Development', 'Problem Solving'],
         },
     ];
 
-    const researchData = [
+    const defaultResearch = [
         {
+            id: 'res-1',
             title: 'AI & Systems Exploration',
             subtitle: 'Academic Projects & Independent Inquiries',
             period: '2025 - Present',
@@ -86,6 +88,9 @@ export const EducationSection = ({ education = [] }) => {
             tags: ['Applied AI', 'Agent Workflows', 'Web Performance'],
         },
     ];
+
+    const rolesData = Array.isArray(roles) && roles.length > 0 ? roles : defaultRoles;
+    const researchData = Array.isArray(research) && research.length > 0 ? research : defaultResearch;
 
     return (
         <section id="education" className="py-20 sm:py-24 bg-white dark:bg-charcoal-950 relative overflow-hidden scroll-mt-16 transition-colors duration-300">
@@ -128,7 +133,7 @@ export const EducationSection = ({ education = [] }) => {
                                 }`}
                             >
                                 <Briefcase className="w-4 h-4" />
-                                <span>Roles &amp; Leadership</span>
+                                <span>Roles &amp; Leadership ({rolesData.length})</span>
                             </button>
                             <button
                                 type="button"
@@ -140,7 +145,7 @@ export const EducationSection = ({ education = [] }) => {
                                 }`}
                             >
                                 <BookOpen className="w-4 h-4" />
-                                <span>Research</span>
+                                <span>Research ({researchData.length})</span>
                             </button>
                         </div>
                     </div>
@@ -233,7 +238,7 @@ export const EducationSection = ({ education = [] }) => {
                                                         <Calendar className="w-3.5 h-3.5 text-devorange-500 dark:text-amber-400" />
                                                         {item.period}
                                                     </span>
-                                                    <span>•</span>
+                                                    <span aria-hidden="true" className="text-charcoal-400 dark:text-charcoal-600">&bull;</span>
                                                     <span>{item.location}</span>
                                                 </div>
 
@@ -248,7 +253,7 @@ export const EducationSection = ({ education = [] }) => {
                                                         isEven ? 'sm:justify-end' : 'sm:justify-start'
                                                     }`}
                                                 >
-                                                    {item.highlights.map((h, i) => (
+                                                    {(item.highlights || []).map((h, i) => (
                                                         <span
                                                             key={i}
                                                             className="px-2 py-0.5 rounded-md bg-gray-100 dark:bg-charcoal-800 text-charcoal-600 dark:text-gray-300 text-[11px] font-semibold border border-transparent dark:border-charcoal-700"
@@ -268,89 +273,105 @@ export const EducationSection = ({ education = [] }) => {
 
                 {/* Content: Roles Tab */}
                 {activeTab === 'roles' && (
-                    <div className="max-w-3xl mx-auto space-y-6 pt-4">
-                        {rolesData.map((role, idx) => (
-                            <div
-                                key={idx}
-                                className="p-8 rounded-3xl bg-white dark:bg-charcoal-900 border border-gray-200/90 dark:border-charcoal-800 shadow-warm-md hover:shadow-warm-lg transition-all duration-300"
-                            >
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                    <div className="max-w-5xl mx-auto pt-4">
+                        <div className={`grid grid-cols-1 ${rolesData.length > 1 ? 'md:grid-cols-2' : ''} gap-6`}>
+                            {rolesData.map((role, idx) => (
+                                <div
+                                    key={role.id || idx}
+                                    className="p-8 rounded-3xl bg-white dark:bg-charcoal-900 border border-gray-200/90 dark:border-charcoal-800 shadow-warm-md hover:shadow-warm-lg transition-all duration-300 flex flex-col justify-between"
+                                >
                                     <div>
-                                        <span className="px-3 py-1 rounded-full bg-devorange-50 dark:bg-amber-950/40 text-devorange-600 dark:text-amber-400 border border-devorange-200 dark:border-amber-800/60 text-xs font-black uppercase tracking-wider inline-flex items-center gap-1.5 mb-2">
-                                            <Briefcase className="w-3.5 h-3.5" />
-                                            Leadership &amp; Roles
-                                        </span>
-                                        <h3 className="text-2xl font-black text-charcoal-900 dark:text-white">
-                                            {role.title}
-                                        </h3>
-                                        <p className="text-sm font-semibold text-devorange-600 dark:text-amber-400 mt-1">
-                                            {role.subtitle}
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                                            <div>
+                                                <span className="px-3 py-1 rounded-full bg-devorange-50 dark:bg-amber-950/40 text-devorange-600 dark:text-amber-400 border border-devorange-200 dark:border-amber-800/60 text-xs font-black uppercase tracking-wider inline-flex items-center gap-1.5 mb-2">
+                                                    <Briefcase className="w-3.5 h-3.5" />
+                                                    Leadership &amp; Roles
+                                                </span>
+                                                <h3 className="text-2xl font-black text-charcoal-900 dark:text-white">
+                                                    {role.title}
+                                                </h3>
+                                                {role.subtitle && (
+                                                    <p className="text-sm font-semibold text-devorange-600 dark:text-amber-400 mt-1">
+                                                        {role.subtitle}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <span className="self-start sm:self-auto px-3 py-1 rounded-xl bg-gray-100 dark:bg-charcoal-800 text-charcoal-700 dark:text-gray-300 text-xs font-bold flex items-center gap-1.5 shrink-0">
+                                                <Calendar className="w-3.5 h-3.5 text-devorange-500 dark:text-amber-400" />
+                                                {role.period}
+                                            </span>
+                                        </div>
+                                        <p className="text-charcoal-600 dark:text-gray-300 text-sm leading-relaxed mb-6">
+                                            {role.description}
                                         </p>
                                     </div>
-                                    <span className="self-start sm:self-auto px-3 py-1 rounded-xl bg-gray-100 dark:bg-charcoal-800 text-charcoal-700 dark:text-gray-300 text-xs font-bold flex items-center gap-1.5">
-                                        <Calendar className="w-3.5 h-3.5 text-devorange-500 dark:text-amber-400" />
-                                        {role.period}
-                                    </span>
+                                    {Array.isArray(role.tags) && role.tags.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100 dark:border-charcoal-800">
+                                            {role.tags.map((tag, tIdx) => (
+                                                <span
+                                                    key={tIdx}
+                                                    className="px-3 py-1 rounded-lg bg-charcoal-50 dark:bg-charcoal-800 border border-gray-200 dark:border-charcoal-700 text-charcoal-700 dark:text-gray-300 text-xs font-bold"
+                                                >
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
-                                <p className="text-charcoal-600 dark:text-gray-300 text-sm leading-relaxed mb-6">
-                                    {role.description}
-                                </p>
-                                <div className="flex flex-wrap gap-2">
-                                    {role.tags.map((tag, tIdx) => (
-                                        <span
-                                            key={tIdx}
-                                            className="px-3 py-1 rounded-lg bg-charcoal-50 dark:bg-charcoal-800 border border-gray-200 dark:border-charcoal-700 text-charcoal-700 dark:text-gray-300 text-xs font-bold"
-                                        >
-                                            {tag}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                 )}
 
                 {/* Content: Research Tab */}
                 {activeTab === 'research' && (
-                    <div className="max-w-3xl mx-auto space-y-6 pt-4">
-                        {researchData.map((item, idx) => (
-                            <div
-                                key={idx}
-                                className="p-8 rounded-3xl bg-white dark:bg-charcoal-900 border border-gray-200/90 dark:border-charcoal-800 shadow-warm-md hover:shadow-warm-lg transition-all duration-300"
-                            >
-                                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                    <div className="max-w-5xl mx-auto pt-4">
+                        <div className={`grid grid-cols-1 ${researchData.length > 1 ? 'md:grid-cols-2' : ''} gap-6`}>
+                            {researchData.map((item, idx) => (
+                                <div
+                                    key={item.id || idx}
+                                    className="p-8 rounded-3xl bg-white dark:bg-charcoal-900 border border-gray-200/90 dark:border-charcoal-800 shadow-warm-md hover:shadow-warm-lg transition-all duration-300 flex flex-col justify-between"
+                                >
                                     <div>
-                                        <span className="px-3 py-1 rounded-full bg-devyellow-100 dark:bg-amber-950/40 text-charcoal-900 dark:text-amber-400 border border-devyellow-200 dark:border-amber-800/60 text-xs font-black uppercase tracking-wider inline-flex items-center gap-1.5 mb-2">
-                                            <BookOpen className="w-3.5 h-3.5 text-devorange-500 dark:text-amber-400" />
-                                            Academic Inquiries
-                                        </span>
-                                        <h3 className="text-2xl font-black text-charcoal-900 dark:text-white">
-                                            {item.title}
-                                        </h3>
-                                        <p className="text-sm font-semibold text-devorange-600 dark:text-amber-400 mt-1">
-                                            {item.subtitle}
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                                            <div>
+                                                <span className="px-3 py-1 rounded-full bg-devyellow-100 dark:bg-amber-950/40 text-charcoal-900 dark:text-amber-400 border border-devyellow-200 dark:border-amber-800/60 text-xs font-black uppercase tracking-wider inline-flex items-center gap-1.5 mb-2">
+                                                    <BookOpen className="w-3.5 h-3.5 text-devorange-500 dark:text-amber-400" />
+                                                    Academic Inquiries
+                                                </span>
+                                                <h3 className="text-2xl font-black text-charcoal-900 dark:text-white">
+                                                    {item.title}
+                                                </h3>
+                                                {item.subtitle && (
+                                                    <p className="text-sm font-semibold text-devorange-600 dark:text-amber-400 mt-1">
+                                                        {item.subtitle}
+                                                    </p>
+                                                )}
+                                            </div>
+                                            <span className="self-start sm:self-auto px-3 py-1 rounded-xl bg-gray-100 dark:bg-charcoal-800 text-charcoal-700 dark:text-gray-300 text-xs font-bold flex items-center gap-1.5 shrink-0">
+                                                <Calendar className="w-3.5 h-3.5 text-devorange-500 dark:text-amber-400" />
+                                                {item.period}
+                                            </span>
+                                        </div>
+                                        <p className="text-charcoal-600 dark:text-gray-300 text-sm leading-relaxed mb-6">
+                                            {item.description}
                                         </p>
                                     </div>
-                                    <span className="self-start sm:self-auto px-3 py-1 rounded-xl bg-gray-100 dark:bg-charcoal-800 text-charcoal-700 dark:text-gray-300 text-xs font-bold flex items-center gap-1.5">
-                                        <Calendar className="w-3.5 h-3.5 text-devorange-500 dark:text-amber-400" />
-                                        {item.period}
-                                    </span>
+                                    {Array.isArray(item.tags) && item.tags.length > 0 && (
+                                        <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100 dark:border-charcoal-800">
+                                            {item.tags.map((tag, tIdx) => (
+                                                <span
+                                                    key={tIdx}
+                                                    className="px-3 py-1 rounded-lg bg-charcoal-50 dark:bg-charcoal-800 border border-gray-200 dark:border-charcoal-700 text-charcoal-700 dark:text-gray-300 text-xs font-bold"
+                                                >
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
-                                <p className="text-charcoal-600 dark:text-gray-300 text-sm leading-relaxed mb-6">
-                                    {item.description}
-                                </p>
-                                <div className="flex flex-wrap gap-2">
-                                    {item.tags.map((tag, tIdx) => (
-                                        <span
-                                            key={tIdx}
-                                            className="px-3 py-1 rounded-lg bg-charcoal-50 dark:bg-charcoal-800 border border-gray-200 dark:border-charcoal-700 text-charcoal-700 dark:text-gray-300 text-xs font-bold"
-                                        >
-                                            {tag}
-                                        </span>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
                 )}
             </div>

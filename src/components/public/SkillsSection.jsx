@@ -54,7 +54,7 @@ export const SkillsSection = ({ skills = [] }) => {
                         <span>Technical Capabilities</span>
                     </div>
                     <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-charcoal-900 dark:text-white tracking-tight">
-                        Technologies I Work With
+                        Technical Skills &amp; Ecosystem
                     </h2>
                     <p className="text-sm sm:text-base text-charcoal-500 dark:text-gray-400 font-normal leading-relaxed">
                         The tools, technologies, and AI applications I explore and use everyday.

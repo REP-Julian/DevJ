@@ -27,7 +27,12 @@ export const DashboardPage = () => {
                 <SkillsManager skills={portfolio.skills} onUpdated={refreshPortfolio} />
             )}
             {activeTab === 'education' && (
-                <EducationManager education={portfolio.education} onUpdated={refreshPortfolio} />
+                <EducationManager
+                    education={portfolio.education}
+                    roles={portfolio.roles}
+                    research={portfolio.research}
+                    onUpdated={refreshPortfolio}
+                />
             )}
             {activeTab === 'achievements' && (
                 <AchievementsManager achievements={portfolio.achievements} onUpdated={refreshPortfolio} />

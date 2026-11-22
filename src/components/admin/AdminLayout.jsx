@@ -54,7 +54,7 @@ export const AdminLayout = ({ children, activeTab, setActiveTab }) => {
         { id: 'ai', label: 'AI Studio & Copilot', icon: Sparkles, badge: providerBadge },
         { id: 'profile', label: 'Profile', icon: User },
         { id: 'skills', label: 'Skills', icon: Wrench },
-        { id: 'education', label: 'Education', icon: GraduationCap },
+        { id: 'education', label: 'Education & Growth', icon: GraduationCap },
         { id: 'achievements', label: 'Achievements', icon: Award },
         { id: 'projects', label: 'Projects', icon: FolderGit2 },
         { id: 'hobbies', label: 'Hobbies', icon: Heart },

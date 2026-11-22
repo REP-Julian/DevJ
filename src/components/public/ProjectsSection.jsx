@@ -219,16 +219,16 @@ export const ProjectsSection = ({ projects = [] }) => {
                     aria-labelledby="project-modal-title"
                 >
                     <div
-                        className="animate-popup-zoom relative max-w-2xl w-full max-h-[90vh] bg-white rounded-3xl border border-gray-200 shadow-2xl overflow-y-auto flex flex-col select-text"
+                        className="animate-popup-zoom relative max-w-2xl w-full max-h-[90vh] bg-white dark:bg-charcoal-900 rounded-3xl border border-gray-200 dark:border-charcoal-800 shadow-2xl overflow-y-auto flex flex-col select-text"
                         onClick={(e) => e.stopPropagation()}
                     >
                         {/* Modal Header */}
-                        <div className="sticky top-0 bg-white/95 backdrop-blur-md px-6 py-4 border-b border-gray-100 flex items-center justify-between z-10">
+                        <div className="sticky top-0 bg-white/95 dark:bg-charcoal-900/95 backdrop-blur-md px-6 py-4 border-b border-gray-100 dark:border-charcoal-800 flex items-center justify-between z-10">
                             <div className="flex items-center gap-2.5 min-w-0 pr-3">
-                                <span className="px-2.5 py-0.5 rounded-full bg-devyellow-100 text-devorange-600 text-xs font-bold uppercase tracking-wider shrink-0 border border-devyellow-200">
+                                <span className="px-2.5 py-0.5 rounded-full bg-devyellow-100 dark:bg-amber-950/40 text-devorange-600 dark:text-amber-400 text-xs font-bold uppercase tracking-wider shrink-0 border border-devyellow-200 dark:border-amber-800/60">
                                     {activeModalProject.category}
                                 </span>
-                                <h3 id="project-modal-title" className="text-base sm:text-lg font-black text-charcoal-900 truncate">
+                                <h3 id="project-modal-title" className="text-base sm:text-lg font-black text-charcoal-900 dark:text-white truncate">
                                     {activeModalProject.title}
                                 </h3>
                             </div>
@@ -236,7 +236,7 @@ export const ProjectsSection = ({ projects = [] }) => {
                                 type="button"
                                 onClick={() => setActiveModalProject(null)}
                                 aria-label="Close project details"
-                                className="p-2 rounded-full hover:bg-gray-100 text-charcoal-500 hover:text-charcoal-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
+                                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-charcoal-800 text-charcoal-500 dark:text-charcoal-400 hover:text-charcoal-900 dark:hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500"
                             >
                                 <X className="w-5 h-5" />
                             </button>
@@ -259,22 +259,22 @@ export const ProjectsSection = ({ projects = [] }) => {
 
                             {/* Project Description */}
                             <div className="space-y-2">
-                                <h4 className="text-xs font-bold uppercase tracking-wider text-charcoal-400">
+                                <h4 className="text-xs font-bold uppercase tracking-wider text-charcoal-400 dark:text-charcoal-500">
                                     About the Project
                                 </h4>
-                                <p className="text-sm text-charcoal-700 leading-relaxed font-normal">
+                                <p className="text-sm text-charcoal-700 dark:text-gray-300 leading-relaxed font-normal">
                                     {activeModalProject.description}
                                 </p>
                             </div>
 
                             {/* External Links */}
                             {activeModalProject.githubUrl && activeModalProject.githubUrl !== '#' && (
-                                <div className="pt-4 border-t border-gray-100 flex flex-wrap items-center gap-3">
+                                <div className="pt-4 border-t border-gray-100 dark:border-charcoal-800 flex flex-wrap items-center gap-3">
                                     <a
                                         href={activeModalProject.githubUrl}
                                         target="_blank"
                                         rel="noreferrer"
-                                        className="px-5 py-2.5 rounded-xl bg-charcoal-900 hover:bg-charcoal-800 text-devyellow-400 text-xs font-bold flex items-center gap-2 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 active:scale-95"
+                                        className="px-5 py-2.5 rounded-xl bg-charcoal-900 dark:bg-amber-400 hover:bg-charcoal-800 dark:hover:bg-amber-300 text-devyellow-400 dark:text-charcoal-950 text-xs font-bold flex items-center gap-2 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-devorange-500 active:scale-95"
                                     >
                                         <Github className="w-4 h-4" />
                                         <span>View on GitHub</span>

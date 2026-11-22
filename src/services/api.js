@@ -74,6 +74,8 @@ export const getStoredPortfolio = () => {
                 ...parsed,
                 profile: { ...initialPortfolioData.profile, ...(parsed.profile || {}) },
                 education: (Array.isArray(parsed.education) && parsed.education.length > 0) ? parsed.education : initialPortfolioData.education,
+                roles: (Array.isArray(parsed.roles) && parsed.roles.length > 0) ? parsed.roles : initialPortfolioData.roles,
+                research: (Array.isArray(parsed.research) && parsed.research.length > 0) ? parsed.research : initialPortfolioData.research,
             };
         }
     } catch (e) {
@@ -709,6 +711,72 @@ export const api = {
         const current = getStoredPortfolio();
         if (!Array.isArray(current.education)) current.education = [];
         current.education = current.education.filter((e) => e.id !== id);
+        saveStoredPortfolio(current);
+        await syncPortfolioToAppwrite(current);
+        return true;
+    },
+
+    // 8b. Roles & Leadership Management
+    createRole: async (data) => {
+        const current = getStoredPortfolio();
+        if (!Array.isArray(current.roles)) current.roles = [];
+        const newRole = {
+            ...data,
+            id: String(Date.now()),
+            order: Number(data.order) || current.roles.length + 1,
+        };
+        current.roles.push(newRole);
+        saveStoredPortfolio(current);
+        await syncPortfolioToAppwrite(current);
+        return newRole;
+    },
+
+    updateRole: async (id, data) => {
+        const current = getStoredPortfolio();
+        if (!Array.isArray(current.roles)) current.roles = [];
+        current.roles = current.roles.map((r) => (r.id === id ? { ...r, ...data } : r));
+        saveStoredPortfolio(current);
+        await syncPortfolioToAppwrite(current);
+        return data;
+    },
+
+    deleteRole: async (id) => {
+        const current = getStoredPortfolio();
+        if (!Array.isArray(current.roles)) current.roles = [];
+        current.roles = current.roles.filter((r) => r.id !== id);
+        saveStoredPortfolio(current);
+        await syncPortfolioToAppwrite(current);
+        return true;
+    },
+
+    // 8c. Research & Academic Inquiries Management
+    createResearch: async (data) => {
+        const current = getStoredPortfolio();
+        if (!Array.isArray(current.research)) current.research = [];
+        const newResearch = {
+            ...data,
+            id: String(Date.now()),
+            order: Number(data.order) || current.research.length + 1,
+        };
+        current.research.push(newResearch);
+        saveStoredPortfolio(current);
+        await syncPortfolioToAppwrite(current);
+        return newResearch;
+    },
+
+    updateResearch: async (id, data) => {
+        const current = getStoredPortfolio();
+        if (!Array.isArray(current.research)) current.research = [];
+        current.research = current.research.map((res) => (res.id === id ? { ...res, ...data } : res));
+        saveStoredPortfolio(current);
+        await syncPortfolioToAppwrite(current);
+        return data;
+    },
+
+    deleteResearch: async (id) => {
+        const current = getStoredPortfolio();
+        if (!Array.isArray(current.research)) current.research = [];
+        current.research = current.research.filter((res) => res.id !== id);
         saveStoredPortfolio(current);
         await syncPortfolioToAppwrite(current);
         return true;
