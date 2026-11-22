@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { api } from '../../services/api';
 import { aiService } from '../../services/aiService';
 import { notify } from '../../services/notificationService';
@@ -11,6 +11,18 @@ export const SkillsManager = ({ skills = [], onUpdated }) => {
     const [aiLoading, setAiLoading] = useState(false);
     const [gapLoading, setGapLoading] = useState(false);
     const [suggestedSkills, setSuggestedSkills] = useState([]);
+    const topRef = useRef(null);
+
+    const scrollToTop = () => {
+        setTimeout(() => {
+            if (topRef.current) {
+                topRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 50);
+    };
+
     const [formData, setFormData] = useState({
         category: 'Specialized Frontier AI',
         name: '',
@@ -24,6 +36,7 @@ export const SkillsManager = ({ skills = [], onUpdated }) => {
         setEditingId(skill.id);
         setIsCreating(false);
         setFormData(skill);
+        scrollToTop();
     };
 
     const handleCreateNew = () => {
@@ -37,6 +50,7 @@ export const SkillsManager = ({ skills = [], onUpdated }) => {
             iconName: 'Gemini',
             order: skills.length + 1,
         });
+        scrollToTop();
     };
 
     const handleCancel = () => {
@@ -134,7 +148,7 @@ export const SkillsManager = ({ skills = [], onUpdated }) => {
     };
 
     return (
-        <div className="space-y-6">
+        <div ref={topRef} className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 pb-4">
                 <div>
                     <h2 className="text-2xl font-black text-charcoal-900">Skills & Tech Stack</h2>

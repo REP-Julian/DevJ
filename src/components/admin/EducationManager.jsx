@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { api } from '../../services/api';
 import { notify } from '../../services/notificationService';
 import {
@@ -28,6 +28,17 @@ export const EducationManager = ({
     // Form states
     const [editingId, setEditingId] = useState(null);
     const [isCreating, setIsCreating] = useState(false);
+    const topRef = useRef(null);
+
+    const scrollToTop = () => {
+        setTimeout(() => {
+            if (topRef.current) {
+                topRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 50);
+    };
 
     // Education form data
     const [eduForm, setEduForm] = useState({
@@ -120,6 +131,7 @@ export const EducationManager = ({
             ...item,
             highlights: Array.isArray(item.highlights) ? item.highlights.join(', ') : (item.highlights || ''),
         });
+        scrollToTop();
     };
 
     const handleCreateNewEdu = () => {
@@ -137,6 +149,7 @@ export const EducationManager = ({
             highlights: '',
             order: education.length + 1,
         });
+        scrollToTop();
     };
 
     const handleSaveEdu = async (e) => {
@@ -197,6 +210,7 @@ export const EducationManager = ({
             ...item,
             tags: Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags || ''),
         });
+        scrollToTop();
     };
 
     const handleCreateNewRole = () => {
@@ -210,6 +224,7 @@ export const EducationManager = ({
             tags: 'Team Collaboration, Problem Solving',
             order: roles.length + 1,
         });
+        scrollToTop();
     };
 
     const handleSaveRole = async (e) => {
@@ -268,6 +283,7 @@ export const EducationManager = ({
             highlights: Array.isArray(item.highlights) ? item.highlights.join(', ') : (item.highlights || ''),
             tags: Array.isArray(item.tags) ? item.tags.join(', ') : (item.tags || ''),
         });
+        scrollToTop();
     };
 
     const handleCreateNewResearch = () => {
@@ -282,6 +298,7 @@ export const EducationManager = ({
             tags: 'Applied AI, Research, Web Performance',
             order: research.length + 1,
         });
+        scrollToTop();
     };
 
     const handleSaveResearch = async (e) => {
@@ -335,7 +352,7 @@ export const EducationManager = ({
     };
 
     return (
-        <div className="space-y-8 max-w-5xl">
+        <div ref={topRef} className="space-y-8 max-w-5xl">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-gray-200">
                 <div>

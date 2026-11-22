@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import ImageUploader from '../common/ImageUploader';
 import { api } from '../../services/api';
 import { aiService } from '../../services/aiService';
@@ -11,6 +11,18 @@ export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
     const [aiLoading, setAiLoading] = useState(false);
     const [aiVisionScanning, setAiVisionScanning] = useState(false);
     const [localImageFile, setLocalImageFile] = useState(null);
+    const topRef = useRef(null);
+
+    const scrollToTop = () => {
+        setTimeout(() => {
+            if (topRef.current) {
+                topRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 50);
+    };
+
     const [formData, setFormData] = useState({
         name: '',
         description: '',
@@ -24,6 +36,7 @@ export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
         setIsCreating(false);
         setLocalImageFile(null);
         setFormData(hobby);
+        scrollToTop();
     };
 
     const handleCreateNew = () => {
@@ -37,6 +50,7 @@ export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
             iconName: 'Heart',
             order: hobbies.length + 1,
         });
+        scrollToTop();
     };
 
     const handleCancel = () => {
@@ -125,7 +139,7 @@ export const HobbiesManager = ({ hobbies = [], onUpdated }) => {
     };
 
     return (
-        <div className="space-y-6">
+        <div ref={topRef} className="space-y-6">
             <div className="flex items-center justify-between border-b border-gray-200 pb-4">
                 <div>
                     <h2 className="text-2xl font-black text-charcoal-900">Hobbies Management</h2>

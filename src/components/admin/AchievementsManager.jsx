@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import ImageUploader from '../common/ImageUploader';
 import { api } from '../../services/api';
 import { aiService } from '../../services/aiService';
@@ -12,6 +12,18 @@ export const AchievementsManager = ({ achievements = [], onUpdated }) => {
     const [aiVisionScanning, setAiVisionScanning] = useState(false);
     const [visualReport, setVisualReport] = useState(null);
     const [localImageFile, setLocalImageFile] = useState(null);
+    const topRef = useRef(null);
+
+    const scrollToTop = () => {
+        setTimeout(() => {
+            if (topRef.current) {
+                topRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            document.querySelector('main')?.scrollTo({ top: 0, behavior: 'smooth' });
+        }, 50);
+    };
+
     const [formData, setFormData] = useState({
         title: '',
         category: '',
@@ -28,6 +40,7 @@ export const AchievementsManager = ({ achievements = [], onUpdated }) => {
         setVisualReport(null);
         setLocalImageFile(null);
         setFormData(item);
+        scrollToTop();
     };
 
     const handleCreateNew = () => {
@@ -44,6 +57,7 @@ export const AchievementsManager = ({ achievements = [], onUpdated }) => {
             imageUrl: '',
             order: achievements.length + 1,
         });
+        scrollToTop();
     };
 
     const handleCancel = () => {
@@ -114,7 +128,7 @@ export const AchievementsManager = ({ achievements = [], onUpdated }) => {
     };
 
     return (
-        <div className="space-y-6">
+        <div ref={topRef} className="space-y-6">
             <div className="flex items-center justify-between border-b border-gray-200 pb-4">
                 <div>
                     <h2 className="text-2xl font-black text-charcoal-900">Achievements Management</h2>
